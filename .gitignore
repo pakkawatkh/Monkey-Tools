@@ -1,0 +1,13 @@
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Swift Package Manager
+/.build/
+.swiftpm/
+DerivedData/
+
+# Built App Bundles
+*.app/
+*.app.dSYM/
