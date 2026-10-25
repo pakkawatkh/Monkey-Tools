@@ -13,6 +13,9 @@ public final class AppSettings: ObservableObject {
         static let maxHistory = "app_max_history"
         static let launchAtLogin = "app_launch_at_login"
         static let autoPasteEnabled = "app_auto_paste_enabled"
+        static let selectionTranslateEnabled = "app_selection_translate_enabled"
+        static let translationEngineMode = "app_translation_engine_mode"
+        static let translationTargetLang = "app_translation_target_lang"
     }
 
     @Published public var hotkeyKeyCode: UInt32 {
@@ -53,6 +56,24 @@ public final class AppSettings: ObservableObject {
         }
     }
 
+    @Published public var selectionTranslateEnabled: Bool {
+        didSet {
+            UserDefaults.standard.set(selectionTranslateEnabled, forKey: Keys.selectionTranslateEnabled)
+        }
+    }
+
+    @Published public var translationEngineMode: TranslationEngineMode {
+        didSet {
+            UserDefaults.standard.set(translationEngineMode.rawValue, forKey: Keys.translationEngineMode)
+        }
+    }
+
+    @Published public var translationTargetLang: String {
+        didSet {
+            UserDefaults.standard.set(translationTargetLang, forKey: Keys.translationTargetLang)
+        }
+    }
+
     public init() {
         let defaults = UserDefaults.standard
 
@@ -63,6 +84,9 @@ public final class AppSettings: ObservableObject {
         let savedMax = defaults.object(forKey: Keys.maxHistory) as? Int
         let savedLaunch = defaults.bool(forKey: Keys.launchAtLogin)
         let savedAutoPaste = defaults.object(forKey: Keys.autoPasteEnabled) as? Bool
+        let savedSelectionTranslate = defaults.object(forKey: Keys.selectionTranslateEnabled) as? Bool
+        let savedEngineRaw = defaults.string(forKey: Keys.translationEngineMode)
+        let savedTargetLang = defaults.string(forKey: Keys.translationTargetLang)
 
         self.hotkeyKeyCode = savedKeyCode ?? 9
         self.hotkeyModifiers = savedModifiers ?? UInt32(cmdKey | shiftKey)
@@ -70,6 +94,9 @@ public final class AppSettings: ObservableObject {
         self.maxHistoryCount = savedMax ?? 100
         self.launchAtLogin = savedLaunch
         self.autoPasteEnabled = savedAutoPaste ?? true
+        self.selectionTranslateEnabled = savedSelectionTranslate ?? true
+        self.translationEngineMode = (savedEngineRaw.flatMap(TranslationEngineMode.init(rawValue:))) ?? .google
+        self.translationTargetLang = savedTargetLang ?? "auto"
     }
 
     public func setHotKey(keyCode: UInt32, modifiers: UInt32, display: String) {
