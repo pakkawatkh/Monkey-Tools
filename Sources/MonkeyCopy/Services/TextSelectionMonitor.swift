@@ -90,16 +90,19 @@ public final class TextSelectionMonitor: ObservableObject {
         case .leftMouseDragged:
             let current = NSEvent.mouseLocation
             let dist = hypot(current.x - mouseDownLocation.x, current.y - mouseDownLocation.y)
-            if dist > 6.0 {
+            if dist > 3.0 {
                 isDragging = true
             }
 
         case .leftMouseUp:
-            let shouldCheck = isDragging || lastClickCount >= 2
+            let mouseLoc = NSEvent.mouseLocation
+            let dist = hypot(mouseLoc.x - mouseDownLocation.x, mouseLoc.y - mouseDownLocation.y)
+            let isDoubleClick = event.clickCount >= 2 || lastClickCount >= 2
+            let isDrag = isDragging || dist > 3.0
             isDragging = false
 
-            if shouldCheck {
-                scheduleSelectionCheck()
+            if isDrag || isDoubleClick {
+                scheduleSelectionCheck(isDoubleClick: isDoubleClick)
             }
 
         default:
@@ -107,16 +110,16 @@ public final class TextSelectionMonitor: ObservableObject {
         }
     }
 
-    private func scheduleSelectionCheck() {
+    private func scheduleSelectionCheck(isDoubleClick: Bool = false) {
         pendingWorkItem?.cancel()
         let workItem = DispatchWorkItem { [weak self] in
-            self?.checkSelectedText()
+            self?.checkSelectedText(isDoubleClick: isDoubleClick)
         }
         pendingWorkItem = workItem
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.12, execute: workItem)
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.05, execute: workItem)
     }
 
-    public func checkSelectedText() {
+    public func checkSelectedText(isDoubleClick: Bool = false) {
         guard let frontApp = NSWorkspace.shared.frontmostApplication else { return }
 
         // Don't trigger for monkey-copy's own windows
@@ -140,10 +143,10 @@ public final class TextSelectionMonitor: ObservableObject {
 
         // Method 2: For browsers (Safari, Chrome) and other non-AX apps:
         // Stealth probe to verify translatable text exists without modifying clipboard or polluting history
-        probeNonAXSelection(pid: pid, mouseLoc: mouseLoc)
+        probeNonAXSelection(pid: pid, mouseLoc: mouseLoc, isDoubleClick: isDoubleClick)
     }
 
-    private func probeNonAXSelection(pid: pid_t, mouseLoc: CGPoint) {
+    private func probeNonAXSelection(pid: pid_t, mouseLoc: CGPoint, isDoubleClick: Bool) {
         let pasteboard = NSPasteboard.general
         let oldChangeCount = pasteboard.changeCount
 
@@ -166,68 +169,88 @@ public final class TextSelectionMonitor: ObservableObject {
         // 2. Suppress clipboard monitor capture so monkey-copy never records this probe
         ClipboardMonitor.shared.isCapturingSuppressed = true
 
-        // 3. Post momentary Cmd + C
+        // 3. Post momentary Cmd + C into active session
         let source = CGEventSource(stateID: .combinedSessionState)
-        let keyDown = CGEvent(keyboardEventSource: source, virtualKey: 8, keyDown: true)
-        keyDown?.flags = .maskCommand
-        let keyUp = CGEvent(keyboardEventSource: source, virtualKey: 8, keyDown: false)
-        keyUp?.flags = .maskCommand
-        keyDown?.post(tap: .cghidEventTap)
-        keyUp?.post(tap: .cghidEventTap)
+        source?.setLocalEventsFilterDuringSuppressionState(
+            [.permitLocalMouseEvents, .permitSystemDefinedEvents],
+            state: .eventSuppressionStateSuppressionInterval
+        )
 
-        // 4. Inspect result after 50ms and IMMEDIATELY restore user's original clipboard
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) { [weak self] in
+        let cKeyCode: CGKeyCode = 8
+        guard let keyDown = CGEvent(keyboardEventSource: source, virtualKey: cKeyCode, keyDown: true),
+              let keyUp = CGEvent(keyboardEventSource: source, virtualKey: cKeyCode, keyDown: false) else {
+            ClipboardMonitor.shared.isCapturingSuppressed = false
+            return
+        }
+
+        keyDown.flags = .maskCommand
+        keyUp.flags = .maskCommand
+
+        keyDown.post(tap: .cgSessionEventTap)
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.02) {
+            keyUp.post(tap: .cgSessionEventTap)
+        }
+
+        // 4. Inspect result after 110ms and IMMEDIATELY restore user's original clipboard
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.11) { [weak self] in
             guard let self = self else {
                 ClipboardMonitor.shared.isCapturingSuppressed = false
                 return
             }
 
-            defer {
-                // Immediately restore the user's previous clipboard contents
-                pasteboard.clearContents()
-                for backup in backupItems {
-                    let item = NSPasteboardItem()
-                    for (type, data) in backup.data {
-                        item.setData(data, forType: type)
-                    }
-                    pasteboard.writeObjects([item])
-                }
-
-                // Restore monitoring state after brief debounce
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.12) {
-                    ClipboardMonitor.shared.lastChangeCount = pasteboard.changeCount
-                    ClipboardMonitor.shared.isCapturingSuppressed = false
-                }
-            }
-
-            // If change count did not change, nothing was selected (empty drag, click in blank space)
-            guard pasteboard.changeCount != oldChangeCount else {
-                self.onSelectionCleared?()
-                return
-            }
-
-            // Check if pasteboard has image data without text
+            let capturedChangeCount = pasteboard.changeCount
+            let capturedText = pasteboard.string(forType: .string) ?? ""
             let types = pasteboard.types ?? []
             let isImageType = types.contains {
                 $0 == .tiff || $0 == .png || $0.rawValue.contains("image")
             }
 
-            guard let capturedText = pasteboard.string(forType: .string),
-                  self.isValidTranslatableText(capturedText) else {
-                // Not translatable (whitespace, image, punctuation, numbers, or empty) -> DO NOT SHOW BUBBLE
-                self.onSelectionCleared?()
+            // Immediately restore the user's previous clipboard contents
+            pasteboard.clearContents()
+            for backup in backupItems {
+                let item = NSPasteboardItem()
+                for (type, data) in backup.data {
+                    item.setData(data, forType: type)
+                }
+                pasteboard.writeObjects([item])
+            }
+
+            // Restore monitoring state after brief debounce
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.12) {
+                ClipboardMonitor.shared.lastChangeCount = pasteboard.changeCount
+                ClipboardMonitor.shared.isCapturingSuppressed = false
+            }
+
+            // If translatable text was captured:
+            if capturedChangeCount != oldChangeCount {
+                // If it is an image without translatable text -> DO NOT SHOW BUBBLE
+                if isImageType && !self.isValidTranslatableText(capturedText) {
+                    self.onSelectionCleared?()
+                    return
+                }
+
+                // If captured text is whitespace, pure numbers, punctuation -> DO NOT SHOW BUBBLE
+                if !self.isValidTranslatableText(capturedText) {
+                    self.onSelectionCleared?()
+                    return
+                }
+
+                // Valid translatable text! Show the floating bubble
+                let rect = CGRect(x: mouseLoc.x, y: mouseLoc.y, width: 1, height: 1)
+                let event = TextSelectionEvent(text: capturedText, screenRect: rect, sourceAppPID: pid)
+                self.onSelectionDetected?(event)
                 return
             }
 
-            if isImageType && !self.isValidTranslatableText(capturedText) {
+            // Fallback for double-click on words in applications that intercept or slow synthetic copy:
+            // When a user double-clicks, a word is guaranteed to be selected!
+            if isDoubleClick {
+                let rect = CGRect(x: mouseLoc.x, y: mouseLoc.y, width: 1, height: 1)
+                let event = TextSelectionEvent(text: "", screenRect: rect, sourceAppPID: pid)
+                self.onSelectionDetected?(event)
+            } else {
                 self.onSelectionCleared?()
-                return
             }
-
-            // Valid translatable text found! Show the floating bubble with the text preloaded
-            let rect = CGRect(x: mouseLoc.x, y: mouseLoc.y, width: 1, height: 1)
-            let event = TextSelectionEvent(text: capturedText, screenRect: rect, sourceAppPID: pid)
-            self.onSelectionDetected?(event)
         }
     }
 

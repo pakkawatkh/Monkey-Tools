@@ -141,15 +141,21 @@ public final class SelectionBubblePanel: NSPanel {
 
         // Synthesize Cmd + C
         let source = CGEventSource(stateID: .combinedSessionState)
+        source?.setLocalEventsFilterDuringSuppressionState(
+            [.permitLocalMouseEvents, .permitSystemDefinedEvents],
+            state: .eventSuppressionStateSuppressionInterval
+        )
         let keyDown = CGEvent(keyboardEventSource: source, virtualKey: 8, keyDown: true)
         keyDown?.flags = .maskCommand
         let keyUp = CGEvent(keyboardEventSource: source, virtualKey: 8, keyDown: false)
         keyUp?.flags = .maskCommand
 
         keyDown?.post(tap: .cgSessionEventTap)
-        keyUp?.post(tap: .cgSessionEventTap)
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.02) {
+            keyUp?.post(tap: .cgSessionEventTap)
+        }
 
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.10) {
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.12) {
             let capturedText = pasteboard.string(forType: .string) ?? ""
 
             // Restore user's previous clipboard completely
