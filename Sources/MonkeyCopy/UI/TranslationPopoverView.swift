@@ -189,22 +189,25 @@ public struct TranslationPopoverView: View {
 
     private var headerBar: some View {
         HStack(spacing: 6) {
-            // Swap Button (placed at the front)
-            Button(action: swapLanguages) {
-                Image(systemName: "arrow.left.arrow.right")
-                    .font(.system(size: 9, weight: .semibold))
-                    .foregroundColor(Color.white.opacity(0.85))
-                    .frame(width: 22, height: 22)
-                    .background(Color.white.opacity(0.08))
-                    .clipShape(Circle())
-                    .overlay(
-                        Circle()
-                            .stroke(Color.white.opacity(0.12), lineWidth: 1)
-                    )
+            // Engine Mode Switcher (Icon-only at the front!)
+            Button(action: toggleEngineMode) {
+                ZStack {
+                    Circle()
+                        .fill(Color.white.opacity(0.08))
+                        .overlay(
+                            Circle()
+                                .stroke(Color.white.opacity(0.12), lineWidth: 1)
+                        )
+
+                    Image(systemName: settings.translationEngineMode == .google ? "globe" : "apple.logo")
+                        .font(.system(size: 11, weight: .semibold))
+                        .foregroundColor(settings.translationEngineMode == .google ? Color(red: 0.4, green: 0.7, blue: 1.0) : Color.white.opacity(0.90))
+                }
+                .frame(width: 22, height: 22)
             }
             .buttonStyle(.plain)
             .fixedSize()
-            .help("สลับภาษาต้นทางและปลายทาง (Swap Languages)")
+            .help("เครื่องมือแปลภาษาปัจจุบัน: \(settings.translationEngineMode.title) (คลิกเพื่อสลับ Google / Apple)")
 
             // Source Language Picker Menu
             Menu {
@@ -237,11 +240,18 @@ public struct TranslationPopoverView: View {
             .menuStyle(.borderlessButton)
             .fixedSize()
 
-            // Direction arrow pointing to Target Language
-            Image(systemName: "arrow.right")
-                .font(.system(size: 8, weight: .bold))
-                .foregroundColor(Color.white.opacity(0.35))
-                .fixedSize()
+            // Language Swap Button (in the middle between Source and Target!)
+            Button(action: swapLanguages) {
+                Image(systemName: "arrow.left.arrow.right")
+                    .font(.system(size: 9, weight: .semibold))
+                    .foregroundColor(Color.white.opacity(0.80))
+                    .frame(width: 20, height: 20)
+                    .background(Color.white.opacity(0.06))
+                    .clipShape(Circle())
+            }
+            .buttonStyle(.plain)
+            .fixedSize()
+            .help("สลับภาษาต้นทางและปลายทาง (Swap Languages)")
 
             // Target Language Picker Menu
             Menu {
@@ -278,30 +288,7 @@ public struct TranslationPopoverView: View {
 
             Spacer()
 
-            // Engine Mode Switcher Pill
-            Button(action: toggleEngineMode) {
-                HStack(spacing: 3) {
-                    Image(systemName: settings.translationEngineMode == .google ? "globe" : "apple.logo")
-                        .font(.system(size: 9))
-                    Text(settings.translationEngineMode == .google ? "Google" : "Apple")
-                        .font(.system(size: 9, weight: .medium))
-                        .lineLimit(1)
-                }
-                .foregroundColor(Color.white.opacity(0.85))
-                .padding(.horizontal, 6)
-                .padding(.vertical, 3)
-                .background(Color.white.opacity(0.08))
-                .clipShape(RoundedRectangle(cornerRadius: 4))
-                .overlay(
-                    RoundedRectangle(cornerRadius: 4)
-                        .stroke(Color.white.opacity(0.12), lineWidth: 1)
-                )
-            }
-            .buttonStyle(.plain)
-            .fixedSize()
-            .help("สลับโหมดเครื่องมือแปลภาษา (Google Translate / Apple Native)")
-
-            // Close button
+            // Close button (at the far right)
             Button(action: onClose) {
                 Image(systemName: "xmark")
                     .font(.system(size: 9, weight: .bold))
