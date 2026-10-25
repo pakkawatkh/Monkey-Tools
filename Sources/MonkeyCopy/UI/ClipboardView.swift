@@ -63,11 +63,16 @@ public struct ClipboardView: View {
                 .padding(.vertical, 8)
         }
         .frame(width: 320, height: 520)
-        .background(VisualEffectBackground())
+        .background(
+            ZStack {
+                VisualEffectBackground()
+                Color(red: 0.10, green: 0.10, blue: 0.12).opacity(0.85)
+            }
+        )
         .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
         .overlay(
             RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .stroke(Color.white.opacity(0.12), lineWidth: 1)
+                .stroke(Color.white.opacity(0.14), lineWidth: 1)
         )
         .preferredColorScheme(.dark)
         .onAppear {
@@ -91,7 +96,7 @@ public struct ClipboardView: View {
 
     private var customDivider: some View {
         Rectangle()
-            .fill(Color.white.opacity(0.08))
+            .fill(Color.white.opacity(0.10))
             .frame(height: 1)
     }
 
@@ -105,7 +110,7 @@ public struct ClipboardView: View {
                     tabButton(title: "Emoji", icon: "face.smiling", tab: .emoji)
                 }
                 .padding(2)
-                .background(Color.white.opacity(0.06))
+                .background(Color.white.opacity(0.08))
                 .clipShape(RoundedRectangle(cornerRadius: 7))
 
                 Spacer()
@@ -115,12 +120,12 @@ public struct ClipboardView: View {
                     SettingsWindowController.shared.showSettings()
                 }) {
                     Image(systemName: "gearshape")
-                        .foregroundColor(Color.white.opacity(0.65))
+                        .foregroundColor(Color.white.opacity(0.80))
                         .font(.system(size: 11))
                         .frame(width: 26, height: 26)
-                        .background(Color.white.opacity(0.06))
+                        .background(Color.white.opacity(0.08))
                         .clipShape(Circle())
-                        .overlay(Circle().stroke(Color.white.opacity(0.08), lineWidth: 1))
+                        .overlay(Circle().stroke(Color.white.opacity(0.12), lineWidth: 1))
                 }
                 .buttonStyle(.plain)
                 .help("Settings...")
@@ -128,12 +133,12 @@ public struct ClipboardView: View {
                 // Close button
                 Button(action: onClose) {
                     Image(systemName: "xmark")
-                        .foregroundColor(Color.white.opacity(0.65))
+                        .foregroundColor(Color.white.opacity(0.80))
                         .font(.system(size: 10, weight: .bold))
                         .frame(width: 26, height: 26)
-                        .background(Color.white.opacity(0.06))
+                        .background(Color.white.opacity(0.08))
                         .clipShape(Circle())
-                        .overlay(Circle().stroke(Color.white.opacity(0.08), lineWidth: 1))
+                        .overlay(Circle().stroke(Color.white.opacity(0.12), lineWidth: 1))
                 }
                 .buttonStyle(.plain)
                 .help("Close (Esc)")
@@ -152,66 +157,80 @@ public struct ClipboardView: View {
         }) {
             HStack(spacing: 4) {
                 Image(systemName: icon)
-                    .font(.system(size: 10))
+                    .font(.system(size: 10, weight: activeTab == tab ? .semibold : .medium))
                 Text(title)
-                    .font(.system(size: 11, weight: .medium))
+                    .font(.system(size: 11, weight: activeTab == tab ? .semibold : .medium))
             }
-            .foregroundColor(activeTab == tab ? .white : Color.white.opacity(0.55))
-            .padding(.horizontal, 8)
-            .padding(.vertical, 4)
+            .foregroundColor(activeTab == tab ? .white : Color.white.opacity(0.70))
+            .padding(.horizontal, 10)
+            .padding(.vertical, 5)
             .background(
-                RoundedRectangle(cornerRadius: 5)
-                    .fill(activeTab == tab ? Color.white.opacity(0.14) : Color.clear)
+                RoundedRectangle(cornerRadius: 6)
+                    .fill(activeTab == tab ? Color.white.opacity(0.18) : Color.clear)
             )
         }
         .buttonStyle(.plain)
     }
 
     private var searchField: some View {
-        HStack(spacing: 6) {
+        HStack(spacing: 7) {
             Image(systemName: "magnifyingglass")
-                .foregroundColor(Color.white.opacity(0.45))
-                .font(.system(size: 12))
+                .foregroundColor(Color.white.opacity(0.65))
+                .font(.system(size: 12, weight: .medium))
 
             if activeTab == .clipboard {
-                TextField("Search history... (↑↓)", text: $manager.searchQuery)
-                    .textFieldStyle(.plain)
-                    .font(.system(size: 12))
-                    .foregroundColor(Color.white.opacity(0.95))
-                    .focused($isSearchFocused)
+                ZStack(alignment: .leading) {
+                    if manager.searchQuery.isEmpty {
+                        Text("Search history... (↑↓)")
+                            .font(.system(size: 12))
+                            .foregroundColor(Color.white.opacity(0.55))
+                    }
+                    TextField("", text: $manager.searchQuery)
+                        .textFieldStyle(.plain)
+                        .font(.system(size: 12))
+                        .foregroundColor(.white)
+                        .focused($isSearchFocused)
+                }
 
                 if !manager.searchQuery.isEmpty {
                     Button(action: { manager.searchQuery = "" }) {
                         Image(systemName: "xmark.circle.fill")
-                            .foregroundColor(Color.white.opacity(0.45))
+                            .foregroundColor(Color.white.opacity(0.65))
                             .font(.system(size: 12))
                     }
                     .buttonStyle(.plain)
                 }
             } else {
-                TextField("Search emojis... (e.g. smile, heart, ลิง)", text: $emojiManager.searchQuery)
-                    .textFieldStyle(.plain)
-                    .font(.system(size: 12))
-                    .foregroundColor(Color.white.opacity(0.95))
-                    .focused($isSearchFocused)
+                ZStack(alignment: .leading) {
+                    if emojiManager.searchQuery.isEmpty {
+                        Text("Search emojis... (e.g. smile, heart, ลิง)")
+                            .font(.system(size: 12))
+                            .foregroundColor(Color.white.opacity(0.55))
+                    }
+                    TextField("", text: $emojiManager.searchQuery)
+                        .textFieldStyle(.plain)
+                        .font(.system(size: 12))
+                        .foregroundColor(.white)
+                        .focused($isSearchFocused)
+                }
 
                 if !emojiManager.searchQuery.isEmpty {
                     Button(action: { emojiManager.searchQuery = "" }) {
                         Image(systemName: "xmark.circle.fill")
-                            .foregroundColor(Color.white.opacity(0.45))
+                            .foregroundColor(Color.white.opacity(0.65))
                             .font(.system(size: 12))
                     }
                     .buttonStyle(.plain)
                 }
             }
         }
-        .padding(.horizontal, 8)
-        .padding(.vertical, 5)
-        .background(Color.white.opacity(0.06))
-        .clipShape(RoundedRectangle(cornerRadius: 6))
+        .padding(.horizontal, 9)
+        .padding(.vertical, 6)
+        .background(Color.white.opacity(0.08))
+        .clipShape(RoundedRectangle(cornerRadius: 7))
         .overlay(
-            RoundedRectangle(cornerRadius: 6)
-                .stroke(Color.white.opacity(0.08), lineWidth: 1)
+            RoundedRectangle(cornerRadius: 7)
+                .stroke(Color.white.opacity(0.12), lineWidth: 1)
         )
     }
 
@@ -286,25 +305,25 @@ public struct ClipboardView: View {
         VStack(spacing: 10) {
             Spacer()
             Image(systemName: "doc.on.clipboard")
-                .font(.system(size: 32))
-                .foregroundColor(Color.white.opacity(0.25))
+                .font(.system(size: 34))
+                .foregroundColor(Color.white.opacity(0.35))
 
             if manager.searchQuery.isEmpty {
                 Text("Clipboard is empty")
-                    .font(.system(size: 13, weight: .medium))
-                    .foregroundColor(Color.white.opacity(0.70))
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundColor(.white)
                 Text("Copy text or images (⌘C) to build your history.")
                     .font(.system(size: 11))
-                    .foregroundColor(Color.white.opacity(0.40))
+                    .foregroundColor(Color.white.opacity(0.70))
                     .multilineTextAlignment(.center)
-                    .padding(.horizontal, 20)
+                    .padding(.horizontal, 24)
             } else {
                 Text("No matching results")
-                    .font(.system(size: 13, weight: .medium))
-                    .foregroundColor(Color.white.opacity(0.70))
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundColor(.white)
                 Text("Try searching for text or 'image'.")
                     .font(.system(size: 11))
-                    .foregroundColor(Color.white.opacity(0.40))
+                    .foregroundColor(Color.white.opacity(0.70))
             }
             Spacer()
         }
@@ -314,8 +333,8 @@ public struct ClipboardView: View {
         HStack(spacing: 8) {
             if activeTab == .clipboard {
                 Text("\(manager.filteredItems.count) items")
-                    .font(.system(size: 10, design: .monospaced))
-                    .foregroundColor(Color.white.opacity(0.45))
+                    .font(.system(size: 10, weight: .medium, design: .monospaced))
+                    .foregroundColor(Color.white.opacity(0.75))
 
                 Spacer()
 
@@ -324,31 +343,41 @@ public struct ClipboardView: View {
                     Text("•")
                     Text("↵ Paste")
                 }
-                .font(.system(size: 9))
-                .foregroundColor(Color.white.opacity(0.35))
+                .font(.system(size: 10, weight: .medium))
+                .foregroundColor(Color.white.opacity(0.65))
 
                 Spacer()
 
-                Button("Clear") {
+                Button(action: {
                     showingClearConfirmation = true
+                }) {
+                    Image(systemName: "trash")
+                        .font(.system(size: 11, weight: .medium))
+                        .foregroundColor(Color.white.opacity(manager.items.isEmpty ? 0.30 : 0.75))
+                        .frame(width: 24, height: 24)
+                        .background(Color.white.opacity(0.08))
+                        .clipShape(RoundedRectangle(cornerRadius: 5))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 5)
+                                .stroke(Color.white.opacity(0.10), lineWidth: 1)
+                        )
                 }
                 .buttonStyle(.plain)
-                .font(.system(size: 10))
-                .foregroundColor(Color.white.opacity(0.45))
                 .disabled(manager.items.isEmpty)
+                .help("Clear history")
             } else {
                 HStack(spacing: 4) {
                     Text("💡")
                     Text("Click any emoji to paste directly")
-                        .font(.system(size: 10))
-                        .foregroundColor(Color.white.opacity(0.55))
+                        .font(.system(size: 10, weight: .medium))
+                        .foregroundColor(Color.white.opacity(0.75))
                 }
 
                 Spacer()
 
                 Text("Esc Close")
-                    .font(.system(size: 9))
-                    .foregroundColor(Color.white.opacity(0.35))
+                    .font(.system(size: 10, weight: .medium))
+                    .foregroundColor(Color.white.opacity(0.65))
             }
         }
     }

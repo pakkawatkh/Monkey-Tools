@@ -29,8 +29,8 @@ public struct ClipboardItemRow: View {
                     }
 
                     Text(item.relativeTime)
-                        .font(.system(size: 10))
-                        .foregroundColor(Color.white.opacity(0.45))
+                        .font(.system(size: 10, weight: .medium))
+                        .foregroundColor(Color.white.opacity(0.70))
 
                     Spacer()
 
@@ -38,17 +38,17 @@ public struct ClipboardItemRow: View {
                     if item.type == .image {
                         if let w = item.imageWidth, let h = item.imageHeight {
                             Text("\(w)×\(h)")
-                                .font(.system(size: 9, design: .monospaced))
-                                .foregroundColor(Color.white.opacity(0.40))
+                                .font(.system(size: 9, weight: .medium, design: .monospaced))
+                                .foregroundColor(Color.white.opacity(0.65))
                         } else {
                             Text("Image")
-                                .font(.system(size: 9))
-                                .foregroundColor(Color.white.opacity(0.40))
+                                .font(.system(size: 9, weight: .medium))
+                                .foregroundColor(Color.white.opacity(0.65))
                         }
                     } else {
                         Text("\(item.characterCount)c")
-                            .font(.system(size: 9, design: .monospaced))
-                            .foregroundColor(Color.white.opacity(0.40))
+                            .font(.system(size: 9, weight: .medium, design: .monospaced))
+                            .foregroundColor(Color.white.opacity(0.65))
                     }
 
                     // Action buttons (Pin & Delete)
@@ -56,7 +56,7 @@ public struct ClipboardItemRow: View {
                         Button(action: onTogglePin) {
                             Image(systemName: item.isPinned ? "pin.slash" : "pin")
                                 .font(.system(size: 11))
-                                .foregroundColor(item.isPinned ? .orange : Color.white.opacity(0.6))
+                                .foregroundColor(item.isPinned ? .orange : Color.white.opacity(0.75))
                                 .frame(width: 20, height: 20)
                                 .contentShape(Rectangle())
                         }
@@ -66,7 +66,7 @@ public struct ClipboardItemRow: View {
                         Button(action: onDelete) {
                             Image(systemName: "trash")
                                 .font(.system(size: 11))
-                                .foregroundColor(Color.white.opacity(0.5))
+                                .foregroundColor(Color.white.opacity(0.70))
                                 .frame(width: 20, height: 20)
                                 .contentShape(Rectangle())
                         }
@@ -103,7 +103,7 @@ public struct ClipboardItemRow: View {
     private var textPreview: some View {
         Text(item.previewText)
             .font(.system(size: 12, weight: .regular))
-            .foregroundColor(Color.white.opacity(0.92))
+            .foregroundColor(.white)
             .lineLimit(3)
             .frame(maxWidth: .infinity, alignment: .leading)
             .multilineTextAlignment(.leading)
@@ -123,7 +123,7 @@ public struct ClipboardItemRow: View {
             .clipShape(RoundedRectangle(cornerRadius: 6))
             .overlay(
                 RoundedRectangle(cornerRadius: 6)
-                    .stroke(Color.white.opacity(0.08), lineWidth: 1)
+                    .stroke(Color.white.opacity(0.12), lineWidth: 1)
             )
         } else {
             HStack(spacing: 6) {
@@ -131,28 +131,28 @@ public struct ClipboardItemRow: View {
                 Text("Image unavailable")
             }
             .font(.system(size: 11))
-            .foregroundColor(Color.white.opacity(0.4))
+            .foregroundColor(Color.white.opacity(0.60))
             .padding(10)
         }
     }
 
     private var backgroundColor: Color {
         if isSelected {
-            return Color(red: 0.18, green: 0.36, blue: 0.65).opacity(0.40)
+            return Color(red: 0.18, green: 0.42, blue: 0.78).opacity(0.48)
         } else if isHovered {
-            return Color.white.opacity(0.09)
+            return Color.white.opacity(0.12)
         } else {
-            return Color.white.opacity(0.045)
+            return Color.white.opacity(0.065)
         }
     }
 
     private var borderColor: Color {
         if isSelected {
-            return Color(red: 0.35, green: 0.60, blue: 1.0, opacity: 0.75)
+            return Color(red: 0.40, green: 0.65, blue: 1.0, opacity: 0.85)
         } else if isHovered {
-            return Color.white.opacity(0.14)
+            return Color.white.opacity(0.18)
         } else {
-            return Color.white.opacity(0.06)
+            return Color.white.opacity(0.08)
         }
     }
 }

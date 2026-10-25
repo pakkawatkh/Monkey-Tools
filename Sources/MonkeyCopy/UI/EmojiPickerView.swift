@@ -20,7 +20,7 @@ public struct EmojiPickerView: View {
                     .padding(.horizontal, 10)
                     .padding(.vertical, 6)
                 Rectangle()
-                    .fill(Color.white.opacity(0.08))
+                    .fill(Color.white.opacity(0.10))
                     .frame(height: 1)
             }
 
@@ -32,8 +32,8 @@ public struct EmojiPickerView: View {
                     Text("🔍")
                         .font(.system(size: 28))
                     Text("No emojis found")
-                        .font(.system(size: 12))
-                        .foregroundColor(Color.white.opacity(0.5))
+                        .font(.system(size: 12, weight: .medium))
+                        .foregroundColor(Color.white.opacity(0.75))
                     Spacer()
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -67,11 +67,11 @@ public struct EmojiPickerView: View {
                         .frame(height: 28)
                         .background(
                             RoundedRectangle(cornerRadius: 6)
-                                .fill(emojiManager.selectedCategory == cat ? Color.white.opacity(0.14) : Color.clear)
+                                .fill(emojiManager.selectedCategory == cat ? Color.white.opacity(0.20) : Color.white.opacity(0.04))
                         )
                         .overlay(
                             RoundedRectangle(cornerRadius: 6)
-                                .stroke(emojiManager.selectedCategory == cat ? Color.white.opacity(0.2) : Color.clear, lineWidth: 1)
+                                .stroke(emojiManager.selectedCategory == cat ? Color.white.opacity(0.25) : Color.white.opacity(0.06), lineWidth: 1)
                         )
                 }
                 .buttonStyle(.plain)
