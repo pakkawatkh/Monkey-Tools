@@ -23,6 +23,10 @@ public final class TextSelectionMonitor: ObservableObject {
     private var isMonitoring = false
     private var pendingWorkItem: DispatchWorkItem?
 
+    private var mouseDownLocation: CGPoint = .zero
+    private var isDragging = false
+    private var lastClickCount: Int = 1
+
     private init() {}
 
     public func isValidSelectionText(_ text: String) -> Bool {
@@ -42,8 +46,8 @@ public final class TextSelectionMonitor: ObservableObject {
         guard !isMonitoring else { return }
         isMonitoring = true
 
-        globalMouseMonitor = NSEvent.addGlobalMonitorForEvents(matching: [.leftMouseUp]) { [weak self] _ in
-            self?.handleMouseUp()
+        globalMouseMonitor = NSEvent.addGlobalMonitorForEvents(matching: [.leftMouseDown, .leftMouseDragged, .leftMouseUp]) { [weak self] event in
+            self?.handleMouseEvent(event)
         }
     }
 
@@ -59,16 +63,42 @@ public final class TextSelectionMonitor: ObservableObject {
         pendingWorkItem = nil
     }
 
-    private func handleMouseUp() {
+    private func handleMouseEvent(_ event: NSEvent) {
         guard AppSettings.shared.selectionTranslateEnabled else { return }
 
-        // Debounce slightly to allow the OS to complete text selection highlight
+        switch event.type {
+        case .leftMouseDown:
+            mouseDownLocation = NSEvent.mouseLocation
+            isDragging = false
+            lastClickCount = event.clickCount
+
+        case .leftMouseDragged:
+            let current = NSEvent.mouseLocation
+            let dist = hypot(current.x - mouseDownLocation.x, current.y - mouseDownLocation.y)
+            if dist > 6.0 {
+                isDragging = true
+            }
+
+        case .leftMouseUp:
+            let shouldCheck = isDragging || lastClickCount >= 2
+            isDragging = false
+
+            if shouldCheck {
+                scheduleSelectionCheck()
+            }
+
+        default:
+            break
+        }
+    }
+
+    private func scheduleSelectionCheck() {
         pendingWorkItem?.cancel()
         let workItem = DispatchWorkItem { [weak self] in
             self?.checkSelectedText()
         }
         pendingWorkItem = workItem
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.15, execute: workItem)
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.12, execute: workItem)
     }
 
     public func checkSelectedText() {
@@ -80,24 +110,63 @@ public final class TextSelectionMonitor: ObservableObject {
         }
 
         let pid = frontApp.processIdentifier
+        let mouseLoc = NSEvent.mouseLocation
+
+        // Method 1: Try Accessibility API first (fast for native text fields like TextEdit, Mail, Xcode)
+        if let axText = queryAXSelectedText(pid: pid), isValidSelectionText(axText.text) {
+            let event = TextSelectionEvent(text: axText.text, screenRect: axText.bounds, sourceAppPID: pid)
+            onSelectionDetected?(event)
+            return
+        }
+
+        // Method 2: Universal Fallback for Browsers (Safari, Chrome, Arc), Slack, VS Code, Electron, PDFs
+        // Perform quick Cmd+C probe to capture highlighted text
+        probeSelectionViaCopy(frontPID: pid, mouseLoc: mouseLoc)
+    }
+
+    private func queryAXSelectedText(pid: pid_t) -> (text: String, bounds: CGRect)? {
         let appElement = AXUIElementCreateApplication(pid)
 
         var focusedElementObj: AnyObject?
         let focusedResult = AXUIElementCopyAttributeValue(appElement, kAXFocusedUIElementAttribute as CFString, &focusedElementObj)
         guard focusedResult == .success, let focusedElement = focusedElementObj else {
-            return
+            return nil
         }
         let element = focusedElement as! AXUIElement
 
         var selectedTextObj: AnyObject?
         let textResult = AXUIElementCopyAttributeValue(element, kAXSelectedTextAttribute as CFString, &selectedTextObj)
+        guard textResult == .success, let text = selectedTextObj as? String else {
+            return nil
+        }
 
-        if textResult == .success, let text = selectedTextObj as? String, isValidSelectionText(text) {
-            let bounds = getSelectionBounds(element: element)
-            let event = TextSelectionEvent(text: text, screenRect: bounds, sourceAppPID: pid)
-            onSelectionDetected?(event)
-        } else {
-            onSelectionCleared?()
+        let bounds = getSelectionBounds(element: element)
+        return (text, bounds)
+    }
+
+    private func probeSelectionViaCopy(frontPID: pid_t, mouseLoc: CGPoint) {
+        let prevCount = NSPasteboard.general.changeCount
+
+        // Synthesize Cmd + C
+        let source = CGEventSource(stateID: .combinedSessionState)
+        let keyDown = CGEvent(keyboardEventSource: source, virtualKey: 8, keyDown: true) // 8 is key 'c'
+        keyDown?.flags = .maskCommand
+        let keyUp = CGEvent(keyboardEventSource: source, virtualKey: 8, keyDown: false)
+        keyUp?.flags = .maskCommand
+
+        keyDown?.post(tap: .cgSessionEventTap)
+        keyUp?.post(tap: .cgSessionEventTap)
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.12) { [weak self] in
+            guard let self = self else { return }
+            // Check if changeCount updated and we got text
+            if NSPasteboard.general.changeCount != prevCount,
+               let text = NSPasteboard.general.string(forType: .string),
+               self.isValidSelectionText(text) {
+                let rect = CGRect(x: mouseLoc.x, y: mouseLoc.y, width: 20, height: 20)
+                let event = TextSelectionEvent(text: text, screenRect: rect, sourceAppPID: frontPID)
+                self.onSelectionDetected?(event)
+            }
         }
     }
 

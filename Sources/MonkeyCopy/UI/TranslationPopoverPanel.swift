@@ -14,13 +14,21 @@ public final class TranslationPopoverPanel: NSPanel {
             defer: false
         )
 
-        self.level = .floating
+        self.level = .statusBar
         self.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
         self.backgroundColor = .clear
         self.isOpaque = false
         self.hasShadow = true
         self.appearance = NSAppearance(named: .darkAqua)
         self.hidesOnDeactivate = false
+    }
+
+    public override var canBecomeKey: Bool {
+        return true
+    }
+
+    public override var canBecomeMain: Bool {
+        return true
     }
 
     public func show(text: String, near screenPoint: CGPoint) {
@@ -62,13 +70,8 @@ public final class TranslationPopoverPanel: NSPanel {
         }
 
         self.setFrameOrigin(NSPoint(x: targetX, y: targetY))
-        self.alphaValue = 0.0
-        self.orderFront(nil)
-
-        NSAnimationContext.runAnimationGroup { context in
-            context.duration = 0.15
-            self.animator().alphaValue = 1.0
-        }
+        self.alphaValue = 1.0
+        self.orderFrontRegardless()
 
         startClickMonitoring()
     }

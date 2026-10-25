@@ -11,13 +11,13 @@ public final class SelectionBubblePanel: NSPanel {
 
     public init() {
         super.init(
-            contentRect: NSRect(x: 0, y: 0, width: 32, height: 32),
+            contentRect: NSRect(x: 0, y: 0, width: 34, height: 34),
             styleMask: [.borderless, .nonactivatingPanel],
             backing: .buffered,
             defer: false
         )
 
-        self.level = .floating
+        self.level = .statusBar
         self.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
         self.backgroundColor = .clear
         self.isOpaque = false
@@ -33,9 +33,17 @@ public final class SelectionBubblePanel: NSPanel {
 
         let hosting = NSHostingView(rootView: bubbleView)
         hosting.wantsLayer = true
-        hosting.layer?.cornerRadius = 16
+        hosting.layer?.cornerRadius = 17
         hosting.layer?.masksToBounds = true
         self.contentView = hosting
+    }
+
+    public override var canBecomeKey: Bool {
+        return false
+    }
+
+    public override var canBecomeMain: Bool {
+        return false
     }
 
     public func show(at rect: CGRect, selectedText: String) {
@@ -43,28 +51,29 @@ public final class SelectionBubblePanel: NSPanel {
         self.currentRect = rect
 
         // Position bubble near top-right of the selection rectangle
-        var bubbleX = rect.maxX + 4
-        var bubbleY = rect.maxY + 4
+        var bubbleX = rect.maxX + 6
+        var bubbleY = rect.maxY + 6
 
         // Prevent overflow beyond screen bounds
         if let screen = NSScreen.main {
             let screenFrame = screen.visibleFrame
-            if bubbleX + 36 > screenFrame.maxX {
-                bubbleX = rect.minX - 36
+            if bubbleX + 40 > screenFrame.maxX {
+                bubbleX = rect.minX - 40
             }
-            if bubbleY + 36 > screenFrame.maxY {
-                bubbleY = rect.minY - 36
+            if bubbleY + 40 > screenFrame.maxY {
+                bubbleY = rect.minY - 40
+            }
+            if bubbleX < screenFrame.minX {
+                bubbleX = screenFrame.minX + 10
+            }
+            if bubbleY < screenFrame.minY {
+                bubbleY = screenFrame.minY + 10
             }
         }
 
         self.setFrameOrigin(NSPoint(x: bubbleX, y: bubbleY))
-        self.alphaValue = 0.0
-        self.orderFront(nil)
-
-        NSAnimationContext.runAnimationGroup { context in
-            context.duration = 0.15
-            self.animator().alphaValue = 1.0
-        }
+        self.alphaValue = 1.0
+        self.orderFrontRegardless()
 
         startClickMonitoring()
 
