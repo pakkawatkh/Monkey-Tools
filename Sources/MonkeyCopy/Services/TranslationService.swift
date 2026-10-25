@@ -37,6 +37,7 @@ public final class TranslationService: ObservableObject {
     public func translate(
         text: String,
         mode: TranslationEngineMode = .google,
+        sourceLang: String = "auto",
         targetLang: String = "auto"
     ) async throws -> TranslationResult {
         let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -45,7 +46,8 @@ public final class TranslationService: ObservableObject {
         }
 
         let resolvedTarget = resolveTargetLanguage(for: trimmed, preferredTarget: targetLang)
-        let cacheKey = "\(mode.rawValue):\(resolvedTarget):\(trimmed)"
+        let resolvedSource = sourceLang.isEmpty ? "auto" : sourceLang
+        let cacheKey = "\(mode.rawValue):\(resolvedSource):\(resolvedTarget):\(trimmed)"
 
         let cachedResult = lock.withLock {
             cache[cacheKey]
@@ -55,7 +57,7 @@ public final class TranslationService: ObservableObject {
         }
 
         let selectedEngine = engine(for: mode)
-        let result = try await selectedEngine.translate(text: trimmed, from: "auto", to: resolvedTarget)
+        let result = try await selectedEngine.translate(text: trimmed, from: resolvedSource, to: resolvedTarget)
 
         lock.withLock {
             if cache.count > 100 {
