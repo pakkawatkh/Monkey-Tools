@@ -5,7 +5,8 @@ public final class ClipboardMonitor {
     public static let shared = ClipboardMonitor()
 
     private let pasteboard = NSPasteboard.general
-    private var lastChangeCount: Int
+    public var lastChangeCount: Int
+    public var isCapturingSuppressed: Bool = false
     private var timer: Timer?
     private var lastProgrammaticString: String?
     private var isProgrammaticImageWrite = false
@@ -49,6 +50,11 @@ public final class ClipboardMonitor {
         let currentChangeCount = pasteboard.changeCount
         guard currentChangeCount != lastChangeCount else { return }
         lastChangeCount = currentChangeCount
+
+        // Ignore if capturing is temporarily suppressed for translation probe
+        if isCapturingSuppressed {
+            return
+        }
 
         // 1. Ignore if programmatic image write from ourselves
         if isProgrammaticImageWrite {

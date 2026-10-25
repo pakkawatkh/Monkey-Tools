@@ -105,8 +105,72 @@ public final class SelectionBubblePanel: NSPanel {
         let targetPoint = CGPoint(x: self.frame.origin.x, y: self.frame.origin.y)
         self.hide()
 
-        DispatchQueue.main.async {
-            TranslationPopoverPanel.shared.show(text: text, near: targetPoint)
+        // If we already have the text from Accessibility (e.g. TextEdit, Notes, Xcode):
+        if !text.isEmpty {
+            DispatchQueue.main.async {
+                TranslationPopoverPanel.shared.show(text: text, near: targetPoint)
+            }
+            return
+        }
+
+        // If text was empty (e.g. Safari, Chrome), fetch text ONLY NOW because user clicked "Translate":
+        // - Suppress ClipboardMonitor so it NEVER adds to clipboard history
+        // - Back up user's previous clipboard
+        // - Grab the text
+        // - Immediately restore user's previous clipboard
+        fetchSelectedTextSafelyAndTranslate(targetPoint: targetPoint)
+    }
+
+    private func fetchSelectedTextSafelyAndTranslate(targetPoint: CGPoint) {
+        // Suppress clipboard monitoring so history is completely untouched
+        ClipboardMonitor.shared.isCapturingSuppressed = true
+
+        let pasteboard = NSPasteboard.general
+        var backupList = [[NSPasteboard.PasteboardType: Data]]()
+        if let currentItems = pasteboard.pasteboardItems {
+            for item in currentItems {
+                var dict = [NSPasteboard.PasteboardType: Data]()
+                for type in item.types {
+                    if let data = item.data(forType: type) {
+                        dict[type] = data
+                    }
+                }
+                backupList.append(dict)
+            }
+        }
+
+        // Synthesize Cmd + C
+        let source = CGEventSource(stateID: .combinedSessionState)
+        let keyDown = CGEvent(keyboardEventSource: source, virtualKey: 8, keyDown: true)
+        keyDown?.flags = .maskCommand
+        let keyUp = CGEvent(keyboardEventSource: source, virtualKey: 8, keyDown: false)
+        keyUp?.flags = .maskCommand
+
+        keyDown?.post(tap: .cgSessionEventTap)
+        keyUp?.post(tap: .cgSessionEventTap)
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.10) {
+            let capturedText = pasteboard.string(forType: .string) ?? ""
+
+            // Restore user's previous clipboard completely
+            pasteboard.clearContents()
+            for dict in backupList {
+                let item = NSPasteboardItem()
+                for (type, data) in dict {
+                    item.setData(data, forType: type)
+                }
+                pasteboard.writeObjects([item])
+            }
+
+            // Restore monitoring after small delay
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
+                ClipboardMonitor.shared.lastChangeCount = pasteboard.changeCount
+                ClipboardMonitor.shared.isCapturingSuppressed = false
+            }
+
+            if TextSelectionMonitor.shared.isValidSelectionText(capturedText) {
+                TranslationPopoverPanel.shared.show(text: capturedText, near: targetPoint)
+            }
         }
     }
 

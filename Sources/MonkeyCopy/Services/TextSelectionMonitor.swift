@@ -119,9 +119,11 @@ public final class TextSelectionMonitor: ObservableObject {
             return
         }
 
-        // Method 2: Universal Fallback for Browsers (Safari, Chrome, Arc), Slack, VS Code, Electron, PDFs
-        // Perform quick Cmd+C probe to capture highlighted text
-        probeSelectionViaCopy(frontPID: pid, mouseLoc: mouseLoc)
+        // Method 2: For browsers (Safari, Chrome) and other apps:
+        // Simply show the floating bubble at mouse location WITHOUT copying or touching pasteboard!
+        let rect = CGRect(x: mouseLoc.x, y: mouseLoc.y, width: 1, height: 1)
+        let event = TextSelectionEvent(text: "", screenRect: rect, sourceAppPID: pid)
+        onSelectionDetected?(event)
     }
 
     private func queryAXSelectedText(pid: pid_t) -> (text: String, bounds: CGRect)? {
@@ -142,32 +144,6 @@ public final class TextSelectionMonitor: ObservableObject {
 
         let bounds = getSelectionBounds(element: element)
         return (text, bounds)
-    }
-
-    private func probeSelectionViaCopy(frontPID: pid_t, mouseLoc: CGPoint) {
-        let prevCount = NSPasteboard.general.changeCount
-
-        // Synthesize Cmd + C
-        let source = CGEventSource(stateID: .combinedSessionState)
-        let keyDown = CGEvent(keyboardEventSource: source, virtualKey: 8, keyDown: true) // 8 is key 'c'
-        keyDown?.flags = .maskCommand
-        let keyUp = CGEvent(keyboardEventSource: source, virtualKey: 8, keyDown: false)
-        keyUp?.flags = .maskCommand
-
-        keyDown?.post(tap: .cgSessionEventTap)
-        keyUp?.post(tap: .cgSessionEventTap)
-
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.12) { [weak self] in
-            guard let self = self else { return }
-            // Check if changeCount updated and we got text
-            if NSPasteboard.general.changeCount != prevCount,
-               let text = NSPasteboard.general.string(forType: .string),
-               self.isValidSelectionText(text) {
-                let rect = CGRect(x: mouseLoc.x, y: mouseLoc.y, width: 1, height: 1)
-                let event = TextSelectionEvent(text: text, screenRect: rect, sourceAppPID: frontPID)
-                self.onSelectionDetected?(event)
-            }
-        }
     }
 
     private func getSelectionBounds(element: AXUIElement) -> CGRect {
