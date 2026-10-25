@@ -168,6 +168,57 @@ public struct SettingsView: View {
                     .clipShape(RoundedRectangle(cornerRadius: 10))
                     .overlay(RoundedRectangle(cornerRadius: 10).stroke(Color.primary.opacity(0.08), lineWidth: 1))
 
+                    // MARK: - Translation Section
+                    VStack(alignment: .leading, spacing: 14) {
+                        Text("การแปลภาษา (Selection Translator)")
+                            .font(.system(size: 13, weight: .bold))
+
+                        // Selection translate toggle
+                        Toggle(isOn: $settings.selectionTranslateEnabled) {
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text("แสดงไอคอนแปลภาษาเมื่อคุมดำข้อความ (Selection Bubble)")
+                                    .font(.system(size: 13))
+                                Text("เมื่อใช้เมาส์คลุมดำข้อความในโปรแกรมใดๆ จะมีไอคอนเล็กๆ ลอยขึ้นมาให้กดแปลภาษา")
+                                    .font(.system(size: 11))
+                                    .foregroundColor(.secondary)
+                            }
+                        }
+
+                        if settings.selectionTranslateEnabled {
+                            Divider()
+
+                            // Translation Engine Mode
+                            HStack {
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text("เครื่องมือแปลภาษา (Translation Engine):")
+                                        .font(.system(size: 13))
+                                    Text(settings.translationEngineMode.description)
+                                        .font(.system(size: 11))
+                                        .foregroundColor(.secondary)
+                                }
+                                Spacer()
+                                Picker("", selection: $settings.translationEngineMode) {
+                                    ForEach(TranslationEngineMode.allCases) { mode in
+                                        Text(mode.title).tag(mode)
+                                    }
+                                }
+                                .frame(width: 150)
+                            }
+
+                            Text("💡 คุณยังสามารถคลิกสลับระหว่าง Google Translate และ Apple Native ได้โดยตรงจากหน้าต่างป็อปอัปคำแปล")
+                                .font(.system(size: 11))
+                                .foregroundColor(Color(red: 0.4, green: 0.7, blue: 1.0))
+                                .padding(8)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .background(Color.blue.opacity(0.10))
+                                .clipShape(RoundedRectangle(cornerRadius: 6))
+                        }
+                    }
+                    .padding()
+                    .background(Color.primary.opacity(0.02))
+                    .clipShape(RoundedRectangle(cornerRadius: 10))
+                    .overlay(RoundedRectangle(cornerRadius: 10).stroke(Color.primary.opacity(0.08), lineWidth: 1))
+
                     // MARK: - Permissions Section
                     VStack(alignment: .leading, spacing: 10) {
                         Text("สิทธิ์การควบคุมระบบ (System Permissions)")
@@ -203,7 +254,7 @@ public struct SettingsView: View {
                 .padding(16)
             }
         }
-        .frame(width: 480, height: 560)
+        .frame(width: 480, height: 660)
         .preferredColorScheme(.dark)
         .onAppear {
             autoPaster.refreshAccessibilityStatus()

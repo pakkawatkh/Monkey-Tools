@@ -28,11 +28,23 @@ public final class AppDelegate: NSObject, NSApplicationDelegate {
         }
         HotKeyManager.shared.registerSavedHotKey()
 
+        // Start text selection translator monitor
+        TextSelectionMonitor.shared.onSelectionDetected = { event in
+            SelectionBubblePanel.shared.show(at: event.screenRect, selectedText: event.text)
+        }
+        TextSelectionMonitor.shared.onSelectionCleared = {
+            SelectionBubblePanel.shared.hide()
+        }
+        if AppSettings.shared.selectionTranslateEnabled {
+            TextSelectionMonitor.shared.startMonitoring()
+        }
+
         print("[monkey-copy] Application started successfully. Press your shortcut to show clipboard.")
     }
 
     public func applicationWillTerminate(_ notification: Notification) {
         ClipboardMonitor.shared.stopMonitoring()
+        TextSelectionMonitor.shared.stopMonitoring()
         HotKeyManager.shared.unregisterHotKey()
     }
 }
