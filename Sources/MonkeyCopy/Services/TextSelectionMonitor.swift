@@ -163,7 +163,7 @@ public final class TextSelectionMonitor: ObservableObject {
             if NSPasteboard.general.changeCount != prevCount,
                let text = NSPasteboard.general.string(forType: .string),
                self.isValidSelectionText(text) {
-                let rect = CGRect(x: mouseLoc.x, y: mouseLoc.y, width: 20, height: 20)
+                let rect = CGRect(x: mouseLoc.x, y: mouseLoc.y, width: 1, height: 1)
                 let event = TextSelectionEvent(text: text, screenRect: rect, sourceAppPID: frontPID)
                 self.onSelectionDetected?(event)
             }

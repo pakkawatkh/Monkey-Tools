@@ -11,7 +11,7 @@ public final class SelectionBubblePanel: NSPanel {
 
     public init() {
         super.init(
-            contentRect: NSRect(x: 0, y: 0, width: 34, height: 34),
+            contentRect: NSRect(x: 0, y: 0, width: 26, height: 26),
             styleMask: [.borderless, .nonactivatingPanel],
             backing: .buffered,
             defer: false
@@ -33,7 +33,7 @@ public final class SelectionBubblePanel: NSPanel {
 
         let hosting = NSHostingView(rootView: bubbleView)
         hosting.wantsLayer = true
-        hosting.layer?.cornerRadius = 17
+        hosting.layer?.cornerRadius = 13
         hosting.layer?.masksToBounds = true
         self.contentView = hosting
     }
@@ -50,24 +50,27 @@ public final class SelectionBubblePanel: NSPanel {
         self.currentText = selectedText
         self.currentRect = rect
 
-        // Position bubble near top-right of the selection rectangle
-        var bubbleX = rect.maxX + 6
-        var bubbleY = rect.maxY + 6
+        // Position bubble snugly right next to the end of selection, centered vertically on text
+        let endX = rect.width <= 2 ? rect.origin.x : rect.maxX
+        let centerY = rect.width <= 2 ? rect.origin.y : rect.midY
+
+        var bubbleX = endX + 4
+        var bubbleY = centerY - 13 // Centered vertically (26pt height / 2)
 
         // Prevent overflow beyond screen bounds
         if let screen = NSScreen.main {
             let screenFrame = screen.visibleFrame
-            if bubbleX + 40 > screenFrame.maxX {
-                bubbleX = rect.minX - 40
+            if bubbleX + 30 > screenFrame.maxX {
+                bubbleX = (rect.width <= 2 ? rect.origin.x : rect.minX) - 30
             }
-            if bubbleY + 40 > screenFrame.maxY {
-                bubbleY = rect.minY - 40
+            if bubbleY + 30 > screenFrame.maxY {
+                bubbleY = screenFrame.maxY - 30
             }
             if bubbleX < screenFrame.minX {
-                bubbleX = screenFrame.minX + 10
+                bubbleX = screenFrame.minX + 4
             }
             if bubbleY < screenFrame.minY {
-                bubbleY = screenFrame.minY + 10
+                bubbleY = screenFrame.minY + 4
             }
         }
 
@@ -144,11 +147,11 @@ public struct SelectionBubbleView: View {
 
                 HStack(spacing: 0) {
                     Image(systemName: "globe")
-                        .font(.system(size: 13, weight: .semibold))
-                        .foregroundColor(isHovered ? .white : Color.white.opacity(0.85))
+                        .font(.system(size: 11, weight: .semibold))
+                        .foregroundColor(isHovered ? .white : Color.white.opacity(0.90))
                 }
             }
-            .frame(width: 32, height: 32)
+            .frame(width: 26, height: 26)
             .scaleEffect(isHovered ? 1.08 : 1.0)
             .animation(.spring(response: 0.2, dampingFraction: 0.6), value: isHovered)
         }
