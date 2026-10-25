@@ -32,4 +32,12 @@ final class TranslationServiceTests: XCTestCase {
         let result = try? await engine.translate(text: text, from: "en", to: "th")
         XCTAssertNotNil(result)
     }
+
+    func testTargetLanguageMajorityResolution() {
+        let service = TranslationService.shared
+        XCTAssertEqual(service.resolveTargetLanguage(for: "Existing"), "th")
+        XCTAssertEqual(service.resolveTargetLanguage(for: "ดึง Existing Unit Test จาก repo"), "th")
+        XCTAssertEqual(service.resolveTargetLanguage(for: "สรุปผล (ทุก card)"), "en")
+        XCTAssertEqual(service.resolveTargetLanguage(for: "สวัสดี"), "en")
+    }
 }

@@ -175,8 +175,7 @@ public struct TranslationPopoverView: View {
         )
         .preferredColorScheme(.dark)
         .onAppear {
-            let hasThai = originalText.unicodeScalars.contains { $0.value >= 0x0E00 && $0.value <= 0x0E7F }
-            targetLanguage = hasThai ? "en" : "th"
+            targetLanguage = TranslationService.shared.resolveTargetLanguage(for: originalText)
             sourceLanguage = "auto"
             performTranslation()
         }

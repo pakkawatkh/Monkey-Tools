@@ -21,17 +21,23 @@ public final class TranslationService: ObservableObject {
         }
     }
 
-    /// Auto-detects target language: if source contains Thai characters, targets English ("en"); otherwise targets Thai ("th").
+    /// Auto-detects target language based on majority script: if majority is Thai, targets English ("en"); otherwise targets Thai ("th").
     public func resolveTargetLanguage(for text: String, preferredTarget: String = "auto") -> String {
         if preferredTarget != "auto" && !preferredTarget.isEmpty {
             return preferredTarget
         }
 
-        let hasThai = text.unicodeScalars.contains { scalar in
-            scalar.value >= 0x0E00 && scalar.value <= 0x0E7F
+        var thaiCount = 0
+        var latinCount = 0
+        for scalar in text.unicodeScalars {
+            if scalar.value >= 0x0E00 && scalar.value <= 0x0E7F {
+                thaiCount += 1
+            } else if CharacterSet.letters.contains(scalar) {
+                latinCount += 1
+            }
         }
 
-        return hasThai ? "en" : "th"
+        return thaiCount > latinCount ? "en" : "th"
     }
 
     public func translate(

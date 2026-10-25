@@ -6,11 +6,15 @@ public final class GoogleTranslationEngine: TranslationEngine {
     public init() {}
 
     public func makeTranslateURL(text: String, from sourceLang: String = "auto", to targetLang: String) -> URL? {
-        guard let encodedText = text.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) else {
-            return nil
-        }
-        let urlString = "https://translate.googleapis.com/translate_a/single?client=gtx&sl=\(sourceLang)&tl=\(targetLang)&dt=t&q=\(encodedText)"
-        return URL(string: urlString)
+        var components = URLComponents(string: "https://translate.googleapis.com/translate_a/single")
+        components?.queryItems = [
+            URLQueryItem(name: "client", value: "gtx"),
+            URLQueryItem(name: "sl", value: sourceLang),
+            URLQueryItem(name: "tl", value: targetLang),
+            URLQueryItem(name: "dt", value: "t"),
+            URLQueryItem(name: "q", value: text)
+        ]
+        return components?.url
     }
 
     public func parseResponse(jsonString: String, originalText: String, targetLang: String) throws -> TranslationResult {
