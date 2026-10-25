@@ -11,3 +11,8 @@ DerivedData/
 # Built App Bundles
 *.app/
 *.app.dSYM/
+/.agents
+skills-lock.json
+/.superpowers
+/docs
+FEATURES.md
