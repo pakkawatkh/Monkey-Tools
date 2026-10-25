@@ -1,19 +1,28 @@
 import AppKit
 import SwiftUI
 
-public final class TranslationPopoverPanel: NSPanel {
+public final class TranslationPopoverPanel: NSPanel, NSWindowDelegate {
     public static let shared = TranslationPopoverPanel()
 
     private var globalClickMonitor: Any?
+    private var currentSize: CGSize
 
     public init() {
+        let savedW = UserDefaults.standard.double(forKey: "translation_popover_width")
+        let savedH = UserDefaults.standard.double(forKey: "translation_popover_height")
+        let initialWidth = savedW >= 300 ? CGFloat(savedW) : 345
+        let initialHeight = savedH >= 200 ? CGFloat(savedH) : 250
+        self.currentSize = CGSize(width: initialWidth, height: initialHeight)
+
         super.init(
-            contentRect: NSRect(x: 0, y: 0, width: 345, height: 250),
-            styleMask: [.borderless, .nonactivatingPanel],
+            contentRect: NSRect(x: 0, y: 0, width: initialWidth, height: initialHeight),
+            styleMask: [.borderless, .resizable, .nonactivatingPanel],
             backing: .buffered,
             defer: false
         )
 
+        self.minSize = NSSize(width: 300, height: 200)
+        self.maxSize = NSSize(width: 800, height: 650)
         self.level = .statusBar
         self.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
         self.backgroundColor = .clear
@@ -21,6 +30,17 @@ public final class TranslationPopoverPanel: NSPanel {
         self.hasShadow = true
         self.appearance = NSAppearance(named: .darkAqua)
         self.hidesOnDeactivate = false
+        self.delegate = self
+    }
+
+    public func windowDidResize(_ notification: Notification) {
+        saveCurrentSize()
+    }
+
+    public func saveCurrentSize() {
+        currentSize = self.frame.size
+        UserDefaults.standard.set(currentSize.width, forKey: "translation_popover_width")
+        UserDefaults.standard.set(currentSize.height, forKey: "translation_popover_height")
     }
 
     public override var canBecomeKey: Bool {
@@ -52,9 +72,9 @@ public final class TranslationPopoverPanel: NSPanel {
         hosting.layer?.masksToBounds = true
         self.contentView = hosting
 
-        // Position popover near the trigger point
-        let popoverWidth: CGFloat = 345
-        let popoverHeight: CGFloat = 250
+        // Position popover near the trigger point using remembered or default size
+        let popoverWidth = max(300, currentSize.width)
+        let popoverHeight = max(200, currentSize.height)
         var targetX = screenPoint.x
         var targetY = screenPoint.y - popoverHeight
 
@@ -71,7 +91,7 @@ public final class TranslationPopoverPanel: NSPanel {
             }
         }
 
-        self.setFrameOrigin(NSPoint(x: targetX, y: targetY))
+        self.setFrame(NSRect(x: targetX, y: targetY, width: popoverWidth, height: popoverHeight), display: true)
         self.alphaValue = 1.0
         self.orderFrontRegardless()
 

@@ -161,7 +161,7 @@ public struct TranslationPopoverView: View {
                 .padding(.horizontal, 10)
                 .padding(.vertical, 8)
         }
-        .frame(width: 320, height: 250)
+        .frame(minWidth: 300, maxWidth: .infinity, minHeight: 200, maxHeight: .infinity)
         .background(
             ZStack {
                 VisualEffectBackground()
@@ -189,6 +189,23 @@ public struct TranslationPopoverView: View {
 
     private var headerBar: some View {
         HStack(spacing: 6) {
+            // Swap Button (placed at the front)
+            Button(action: swapLanguages) {
+                Image(systemName: "arrow.left.arrow.right")
+                    .font(.system(size: 9, weight: .semibold))
+                    .foregroundColor(Color.white.opacity(0.85))
+                    .frame(width: 22, height: 22)
+                    .background(Color.white.opacity(0.08))
+                    .clipShape(Circle())
+                    .overlay(
+                        Circle()
+                            .stroke(Color.white.opacity(0.12), lineWidth: 1)
+                    )
+            }
+            .buttonStyle(.plain)
+            .fixedSize()
+            .help("สลับภาษาต้นทางและปลายทาง (Swap Languages)")
+
             // Source Language Picker Menu
             Menu {
                 Button("🌐 ตรวจจับอัตโนมัติ (Auto)") {
@@ -220,17 +237,11 @@ public struct TranslationPopoverView: View {
             .menuStyle(.borderlessButton)
             .fixedSize()
 
-            // Swap Button
-            Button(action: swapLanguages) {
-                Image(systemName: "arrow.left.arrow.right")
-                    .font(.system(size: 9))
-                    .foregroundColor(Color.white.opacity(0.70))
-                    .frame(width: 18, height: 18)
-                    .background(Color.white.opacity(0.06))
-                    .clipShape(Circle())
-            }
-            .buttonStyle(.plain)
-            .help("สลับภาษาต้นทางและปลายทาง")
+            // Direction arrow pointing to Target Language
+            Image(systemName: "arrow.right")
+                .font(.system(size: 8, weight: .bold))
+                .foregroundColor(Color.white.opacity(0.35))
+                .fixedSize()
 
             // Target Language Picker Menu
             Menu {
@@ -382,6 +393,9 @@ public struct TranslationPopoverView: View {
             Text("Esc ปิด")
                 .font(.system(size: 9))
                 .foregroundColor(Color.white.opacity(0.40))
+
+            // Draggable resize grip in bottom-right corner
+            ResizeGripHandle()
         }
     }
 
@@ -450,5 +464,38 @@ public struct TranslationPopoverView: View {
         speech.stop()
         onReplace(translated)
         onClose()
+    }
+}
+
+public struct ResizeGripHandle: View {
+    @State private var dragInitialSize: CGSize = .zero
+
+    public init() {}
+
+    public var body: some View {
+        Image(systemName: "arrow.down.right.and.arrow.up.left")
+            .font(.system(size: 8, weight: .bold))
+            .foregroundColor(Color.white.opacity(0.35))
+            .frame(width: 14, height: 14)
+            .contentShape(Rectangle())
+            .gesture(
+                DragGesture(minimumDistance: 1, coordinateSpace: .global)
+                    .onChanged { value in
+                        let panel = TranslationPopoverPanel.shared
+                        if dragInitialSize == .zero {
+                            dragInitialSize = panel.frame.size
+                        }
+                        let newW = max(300, min(800, dragInitialSize.width + value.translation.width))
+                        let newH = max(200, min(650, dragInitialSize.height - value.translation.height))
+                        let oldFrame = panel.frame
+                        let newY = oldFrame.maxY - newH
+                        panel.setFrame(NSRect(x: oldFrame.minX, y: newY, width: newW, height: newH), display: true)
+                    }
+                    .onEnded { _ in
+                        dragInitialSize = .zero
+                        TranslationPopoverPanel.shared.saveCurrentSize()
+                    }
+            )
+            .help("ลากเพื่อยืดหดขยายขนาดหน้าต่าง (Drag to resize)")
     }
 }
