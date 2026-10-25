@@ -3,14 +3,16 @@ import Foundation
 public struct SupportedLanguage: Identifiable, Hashable {
     public let code: String
     public let name: String
+    public let shortName: String
     public let flag: String
     public let bcp47Tag: String
 
     public var id: String { code }
 
-    public init(code: String, name: String, flag: String, bcp47Tag: String) {
+    public init(code: String, name: String, shortName: String? = nil, flag: String, bcp47Tag: String) {
         self.code = code
         self.name = name
+        self.shortName = shortName ?? name
         self.flag = flag
         self.bcp47Tag = bcp47Tag
     }
@@ -19,8 +21,8 @@ public struct SupportedLanguage: Identifiable, Hashable {
         SupportedLanguage(code: "th", name: "ไทย", flag: "🇹🇭", bcp47Tag: "th-TH"),
         SupportedLanguage(code: "en", name: "English", flag: "🇺🇸", bcp47Tag: "en-US"),
         SupportedLanguage(code: "ja", name: "日本語", flag: "🇯🇵", bcp47Tag: "ja-JP"),
-        SupportedLanguage(code: "zh-CN", name: "中文 (简体)", flag: "🇨🇳", bcp47Tag: "zh-CN"),
-        SupportedLanguage(code: "zh-TW", name: "中文 (繁體)", flag: "🇹🇼", bcp47Tag: "zh-TW"),
+        SupportedLanguage(code: "zh-CN", name: "中文 (简体)", shortName: "中文", flag: "🇨🇳", bcp47Tag: "zh-CN"),
+        SupportedLanguage(code: "zh-TW", name: "中文 (繁體)", shortName: "繁體", flag: "🇹🇼", bcp47Tag: "zh-TW"),
         SupportedLanguage(code: "ko", name: "한국어", flag: "🇰🇷", bcp47Tag: "ko-KR"),
         SupportedLanguage(code: "fr", name: "Français", flag: "🇫🇷", bcp47Tag: "fr-FR"),
         SupportedLanguage(code: "de", name: "Deutsch", flag: "🇩🇪", bcp47Tag: "de-DE"),

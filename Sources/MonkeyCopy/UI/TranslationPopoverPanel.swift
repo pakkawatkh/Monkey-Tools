@@ -8,7 +8,7 @@ public final class TranslationPopoverPanel: NSPanel {
 
     public init() {
         super.init(
-            contentRect: NSRect(x: 0, y: 0, width: 320, height: 250),
+            contentRect: NSRect(x: 0, y: 0, width: 345, height: 250),
             styleMask: [.borderless, .nonactivatingPanel],
             backing: .buffered,
             defer: false
@@ -53,13 +53,15 @@ public final class TranslationPopoverPanel: NSPanel {
         self.contentView = hosting
 
         // Position popover near the trigger point
+        let popoverWidth: CGFloat = 345
+        let popoverHeight: CGFloat = 250
         var targetX = screenPoint.x
-        var targetY = screenPoint.y - 250
+        var targetY = screenPoint.y - popoverHeight
 
         if let screen = NSScreen.main {
             let visible = screen.visibleFrame
-            if targetX + 320 > visible.maxX {
-                targetX = visible.maxX - 324
+            if targetX + popoverWidth > visible.maxX {
+                targetX = visible.maxX - (popoverWidth + 4)
             }
             if targetX < visible.minX {
                 targetX = visible.minX + 4

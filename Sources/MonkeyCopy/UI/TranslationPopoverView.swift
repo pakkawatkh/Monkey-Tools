@@ -206,6 +206,7 @@ public struct TranslationPopoverView: View {
                 HStack(spacing: 3) {
                     Text(sourceLanguageDisplayName)
                         .font(.system(size: 10, weight: .semibold))
+                        .lineLimit(1)
                     Image(systemName: "chevron.down")
                         .font(.system(size: 7))
                         .opacity(0.6)
@@ -250,6 +251,7 @@ public struct TranslationPopoverView: View {
                 HStack(spacing: 3) {
                     Text(targetLanguageDisplayName)
                         .font(.system(size: 10, weight: .semibold))
+                        .lineLimit(1)
                     Image(systemName: "chevron.down")
                         .font(.system(size: 7))
                         .opacity(0.6)
@@ -272,6 +274,7 @@ public struct TranslationPopoverView: View {
                         .font(.system(size: 9))
                     Text(settings.translationEngineMode == .google ? "Google" : "Apple")
                         .font(.system(size: 9, weight: .medium))
+                        .lineLimit(1)
                 }
                 .foregroundColor(Color.white.opacity(0.85))
                 .padding(.horizontal, 6)
@@ -284,6 +287,7 @@ public struct TranslationPopoverView: View {
                 )
             }
             .buttonStyle(.plain)
+            .fixedSize()
             .help("สลับโหมดเครื่องมือแปลภาษา (Google Translate / Apple Native)")
 
             // Close button
@@ -296,6 +300,7 @@ public struct TranslationPopoverView: View {
                     .clipShape(Circle())
             }
             .buttonStyle(.plain)
+            .fixedSize()
             .help("ปิด (Esc)")
         }
     }
@@ -303,19 +308,19 @@ public struct TranslationPopoverView: View {
     private var sourceLanguageDisplayName: String {
         if sourceLanguage == "auto" {
             if let detected = translationResult?.sourceLanguage, let lang = SupportedLanguage.find(byCode: detected) {
-                return "\(lang.flag) \(lang.name)"
+                return "\(lang.flag) \(lang.shortName)"
             }
             return "🌐 ตรวจจับ"
         }
         if let lang = SupportedLanguage.find(byCode: sourceLanguage) {
-            return "\(lang.flag) \(lang.name)"
+            return "\(lang.flag) \(lang.shortName)"
         }
         return sourceLanguage
     }
 
     private var targetLanguageDisplayName: String {
         if let lang = SupportedLanguage.find(byCode: targetLanguage) {
-            return "\(lang.flag) \(lang.name)"
+            return "\(lang.flag) \(lang.shortName)"
         }
         return targetLanguage.uppercased()
     }
