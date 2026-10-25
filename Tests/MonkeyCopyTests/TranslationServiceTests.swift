@@ -33,6 +33,29 @@ final class TranslationServiceTests: XCTestCase {
         XCTAssertNotNil(result)
     }
 
+    func testAppleNativeTargetLanguageValidation() {
+        let engine = AppleNativeTranslationEngine()
+        let englishDictEntry = "setting set·ting | ˈsediNG | noun 1 the place or type of surroundings where something is positioned."
+        XCTAssertFalse(engine.isResultInTargetLanguage(result: englishDictEntry, targetLang: "es"))
+        XCTAssertFalse(engine.isResultInTargetLanguage(result: englishDictEntry, targetLang: "fr"))
+        XCTAssertFalse(engine.isResultInTargetLanguage(result: englishDictEntry, targetLang: "de"))
+        XCTAssertFalse(engine.isResultInTargetLanguage(result: englishDictEntry, targetLang: "th"))
+        XCTAssertFalse(engine.isResultInTargetLanguage(result: englishDictEntry, targetLang: "ja"))
+        XCTAssertFalse(engine.isResultInTargetLanguage(result: englishDictEntry, targetLang: "zh-CN"))
+        XCTAssertFalse(engine.isResultInTargetLanguage(result: englishDictEntry, targetLang: "ko"))
+        XCTAssertFalse(engine.isResultInTargetLanguage(result: englishDictEntry, targetLang: "ru"))
+        XCTAssertTrue(engine.isResultInTargetLanguage(result: englishDictEntry, targetLang: "en"))
+    }
+
+    func testAppleNativeTranslatesToSpanishWithoutDictPollution() async throws {
+        let engine = AppleNativeTranslationEngine()
+        let result = try await engine.translate(text: "Settings", from: "auto", to: "es")
+        XCTAssertEqual(result.targetLanguage, "es")
+        XCTAssertFalse(result.translatedText.contains("noun 1"))
+        XCTAssertFalse(result.translatedText.contains("the place or type"))
+        XCTAssertTrue(result.translatedText.lowercased().contains("ajuste") || result.translatedText.lowercased().contains("configuraci"))
+    }
+
     func testTargetLanguageMajorityResolution() {
         let service = TranslationService.shared
         XCTAssertEqual(service.resolveTargetLanguage(for: "Existing"), "th")

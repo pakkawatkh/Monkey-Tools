@@ -18,37 +18,61 @@ public final class AppleNativeTranslationEngine: TranslationEngine {
         return trimmed.isEmpty ? nil : trimmed
     }
 
+    public func isResultInTargetLanguage(result: String, targetLang: String) -> Bool {
+        switch targetLang.lowercased() {
+        case "th":
+            return result.unicodeScalars.contains { $0.value >= 0x0E00 && $0.value <= 0x0E7F }
+
+        case "ja":
+            return result.unicodeScalars.contains { ($0.value >= 0x3040 && $0.value <= 0x309F) || ($0.value >= 0x30A0 && $0.value <= 0x30FF) }
+
+        case "zh", "zh-cn", "zh-tw":
+            return result.unicodeScalars.contains { $0.value >= 0x4E00 && $0.value <= 0x9FFF }
+
+        case "ko":
+            return result.unicodeScalars.contains { ($0.value >= 0xAC00 && $0.value <= 0xD7AF) || ($0.value >= 0x1100 && $0.value <= 0x11FF) }
+
+        case "ru":
+            return result.unicodeScalars.contains { $0.value >= 0x0400 && $0.value <= 0x04FF }
+
+        case "en":
+            return result.unicodeScalars.contains { CharacterSet.letters.contains($0) }
+
+        default:
+            // For other languages (es, fr, de, vi):
+            // The default macOS dictionary (Oxford English) contains English grammar markers.
+            // If the target language is NOT English, reject monolingual English dictionary definitions.
+            let lower = result.lowercased()
+            let englishDictMarkers = ["| noun", "| verb", "| adjective", "| adverb", "| pronoun", "| preposition", "noun 1", "verb 1", "adjective ["]
+            for marker in englishDictMarkers {
+                if lower.contains(marker) {
+                    return false
+                }
+            }
+            return false
+        }
+    }
+
     public func translate(text: String, from sourceLang: String? = nil, to targetLang: String) async throws -> TranslationResult {
         let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
 
-        // For single words or short phrases, attempt native macOS Dictionary lookup first
-        if trimmed.split(separator: " ").count <= 3, let dictResult = lookupDictionary(term: trimmed) {
-            // Verify definition contains characters of the requested target language
-            // If target is Thai ("th"), definition MUST contain Thai characters (from an EN-TH dictionary),
-            // otherwise it is a monolingual English dictionary definition and should fall back to translator.
-            let isValidForTarget: Bool
-            if targetLang == "th" {
-                isValidForTarget = dictResult.unicodeScalars.contains { $0.value >= 0x0E00 && $0.value <= 0x0E7F }
-            } else if targetLang == "en" {
-                isValidForTarget = dictResult.unicodeScalars.contains { CharacterSet.letters.contains($0) }
-            } else {
-                isValidForTarget = true
-            }
-
-            if isValidForTarget {
-                let lines = dictResult.components(separatedBy: .newlines).filter { !$0.trimmingCharacters(in: .whitespaces).isEmpty }
-                let summary = lines.prefix(3).joined(separator: "\n")
-                return TranslationResult(
-                    originalText: text,
-                    translatedText: summary,
-                    sourceLanguage: sourceLang ?? "en",
-                    targetLanguage: targetLang,
-                    engineUsed: .appleNative
-                )
-            }
+        // For single words or short phrases, attempt native macOS Dictionary lookup first,
+        // BUT only accept it if the definition is genuinely in the requested target language!
+        if trimmed.split(separator: " ").count <= 3,
+           let dictResult = lookupDictionary(term: trimmed),
+           isResultInTargetLanguage(result: dictResult, targetLang: targetLang) {
+            let lines = dictResult.components(separatedBy: .newlines).filter { !$0.trimmingCharacters(in: .whitespaces).isEmpty }
+            let summary = lines.prefix(3).joined(separator: "\n")
+            return TranslationResult(
+                originalText: text,
+                translatedText: summary,
+                sourceLanguage: sourceLang ?? "en",
+                targetLanguage: targetLang,
+                engineUsed: .appleNative
+            )
         }
 
-        // For longer sentences or if bilingual dictionary is not downloaded in macOS Settings,
+        // For all other languages, sentences, or when bilingual dictionary is not downloaded in macOS Settings,
         // use fallback translator while labeling the engine mode
         do {
             let res = try await fallbackGoogle.translate(text: text, from: sourceLang, to: targetLang)
