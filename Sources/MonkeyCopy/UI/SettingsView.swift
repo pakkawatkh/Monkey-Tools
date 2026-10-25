@@ -205,6 +205,27 @@ public struct SettingsView: View {
                                 .frame(width: 150)
                             }
 
+                            Divider()
+
+                            // Target Language
+                            HStack {
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text("ภาษาปลายทางที่จำไว้ (Target Language):")
+                                        .font(.system(size: 13))
+                                    Text("แปลเป็นภาษานี้เสมอจนกว่าจะเลือกเปลี่ยนใหม่")
+                                        .font(.system(size: 11))
+                                        .foregroundColor(.secondary)
+                                }
+                                Spacer()
+                                Picker("", selection: $settings.translationTargetLang) {
+                                    Text("🌐 ตรวจจับอัตโนมัติ (Auto)").tag("auto")
+                                    ForEach(SupportedLanguage.languages) { lang in
+                                        Text("\(lang.flag) \(lang.name)").tag(lang.code)
+                                    }
+                                }
+                                .frame(width: 170)
+                            }
+
                             Text("💡 คุณยังสามารถคลิกสลับระหว่าง Google Translate และ Apple Native ได้โดยตรงจากหน้าต่างป็อปอัปคำแปล")
                                 .font(.system(size: 11))
                                 .foregroundColor(Color(red: 0.4, green: 0.7, blue: 1.0))

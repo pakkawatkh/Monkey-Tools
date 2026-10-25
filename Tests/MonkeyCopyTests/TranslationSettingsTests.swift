@@ -17,6 +17,14 @@ final class TranslationSettingsTests: XCTestCase {
         XCTAssertEqual(settings.translationEngineMode, .google)
     }
 
+    func testTargetLanguagePersistence() {
+        let settings = AppSettings.shared
+        settings.translationTargetLang = "ja"
+        XCTAssertEqual(settings.translationTargetLang, "ja")
+        settings.translationTargetLang = "auto"
+        XCTAssertEqual(settings.translationTargetLang, "auto")
+    }
+
     @MainActor
     func testSettingsWindowController() {
         let controller = SettingsWindowController.shared

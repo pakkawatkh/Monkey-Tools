@@ -21,12 +21,8 @@ public final class TranslationService: ObservableObject {
         }
     }
 
-    /// Auto-detects target language based on majority script: if majority is Thai, targets English ("en"); otherwise targets Thai ("th").
+    /// Auto-detects target language: if preferredTarget is specified, uses it (unless source is identical pure language, e.g. Thai -> English); otherwise uses majority script detection.
     public func resolveTargetLanguage(for text: String, preferredTarget: String = "auto") -> String {
-        if preferredTarget != "auto" && !preferredTarget.isEmpty {
-            return preferredTarget
-        }
-
         var thaiCount = 0
         var latinCount = 0
         for scalar in text.unicodeScalars {
@@ -35,6 +31,18 @@ public final class TranslationService: ObservableObject {
             } else if CharacterSet.letters.contains(scalar) {
                 latinCount += 1
             }
+        }
+
+        if preferredTarget != "auto" && !preferredTarget.isEmpty {
+            // If user explicitly chose Thai ("th") as target, but the text is pure Thai, target English instead of Thai -> Thai
+            if preferredTarget == "th" && thaiCount > 0 && latinCount == 0 {
+                return "en"
+            }
+            // If user explicitly chose English ("en") as target, but the text is pure English, target Thai instead of English -> English
+            if preferredTarget == "en" && latinCount > 0 && thaiCount == 0 {
+                return "th"
+            }
+            return preferredTarget
         }
 
         return thaiCount > latinCount ? "en" : "th"

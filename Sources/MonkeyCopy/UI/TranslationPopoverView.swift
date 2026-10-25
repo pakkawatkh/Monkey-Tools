@@ -175,7 +175,8 @@ public struct TranslationPopoverView: View {
         )
         .preferredColorScheme(.dark)
         .onAppear {
-            targetLanguage = TranslationService.shared.resolveTargetLanguage(for: originalText)
+            let savedTarget = settings.translationTargetLang
+            targetLanguage = TranslationService.shared.resolveTargetLanguage(for: originalText, preferredTarget: savedTarget)
             sourceLanguage = "auto"
             performTranslation()
         }
@@ -232,8 +233,15 @@ public struct TranslationPopoverView: View {
 
             // Target Language Picker Menu
             Menu {
+                Button("🌐 ตรวจจับอัตโนมัติ (Auto)") {
+                    settings.translationTargetLang = "auto"
+                    targetLanguage = TranslationService.shared.resolveTargetLanguage(for: originalText, preferredTarget: "auto")
+                    performTranslation()
+                }
+                Divider()
                 ForEach(SupportedLanguage.languages) { lang in
                     Button("\(lang.flag) \(lang.name)") {
+                        settings.translationTargetLang = lang.code
                         targetLanguage = lang.code
                         performTranslation()
                     }
@@ -322,6 +330,7 @@ public struct TranslationPopoverView: View {
         }
         sourceLanguage = currentTarget
         targetLanguage = newTarget
+        settings.translationTargetLang = newTarget
         performTranslation()
     }
 
