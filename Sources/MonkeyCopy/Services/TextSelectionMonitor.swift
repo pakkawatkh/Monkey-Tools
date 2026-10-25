@@ -29,17 +29,32 @@ public final class TextSelectionMonitor: ObservableObject {
 
     private init() {}
 
-    public func isValidSelectionText(_ text: String) -> Bool {
+    public func isValidTranslatableText(_ text: String) -> Bool {
         let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
         if trimmed.isEmpty { return false }
 
-        // Ignore if single punctuation
-        let punctuationSet = CharacterSet(charactersIn: ".,;:!?\"'()[]{}<>-–—/\\|`~@#$%^&*+=_")
-        if trimmed.count == 1, let scalar = trimmed.unicodeScalars.first, punctuationSet.contains(scalar) {
+        // Must contain at least one letter (rejects pure punctuation, symbols, whitespace, and numbers)
+        guard trimmed.rangeOfCharacter(from: .letters) != nil else {
             return false
         }
 
-        return trimmed.count >= 1
+        // Must not be an image file or URL
+        let lower = trimmed.lowercased()
+        let imageExtensions = [
+            ".png", ".jpg", ".jpeg", ".gif", ".webp", ".bmp", ".svg",
+            ".tiff", ".ico", ".heic", ".raw", ".psd", ".ai"
+        ]
+        for ext in imageExtensions {
+            if lower.hasSuffix(ext) {
+                return false
+            }
+        }
+
+        return true
+    }
+
+    public func isValidSelectionText(_ text: String) -> Bool {
+        return isValidTranslatableText(text)
     }
 
     public func startMonitoring() {
@@ -112,18 +127,108 @@ public final class TextSelectionMonitor: ObservableObject {
         let pid = frontApp.processIdentifier
         let mouseLoc = NSEvent.mouseLocation
 
-        // Method 1: Try Accessibility API first (fast for native text fields like TextEdit, Mail, Xcode)
-        if let axText = queryAXSelectedText(pid: pid), isValidSelectionText(axText.text) {
-            let event = TextSelectionEvent(text: axText.text, screenRect: axText.bounds, sourceAppPID: pid)
-            onSelectionDetected?(event)
+        // Method 1: Try Accessibility API first (fast for native text fields like TextEdit, Mail, Xcode, Notes)
+        if let axText = queryAXSelectedText(pid: pid) {
+            if isValidTranslatableText(axText.text) {
+                let event = TextSelectionEvent(text: axText.text, screenRect: axText.bounds, sourceAppPID: pid)
+                onSelectionDetected?(event)
+            } else {
+                onSelectionCleared?()
+            }
             return
         }
 
-        // Method 2: For browsers (Safari, Chrome) and other apps:
-        // Simply show the floating bubble at mouse location WITHOUT copying or touching pasteboard!
-        let rect = CGRect(x: mouseLoc.x, y: mouseLoc.y, width: 1, height: 1)
-        let event = TextSelectionEvent(text: "", screenRect: rect, sourceAppPID: pid)
-        onSelectionDetected?(event)
+        // Method 2: For browsers (Safari, Chrome) and other non-AX apps:
+        // Stealth probe to verify translatable text exists without modifying clipboard or polluting history
+        probeNonAXSelection(pid: pid, mouseLoc: mouseLoc)
+    }
+
+    private func probeNonAXSelection(pid: pid_t, mouseLoc: CGPoint) {
+        let pasteboard = NSPasteboard.general
+        let oldChangeCount = pasteboard.changeCount
+
+        // 1. In-memory backup of current clipboard contents
+        var backupItems: [(types: [NSPasteboard.PasteboardType], data: [NSPasteboard.PasteboardType: Data])] = []
+        if let items = pasteboard.pasteboardItems {
+            for item in items {
+                var itemData: [NSPasteboard.PasteboardType: Data] = [:]
+                for type in item.types {
+                    if let data = item.data(forType: type) {
+                        itemData[type] = data
+                    }
+                }
+                if !itemData.isEmpty {
+                    backupItems.append((types: item.types, data: itemData))
+                }
+            }
+        }
+
+        // 2. Suppress clipboard monitor capture so monkey-copy never records this probe
+        ClipboardMonitor.shared.isCapturingSuppressed = true
+
+        // 3. Post momentary Cmd + C
+        let source = CGEventSource(stateID: .combinedSessionState)
+        let keyDown = CGEvent(keyboardEventSource: source, virtualKey: 8, keyDown: true)
+        keyDown?.flags = .maskCommand
+        let keyUp = CGEvent(keyboardEventSource: source, virtualKey: 8, keyDown: false)
+        keyUp?.flags = .maskCommand
+        keyDown?.post(tap: .cghidEventTap)
+        keyUp?.post(tap: .cghidEventTap)
+
+        // 4. Inspect result after 50ms and IMMEDIATELY restore user's original clipboard
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) { [weak self] in
+            guard let self = self else {
+                ClipboardMonitor.shared.isCapturingSuppressed = false
+                return
+            }
+
+            defer {
+                // Immediately restore the user's previous clipboard contents
+                pasteboard.clearContents()
+                for backup in backupItems {
+                    let item = NSPasteboardItem()
+                    for (type, data) in backup.data {
+                        item.setData(data, forType: type)
+                    }
+                    pasteboard.writeObjects([item])
+                }
+
+                // Restore monitoring state after brief debounce
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.12) {
+                    ClipboardMonitor.shared.lastChangeCount = pasteboard.changeCount
+                    ClipboardMonitor.shared.isCapturingSuppressed = false
+                }
+            }
+
+            // If change count did not change, nothing was selected (empty drag, click in blank space)
+            guard pasteboard.changeCount != oldChangeCount else {
+                self.onSelectionCleared?()
+                return
+            }
+
+            // Check if pasteboard has image data without text
+            let types = pasteboard.types ?? []
+            let isImageType = types.contains {
+                $0 == .tiff || $0 == .png || $0.rawValue.contains("image")
+            }
+
+            guard let capturedText = pasteboard.string(forType: .string),
+                  self.isValidTranslatableText(capturedText) else {
+                // Not translatable (whitespace, image, punctuation, numbers, or empty) -> DO NOT SHOW BUBBLE
+                self.onSelectionCleared?()
+                return
+            }
+
+            if isImageType && !self.isValidTranslatableText(capturedText) {
+                self.onSelectionCleared?()
+                return
+            }
+
+            // Valid translatable text found! Show the floating bubble with the text preloaded
+            let rect = CGRect(x: mouseLoc.x, y: mouseLoc.y, width: 1, height: 1)
+            let event = TextSelectionEvent(text: capturedText, screenRect: rect, sourceAppPID: pid)
+            self.onSelectionDetected?(event)
+        }
     }
 
     private func queryAXSelectedText(pid: pid_t) -> (text: String, bounds: CGRect)? {

@@ -27,8 +27,21 @@ public final class SettingsWindowController: NSWindowController {
     }
 
     public func showSettings() {
-        window?.center()
-        window?.makeKeyAndOrderFront(nil)
-        NSApp.activate(ignoringOtherApps: true)
+        if let window = window {
+            if !window.isVisible {
+                window.center()
+            }
+            window.makeKeyAndOrderFront(nil)
+            NSApp.activate(ignoringOtherApps: true)
+        }
+    }
+
+    public func toggleSettings() {
+        guard let window = window else { return }
+        if window.isVisible && NSApp.isActive {
+            window.orderOut(nil)
+        } else {
+            showSettings()
+        }
     }
 }

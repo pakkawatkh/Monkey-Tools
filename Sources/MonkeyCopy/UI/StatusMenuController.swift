@@ -17,6 +17,7 @@ public final class StatusMenuController: NSObject {
         let monkeyIcon = createMonkeyTemplateIcon()
         button.image = monkeyIcon
         button.imagePosition = .imageOnly
+        button.toolTip = "monkey-copy (คลิกเพื่อเปิดการตั้งค่า / Settings)"
 
         button.target = self
         button.action = #selector(statusItemClicked(_:))
@@ -99,8 +100,8 @@ public final class StatusMenuController: NSObject {
         if event.type == .rightMouseUp || event.modifierFlags.contains(.control) {
             showMenu()
         } else {
-            // Normal left click toggles the clipboard panel
-            ClipboardPanel.shared.toggleVisibility()
+            // Normal left click opens the app settings / config directly
+            SettingsWindowController.shared.toggleSettings()
         }
     }
 

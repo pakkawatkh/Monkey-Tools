@@ -16,4 +16,12 @@ final class TranslationSettingsTests: XCTestCase {
         settings.translationEngineMode = .google
         XCTAssertEqual(settings.translationEngineMode, .google)
     }
+
+    @MainActor
+    func testSettingsWindowController() {
+        let controller = SettingsWindowController.shared
+        XCTAssertNotNil(controller.window)
+        XCTAssertEqual(controller.window?.title, "monkey-copy Preferences")
+        XCTAssertFalse(controller.window?.isReleasedWhenClosed ?? true)
+    }
 }
