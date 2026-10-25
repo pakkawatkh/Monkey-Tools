@@ -2,15 +2,35 @@
 > **Windows-style Clipboard History (`Win + V`) & Emoji Picker for macOS**  
 > แอพพลิเคชัน Clipboard Manager สุดน่ารักและทรงพลังบน MacBook ใช้งานง่าย รวดเร็ว ดีไซน์ Clean Dark Theme พร้อมรองรับทั้งข้อความ รูปภาพ และอิโมจิในตัว!
 
+[![Release](https://img.shields.io/badge/Release-v1.0.0-success?style=for-the-badge&logo=github)](https://github.com/pakkawatkh/monkey-copy/releases/tag/v1.0.0)
+[![Platform](https://img.shields.io/badge/Platform-macOS%2013%2B-lightgrey?style=for-the-badge&logo=apple)](https://github.com/pakkawatkh/monkey-copy)
+[![License](https://img.shields.io/badge/License-MIT-blue?style=for-the-badge)](https://github.com/pakkawatkh/monkey-copy)
+
 ---
 
-## 📥 ดาวน์โหลดตัวติดตั้ง (Download)
+## 📥 ดาวน์โหลดตัวติดตั้ง (Download v1.0.0)
 
-คุณสามารถดาวน์โหลดไฟล์ตัวติดตั้ง `.dmg` เวอร์ชันล่าสุดได้โดยตรงจากลิงก์นี้:
+คุณสามารถดาวน์โหลดไฟล์ตัวติดตั้ง `.dmg` เวอร์ชัน 1.0.0 ล่าสุดได้โดยตรงจากลิงก์นี้:
 
-[![Download DMG](https://img.shields.io/badge/Download-monkey--copy--Installer.dmg-blue?style=for-the-badge&logo=apple)](https://github.com/pakkawatkh/monkey-copy/raw/main/monkey-copy-Installer.dmg)
+[![Download DMG](https://img.shields.io/badge/Download-monkey--copy--Installer.dmg%20(v1.0.0)-blue?style=for-the-badge&logo=apple)](https://github.com/pakkawatkh/monkey-copy/releases/download/v1.0.0/monkey-copy-Installer.dmg)
 
-👉 **คลิกดาวน์โหลดที่นี่:** **[monkey-copy-Installer.dmg (ดาวน์โหลดไฟล์ติดตั้ง)](https://github.com/pakkawatkh/monkey-copy/raw/main/monkey-copy-Installer.dmg)**
+👉 **คลิกดาวน์โหลดที่นี่:**
+- **[Download monkey-copy-Installer.dmg (GitHub Release v1.0.0)](https://github.com/pakkawatkh/monkey-copy/releases/download/v1.0.0/monkey-copy-Installer.dmg)**
+- หรือดาวน์โหลดไฟล์ตรงจากคลัง: **[monkey-copy-Installer.dmg (Direct)](https://github.com/pakkawatkh/monkey-copy/raw/main/monkey-copy-Installer.dmg)**
+
+---
+
+## 🚀 มีอะไรใหม่ในเวอร์ชัน 1.0.0 (Release Notes)
+
+- 🐵 **Windows-Style Clipboard History:** กดคีย์ลัดเรียกหน้าต่างประวัติคลิปบอร์ดแบบลอย สไตล์ Windows `Win + V`
+- 🖼️ **รองรับทั้งข้อความและรูปภาพ:** คัดลอกรูปภาพจากการแคปหน้าจอ (`Cmd+Shift+4`), รูปจากเบราว์เซอร์ หรือไฟล์จาก Finder พร้อมพรีวิวรูปภาพ
+- 😊 **Continuous Emoji Picker:** เลือกอิโมจิพร้อมช่องค้นหาภาษาไทยและอังกฤษ **คลิกพิมพ์ได้เรื่อยๆ โดยหน้าต่างไม่ปิด**
+- ⚡ **Auto-Paste อัตโนมัติ:** วางข้อความและอิโมจิลงในโปรแกรมที่กำลังใช้งานอยู่ให้อัตโนมัติทันที
+- 🔒 **Persistent Code Signing:** ระบบใบรับรองแบบถาวร สิทธิ์ Accessibility ไม่หลุดแม้ปิดเปิดเครื่องใหม่
+- 🌙 **Clean High-Contrast Dark Theme:** ดีไซน์ Dark Acrylic ทันสมัย ตัวหนังสือคมชัด อ่านง่าย สบายตาทุกมุมมอง
+- 🗑️ **Icon-Only Clear Button:** ปุ่มล้างประวัติแบบไอคอนถังขยะมินิมอล สะอาดตา
+- ⌨️ **Custom Hotkeys:** เลือกระหว่าง `Cmd + Shift + V`, `Option + V` หรือบันทึกปุ่มลัดตามใจชอบ
+- 📦 **One-Click DMG Installer:** ติดตั้งง่ายเพียงลากลงโฟลเดอร์ Applications
 
 ---
 
