@@ -32,4 +32,54 @@ final class TextSelectionMonitorTests: XCTestCase {
         XCTAssertTrue(monitor.isValidTranslatableText("日本語のテキスト"))
         XCTAssertTrue(monitor.isValidTranslatableText("Good morning!"))
     }
+
+    func testTextSelectionEventIsEditableFlag() {
+        let defaultEvent = TextSelectionEvent(
+            text: "Hello",
+            screenRect: CGRect(x: 10, y: 20, width: 30, height: 40),
+            sourceAppPID: 1234
+        )
+        XCTAssertFalse(defaultEvent.isEditable)
+
+        let editableEvent = TextSelectionEvent(
+            text: "Hello",
+            screenRect: CGRect(x: 10, y: 20, width: 30, height: 40),
+            sourceAppPID: 1234,
+            isEditable: true
+        )
+        XCTAssertTrue(editableEvent.isEditable)
+
+        let readOnlyEvent = TextSelectionEvent(
+            text: "Hello",
+            screenRect: CGRect(x: 10, y: 20, width: 30, height: 40),
+            sourceAppPID: 1234,
+            isEditable: false
+        )
+        XCTAssertFalse(readOnlyEvent.isEditable)
+    }
+
+    func testIsElementEditableForInvalidPID() {
+        let monitor = TextSelectionMonitor.shared
+        // Invalid PID should safely return false without crashing
+        XCTAssertFalse(monitor.isElementEditable(pid: -1))
+        XCTAssertFalse(monitor.isElementEditable(pid: 999999))
+    }
+
+    func testTranslationPopoverViewIsEditableInit() {
+        let popoverEditable = TranslationPopoverView(
+            originalText: "Hello",
+            isEditable: true,
+            onClose: {},
+            onReplace: { _ in }
+        )
+        XCTAssertTrue(popoverEditable.isEditable)
+
+        let popoverReadOnly = TranslationPopoverView(
+            originalText: "Hello",
+            isEditable: false,
+            onClose: {},
+            onReplace: { _ in }
+        )
+        XCTAssertFalse(popoverReadOnly.isEditable)
+    }
 }

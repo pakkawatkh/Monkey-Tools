@@ -51,9 +51,10 @@ public final class TranslationPopoverPanel: NSPanel, NSWindowDelegate {
         return true
     }
 
-    public func show(text: String, near screenPoint: CGPoint) {
+    public func show(text: String, near screenPoint: CGPoint, isEditable: Bool = false) {
         let popoverView = TranslationPopoverView(
             originalText: text,
+            isEditable: isEditable,
             onClose: { [weak self] in
                 self?.hide()
             },

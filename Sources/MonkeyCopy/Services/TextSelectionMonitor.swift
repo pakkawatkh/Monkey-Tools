@@ -5,11 +5,13 @@ public struct TextSelectionEvent: Equatable {
     public let text: String
     public let screenRect: CGRect
     public let sourceAppPID: pid_t
+    public let isEditable: Bool
 
-    public init(text: String, screenRect: CGRect, sourceAppPID: pid_t) {
+    public init(text: String, screenRect: CGRect, sourceAppPID: pid_t, isEditable: Bool = false) {
         self.text = text
         self.screenRect = screenRect
         self.sourceAppPID = sourceAppPID
+        self.isEditable = isEditable
     }
 }
 
@@ -133,7 +135,8 @@ public final class TextSelectionMonitor: ObservableObject {
         // Method 1: Try Accessibility API first (fast for native text fields like TextEdit, Mail, Xcode, Notes)
         if let axText = queryAXSelectedText(pid: pid) {
             if isValidTranslatableText(axText.text) {
-                let event = TextSelectionEvent(text: axText.text, screenRect: axText.bounds, sourceAppPID: pid)
+                let editable = isElementEditable(pid: pid, mouseLoc: mouseLoc)
+                let event = TextSelectionEvent(text: axText.text, screenRect: axText.bounds, sourceAppPID: pid, isEditable: editable)
                 onSelectionDetected?(event)
             } else {
                 onSelectionCleared?()
@@ -236,8 +239,9 @@ public final class TextSelectionMonitor: ObservableObject {
                 }
 
                 // Valid translatable text! Show the floating bubble
+                let editable = self.isElementEditable(pid: pid, mouseLoc: mouseLoc)
                 let rect = CGRect(x: mouseLoc.x, y: mouseLoc.y, width: 1, height: 1)
-                let event = TextSelectionEvent(text: capturedText, screenRect: rect, sourceAppPID: pid)
+                let event = TextSelectionEvent(text: capturedText, screenRect: rect, sourceAppPID: pid, isEditable: editable)
                 self.onSelectionDetected?(event)
                 return
             }
@@ -245,8 +249,9 @@ public final class TextSelectionMonitor: ObservableObject {
             // Fallback for double-click on words in applications that intercept or slow synthetic copy:
             // When a user double-clicks, a word is guaranteed to be selected!
             if isDoubleClick {
+                let editable = self.isElementEditable(pid: pid, mouseLoc: mouseLoc)
                 let rect = CGRect(x: mouseLoc.x, y: mouseLoc.y, width: 1, height: 1)
-                let event = TextSelectionEvent(text: "", screenRect: rect, sourceAppPID: pid)
+                let event = TextSelectionEvent(text: "", screenRect: rect, sourceAppPID: pid, isEditable: editable)
                 self.onSelectionDetected?(event)
             } else {
                 self.onSelectionCleared?()
@@ -303,5 +308,91 @@ public final class TextSelectionMonitor: ObservableObject {
         // Fallback: mouse cursor position
         let mouseLoc = NSEvent.mouseLocation
         return CGRect(x: mouseLoc.x, y: mouseLoc.y, width: 20, height: 20)
+    }
+
+    public func isElementEditable(pid: pid_t, mouseLoc: CGPoint? = nil) -> Bool {
+        let appElement = AXUIElementCreateApplication(pid)
+
+        // 1. Check focused element of the application
+        var focusedElementObj: AnyObject?
+        if AXUIElementCopyAttributeValue(appElement, kAXFocusedUIElementAttribute as CFString, &focusedElementObj) == .success,
+           let focused = focusedElementObj {
+            if isAXElementEditable(focused as! AXUIElement) {
+                return true
+            }
+        }
+
+        // 2. Check focused window -> focused element
+        var focusedWindowObj: AnyObject?
+        if AXUIElementCopyAttributeValue(appElement, kAXFocusedWindowAttribute as CFString, &focusedWindowObj) == .success,
+           let win = focusedWindowObj {
+            var winFocusedObj: AnyObject?
+            if AXUIElementCopyAttributeValue(win as! AXUIElement, kAXFocusedUIElementAttribute as CFString, &winFocusedObj) == .success,
+               let winFocused = winFocusedObj {
+                if isAXElementEditable(winFocused as! AXUIElement) {
+                    return true
+                }
+            }
+        }
+
+        // 3. Check element under mouse position if provided
+        if let mouseLoc = mouseLoc {
+            let screenHeight = NSScreen.screens.first?.frame.height ?? 1080
+            let axPoint = CGPoint(x: mouseLoc.x, y: screenHeight - mouseLoc.y)
+            var elementAtPos: AXUIElement?
+            if AXUIElementCopyElementAtPosition(appElement, Float(axPoint.x), Float(axPoint.y), &elementAtPos) == .success,
+               let el = elementAtPos {
+                if isAXElementEditable(el) {
+                    return true
+                }
+            }
+        }
+
+        return false
+    }
+
+    public func isAXElementEditable(_ element: AXUIElement) -> Bool {
+        // 1. Check settability of SelectedText (standard in AppKit, WebKit, Chromium for text selection replacement)
+        var isSelSettable: DarwinBoolean = false
+        let selRes = AXUIElementIsAttributeSettable(element, kAXSelectedTextAttribute as CFString, &isSelSettable)
+        if selRes == .success && isSelSettable.boolValue {
+            return true
+        }
+
+        // 2. Check settability of Value (used by text fields and inputs)
+        var isValSettable: DarwinBoolean = false
+        let valRes = AXUIElementIsAttributeSettable(element, kAXValueAttribute as CFString, &isValSettable)
+        if valRes == .success && isValSettable.boolValue {
+            // Confirm it's a text-like element rather than a slider, stepper, or checkbox
+            var roleObj: AnyObject?
+            AXUIElementCopyAttributeValue(element, kAXRoleAttribute as CFString, &roleObj)
+            let role = (roleObj as? String) ?? ""
+            if role == "AXTextField" || role == "AXTextArea" || role == "AXSearchField" || role == "AXWebArea" || role.isEmpty {
+                return true
+            }
+        }
+
+        // 3. Check subrole for explicit editable marker
+        var subroleObj: AnyObject?
+        AXUIElementCopyAttributeValue(element, kAXSubroleAttribute as CFString, &subroleObj)
+        let subrole = (subroleObj as? String) ?? ""
+        if subrole == "AXEditableText" {
+            return true
+        }
+
+        // 4. If both settability checks succeeded and both reported false, the element is explicitly read-only (e.g. read-only web page, PDF, static text)
+        if selRes == .success && valRes == .success && !isSelSettable.boolValue && !isValSettable.boolValue {
+            return false
+        }
+
+        // 5. Fallback for roles that are inherently editable if settability check was unsupported (-25204)
+        var roleObj: AnyObject?
+        AXUIElementCopyAttributeValue(element, kAXRoleAttribute as CFString, &roleObj)
+        let role = (roleObj as? String) ?? ""
+        if role == "AXTextField" || role == "AXTextArea" || role == "AXSearchField" {
+            return true
+        }
+
+        return false
     }
 }

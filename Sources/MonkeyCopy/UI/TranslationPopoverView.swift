@@ -3,6 +3,7 @@ import AppKit
 
 public struct TranslationPopoverView: View {
     public let originalText: String
+    public let isEditable: Bool
     public var onClose: () -> Void
     public var onReplace: (String) -> Void
 
@@ -18,10 +19,12 @@ public struct TranslationPopoverView: View {
 
     public init(
         originalText: String,
+        isEditable: Bool = false,
         onClose: @escaping () -> Void,
         onReplace: @escaping (String) -> Void
     ) {
         self.originalText = originalText
+        self.isEditable = isEditable
         self.onClose = onClose
         self.onReplace = onReplace
     }
@@ -358,22 +361,24 @@ public struct TranslationPopoverView: View {
             .buttonStyle(.plain)
             .disabled(translationResult == nil)
 
-            // Replace in active app
-            Button(action: replaceOriginalText) {
-                HStack(spacing: 4) {
-                    Image(systemName: "arrow.triangle.2.circlepath")
-                        .font(.system(size: 10))
-                    Text("แทนที่คำเดิม")
-                        .font(.system(size: 11, weight: .medium))
+            // Replace in active app (only shown if selected element is genuinely editable)
+            if isEditable {
+                Button(action: replaceOriginalText) {
+                    HStack(spacing: 4) {
+                        Image(systemName: "arrow.triangle.2.circlepath")
+                            .font(.system(size: 10))
+                        Text("แทนที่คำเดิม")
+                            .font(.system(size: 11, weight: .medium))
+                    }
+                    .foregroundColor(Color(red: 0.4, green: 0.7, blue: 1.0))
+                    .padding(.horizontal, 9)
+                    .padding(.vertical, 5)
+                    .background(Color(red: 0.2, green: 0.4, blue: 0.8).opacity(0.25))
+                    .clipShape(RoundedRectangle(cornerRadius: 5))
                 }
-                .foregroundColor(Color(red: 0.4, green: 0.7, blue: 1.0))
-                .padding(.horizontal, 9)
-                .padding(.vertical, 5)
-                .background(Color(red: 0.2, green: 0.4, blue: 0.8).opacity(0.25))
-                .clipShape(RoundedRectangle(cornerRadius: 5))
+                .buttonStyle(.plain)
+                .disabled(translationResult == nil)
             }
-            .buttonStyle(.plain)
-            .disabled(translationResult == nil)
 
             Spacer()
 

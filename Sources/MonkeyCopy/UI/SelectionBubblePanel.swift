@@ -6,6 +6,7 @@ public final class SelectionBubblePanel: NSPanel {
 
     private var currentText: String = ""
     private var currentRect: CGRect = .zero
+    private var isCurrentSelectionEditable: Bool = false
     private var autoDismissTimer: Timer?
     private var globalClickMonitor: Any?
 
@@ -46,9 +47,10 @@ public final class SelectionBubblePanel: NSPanel {
         return false
     }
 
-    public func show(at rect: CGRect, selectedText: String) {
+    public func show(at rect: CGRect, selectedText: String, isEditable: Bool = false) {
         self.currentText = selectedText
         self.currentRect = rect
+        self.isCurrentSelectionEditable = isEditable
 
         // Position bubble snugly right next to the end of selection, centered vertically on text
         let endX = rect.width <= 2 ? rect.origin.x : rect.maxX
@@ -103,12 +105,13 @@ public final class SelectionBubblePanel: NSPanel {
     private func handleBubbleTap() {
         let text = self.currentText
         let targetPoint = CGPoint(x: self.frame.origin.x, y: self.frame.origin.y)
+        let isEditable = self.isCurrentSelectionEditable
         self.hide()
 
         // If we already have the text from Accessibility (e.g. TextEdit, Notes, Xcode):
         if !text.isEmpty {
             DispatchQueue.main.async {
-                TranslationPopoverPanel.shared.show(text: text, near: targetPoint)
+                TranslationPopoverPanel.shared.show(text: text, near: targetPoint, isEditable: isEditable)
             }
             return
         }
@@ -118,10 +121,10 @@ public final class SelectionBubblePanel: NSPanel {
         // - Back up user's previous clipboard
         // - Grab the text
         // - Immediately restore user's previous clipboard
-        fetchSelectedTextSafelyAndTranslate(targetPoint: targetPoint)
+        fetchSelectedTextSafelyAndTranslate(targetPoint: targetPoint, isEditable: isEditable)
     }
 
-    private func fetchSelectedTextSafelyAndTranslate(targetPoint: CGPoint) {
+    private func fetchSelectedTextSafelyAndTranslate(targetPoint: CGPoint, isEditable: Bool) {
         // Suppress clipboard monitoring so history is completely untouched
         ClipboardMonitor.shared.isCapturingSuppressed = true
 
@@ -175,7 +178,7 @@ public final class SelectionBubblePanel: NSPanel {
             }
 
             if TextSelectionMonitor.shared.isValidSelectionText(capturedText) {
-                TranslationPopoverPanel.shared.show(text: capturedText, near: targetPoint)
+                TranslationPopoverPanel.shared.show(text: capturedText, near: targetPoint, isEditable: isEditable)
             }
         }
     }

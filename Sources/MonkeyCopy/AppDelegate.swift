@@ -30,7 +30,7 @@ public final class AppDelegate: NSObject, NSApplicationDelegate {
 
         // Start text selection translator monitor
         TextSelectionMonitor.shared.onSelectionDetected = { event in
-            SelectionBubblePanel.shared.show(at: event.screenRect, selectedText: event.text)
+            SelectionBubblePanel.shared.show(at: event.screenRect, selectedText: event.text, isEditable: event.isEditable)
         }
         TextSelectionMonitor.shared.onSelectionCleared = {
             SelectionBubblePanel.shared.hide()
