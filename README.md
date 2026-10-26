@@ -2,25 +2,25 @@
 > **Windows-style Clipboard History (`Win + V`) & Emoji Picker for macOS**  
 > แอพพลิเคชัน Clipboard Manager สุดน่ารักและทรงพลังบน MacBook ใช้งานง่าย รวดเร็ว ดีไซน์ Clean Dark Theme พร้อมรองรับทั้งข้อความ รูปภาพ และอิโมจิในตัว!
 
-[![Release](https://img.shields.io/badge/Release-v2.0.0-success?style=for-the-badge&logo=github)](https://github.com/pakkawatkh/monkey-tools/releases/tag/v2.0.0)
+[![Release](https://img.shields.io/badge/Release-2.0.0--Beta-orange?style=for-the-badge&logo=github)](https://github.com/pakkawatkh/monkey-tools/releases/tag/2.0.0-Beta)
 [![Platform](https://img.shields.io/badge/Platform-macOS%2013%2B-lightgrey?style=for-the-badge&logo=apple)](https://github.com/pakkawatkh/monkey-tools)
 [![License](https://img.shields.io/badge/License-MIT-blue?style=for-the-badge)](https://github.com/pakkawatkh/monkey-tools)
 
 ---
 
-## 📥 ดาวน์โหลดตัวติดตั้ง (Download v2.0.0)
+## 📥 ดาวน์โหลดตัวติดตั้ง (Download v2.0.0-Beta)
 
-คุณสามารถดาวน์โหลดไฟล์ตัวติดตั้ง `.dmg` เวอร์ชัน 2.0.0 ล่าสุดได้โดยตรงจากลิงก์นี้:
+คุณสามารถดาวน์โหลดไฟล์ตัวติดตั้ง `.dmg` เวอร์ชัน 2.0.0-Beta ล่าสุดได้โดยตรงจากลิงก์นี้:
 
-[![Download DMG](https://img.shields.io/badge/Download-monkey--tools--Installer.dmg%20(v2.0.0)-blue?style=for-the-badge&logo=apple)](https://github.com/pakkawatkh/monkey-tools/releases/download/v2.0.0/monkey-tools-Installer.dmg)
+[![Download DMG](https://img.shields.io/badge/Download-monkey--tools--Installer.dmg%20(v2.0.0--Beta)-blue?style=for-the-badge&logo=apple)](https://github.com/pakkawatkh/monkey-tools/releases/download/2.0.0-Beta/monkey-tools-Installer.dmg)
 
 👉 **คลิกดาวน์โหลดที่นี่:**
-- **[Download monkey-tools-Installer.dmg (GitHub Release v2.0.0)](https://github.com/pakkawatkh/monkey-tools/releases/download/v2.0.0/monkey-tools-Installer.dmg)**
+- **[Download monkey-tools-Installer.dmg (GitHub Release 2.0.0-Beta)](https://github.com/pakkawatkh/monkey-tools/releases/download/2.0.0-Beta/monkey-tools-Installer.dmg)**
 - หรือดาวน์โหลดไฟล์ตรงจากคลัง: **[monkey-tools-Installer.dmg (Direct)](https://github.com/pakkawatkh/monkey-tools/raw/main/monkey-tools-Installer.dmg)**
 
 ---
 
-## 🚀 มีอะไรใหม่ในเวอร์ชัน 2.0.0 (Release Notes)
+## 🚀 มีอะไรใหม่ในเวอร์ชัน 2.0.0-Beta (Release Notes)
 
 - 🌟 **Rebranded to monkey-tools:** ปรับโฉมชื่อแอพพลิเคชันใหม่ ยกระดับสู่ศูนย์รวมเครื่องมือมัลติฟังก์ชัน
 - 🌐 **Selection Translator (ระบบแปลภาษาจากการคุมดำ):**
