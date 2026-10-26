@@ -2,25 +2,45 @@
 > **Windows-style Clipboard History (`Win + V`) & Emoji Picker for macOS**  
 > แอพพลิเคชัน Clipboard Manager สุดน่ารักและทรงพลังบน MacBook ใช้งานง่าย รวดเร็ว ดีไซน์ Clean Dark Theme พร้อมรองรับทั้งข้อความ รูปภาพ และอิโมจิในตัว!
 
-[![Release](https://img.shields.io/badge/Release-v1.0.0-success?style=for-the-badge&logo=github)](https://github.com/pakkawatkh/monkey-tools/releases/tag/v1.0.0)
+[![Release](https://img.shields.io/badge/Release-v2.0.0-success?style=for-the-badge&logo=github)](https://github.com/pakkawatkh/monkey-tools/releases/tag/v2.0.0)
 [![Platform](https://img.shields.io/badge/Platform-macOS%2013%2B-lightgrey?style=for-the-badge&logo=apple)](https://github.com/pakkawatkh/monkey-tools)
 [![License](https://img.shields.io/badge/License-MIT-blue?style=for-the-badge)](https://github.com/pakkawatkh/monkey-tools)
 
 ---
 
-## 📥 ดาวน์โหลดตัวติดตั้ง (Download v1.0.0)
+## 📥 ดาวน์โหลดตัวติดตั้ง (Download v2.0.0)
 
-คุณสามารถดาวน์โหลดไฟล์ตัวติดตั้ง `.dmg` เวอร์ชัน 1.0.0 ล่าสุดได้โดยตรงจากลิงก์นี้:
+คุณสามารถดาวน์โหลดไฟล์ตัวติดตั้ง `.dmg` เวอร์ชัน 2.0.0 ล่าสุดได้โดยตรงจากลิงก์นี้:
 
-[![Download DMG](https://img.shields.io/badge/Download-monkey--tools--Installer.dmg%20(v1.0.0)-blue?style=for-the-badge&logo=apple)](https://github.com/pakkawatkh/monkey-tools/releases/download/v1.0.0/monkey-tools-Installer.dmg)
+[![Download DMG](https://img.shields.io/badge/Download-monkey--tools--Installer.dmg%20(v2.0.0)-blue?style=for-the-badge&logo=apple)](https://github.com/pakkawatkh/monkey-tools/releases/download/v2.0.0/monkey-tools-Installer.dmg)
 
 👉 **คลิกดาวน์โหลดที่นี่:**
-- **[Download monkey-tools-Installer.dmg (GitHub Release v1.0.0)](https://github.com/pakkawatkh/monkey-tools/releases/download/v1.0.0/monkey-tools-Installer.dmg)**
+- **[Download monkey-tools-Installer.dmg (GitHub Release v2.0.0)](https://github.com/pakkawatkh/monkey-tools/releases/download/v2.0.0/monkey-tools-Installer.dmg)**
 - หรือดาวน์โหลดไฟล์ตรงจากคลัง: **[monkey-tools-Installer.dmg (Direct)](https://github.com/pakkawatkh/monkey-tools/raw/main/monkey-tools-Installer.dmg)**
 
 ---
 
-## 🚀 มีอะไรใหม่ในเวอร์ชัน 1.0.0 (Release Notes)
+## 🚀 มีอะไรใหม่ในเวอร์ชัน 2.0.0 (Release Notes)
+
+- 🌟 **Rebranded to monkey-tools:** ปรับโฉมชื่อแอพพลิเคชันใหม่ ยกระดับสู่ศูนย์รวมเครื่องมือมัลติฟังก์ชัน
+- 🌐 **Selection Translator (ระบบแปลภาษาจากการคุมดำ):**
+  - แสดงไอคอนลูกแก้วลอย (Floating Bubble) อัตโนมัติทันทีที่ใช้เมาส์ไฮไลท์ข้อความในแอพใดๆ
+  - รองรับการแปลภาษาครอบคลุมถึง **37 ภาษาทั่วโลก** (จัดหมวดหมู่: ภาษาใช้บ่อย, เอเชีย & อาเซียน, ยุโรป, ตะวันออกกลาง)
+  - รองรับ 2 เครื่องมือแปลภาษา: **Apple Native Translation Engine** (ออฟไลน์ รวดเร็ว ปลอดภัย) และ **Google Translate** (ออนไลน์ แปลแม่นยำ)
+  - 🔊 **Text-to-Speech:** ฟังเสียงอ่านออกเสียงข้อความต้นฉบับและคำแปล
+  - 🔄 **แทนที่คำเดิม (Replace Original Text):** แทนที่ข้อความที่คุมดำในช่องพิมพ์และโปรแกรมแชทได้ทันที
+  - ↔️ **สลับภาษา (Swap Languages):** สลับภาษาต้นทางและปลายทางได้ในคลิกเดียว
+  - 📐 **ปรับขนาดหน้าต่างได้ (Resizable):** ลากยืดหดมุมหน้าต่างเพื่อปรับขนาดตามต้องการ พร้อมจดจำขนาดไว้ให้อัตโนมัติ
+- 🌍 **App Language Localization:** เลือกลิ้นภาษาของหน้าต่างและการตั้งค่าได้ 3 ภาษา: **ภาษาไทย (Thai)**, **อังกฤษ (English)** และ **จีนประยุกต์ (Simplified Chinese)** หรือตั้งให้ตามภาษาเครื่อง
+- ⚡ **Condition-Based Selection & Multi-Monitor Support:**
+  - เพิ่มความเร็วการตรวจจับการไฮไลท์เร็วขึ้น 3 เท่า รองรับเบราว์เซอร์ Chrome, Safari, Slack, IDEs
+  - รองรับการใช้งานแบบหลายหน้าจอ (Multi-Monitor) ไม่หลุดขอบจอ
+  - รองรับการเลือกข้อความทั้ง Double Click, Triple Click และ Shift + Click
+- 📦 **Seamless Auto-Migration:** ย้ายประวัติคลิปบอร์ดเดิมจาก `monkey-copy` มายัง `monkey-tools` ให้อัตโนมัติ
+
+---
+
+## 🚀 ประวัติเวอร์ชันก่อนหน้า (v1.0.0)
 
 - 🐵 **Windows-Style Clipboard History:** กดคีย์ลัดเรียกหน้าต่างประวัติคลิปบอร์ดแบบลอย สไตล์ Windows `Win + V`
 - 🖼️ **รองรับทั้งข้อความและรูปภาพ:** คัดลอกรูปภาพจากการแคปหน้าจอ (`Cmd+Shift+4`), รูปจากเบราว์เซอร์ หรือไฟล์จาก Finder พร้อมพรีวิวรูปภาพ
@@ -36,6 +56,9 @@
 
 ## ✨ ฟีเจอร์เด่น (Key Features)
 
+- 🌐 **Selection Translator:** คุมดำข้อความเพื่อแปลภาษาได้ทันที มีไอคอนลอย (Floating Bubble) รองรับถึง 37 ภาษาทั่วโลก พร้อม Apple Native & Google Translate
+- 🔊 **Text-to-Speech & Replace In-Place:** ฟังเสียงอ่านออกเสียงคำแปล และกดปุ่มแทนที่ข้อความต้นฉบับได้ทันทีในโปรแกรมแชทและช่องพิมพ์
+- 🌍 **Multi-Language Interface:** เลือกลิ้นภาษาของแอพได้ 3 ภาษา (ไทย, อังกฤษ, จีน) หรือตั้งตามภาษาเครื่อง
 - ⌨️ **Global Shortcut:** กดคีย์ลัดเรียกหน้าต่างคลิปบอร์ดได้จากทุกโปรแกรม (ค่าเริ่มต้น `Command + Shift + V` หรือเลือกเปลี่ยนเป็น `Option + V` ได้)
 - 📝 **เก็บบันทึกประวัติการ Copy อัตโนมัติ:** คัดลอกข้อความติดต่อกันหลายๆ ครั้งได้โดยไม่หาย มีช่องค้นหา (Live Search) แบบเรียลไทม์
 - 🖼️ **รองรับการ Copy รูปภาพ (Image Clipboard):** รองรับทั้งภาพจากการแคปหน้าจอ (Screenshot `Cmd+Shift+4`), รูปจากเว็บเบราว์เซอร์ และไฟล์ภาพจาก Finder พร้อมพรีวิวภาพขนาดย่อ
