@@ -219,11 +219,9 @@ public struct TranslationPopoverView: View {
                     performTranslation()
                 }
                 Divider()
-                ForEach(SupportedLanguage.languages) { lang in
-                    Button("\(lang.flag) \(lang.name)") {
-                        sourceLanguage = lang.code
-                        performTranslation()
-                    }
+                languageMenuItems { selectedCode in
+                    sourceLanguage = selectedCode
+                    performTranslation()
                 }
             } label: {
                 HStack(spacing: 3) {
@@ -264,12 +262,10 @@ public struct TranslationPopoverView: View {
                     performTranslation()
                 }
                 Divider()
-                ForEach(SupportedLanguage.languages) { lang in
-                    Button("\(lang.flag) \(lang.name)") {
-                        settings.translationTargetLang = lang.code
-                        targetLanguage = lang.code
-                        performTranslation()
-                    }
+                languageMenuItems { selectedCode in
+                    settings.translationTargetLang = selectedCode
+                    targetLanguage = selectedCode
+                    performTranslation()
                 }
             } label: {
                 HStack(spacing: 3) {
@@ -306,17 +302,51 @@ public struct TranslationPopoverView: View {
         }
     }
 
+    @ViewBuilder
+    private func languageMenuItems(onSelect: @escaping (String) -> Void) -> some View {
+        ForEach(SupportedLanguage.popularLanguages) { lang in
+            Button("\(lang.flag) \(lang.name)") {
+                onSelect(lang.code)
+            }
+        }
+        Divider()
+        Menu("🌏 เอเชีย & อาเซียน") {
+            ForEach(SupportedLanguage.asianLanguages) { lang in
+                Button("\(lang.flag) \(lang.name)") {
+                    onSelect(lang.code)
+                }
+            }
+        }
+        Menu("🌍 ยุโรป") {
+            ForEach(SupportedLanguage.europeanLanguages) { lang in
+                Button("\(lang.flag) \(lang.name)") {
+                    onSelect(lang.code)
+                }
+            }
+        }
+        Menu("🌍 ตะวันออกกลาง & อื่นๆ") {
+            ForEach(SupportedLanguage.middleEasternLanguages) { lang in
+                Button("\(lang.flag) \(lang.name)") {
+                    onSelect(lang.code)
+                }
+            }
+        }
+    }
+
     private var sourceLanguageDisplayName: String {
         if sourceLanguage == "auto" {
             if let detected = translationResult?.sourceLanguage, let lang = SupportedLanguage.find(byCode: detected) {
                 return "\(lang.flag) \(lang.shortName)"
+            }
+            if let detected = translationResult?.sourceLanguage, !detected.isEmpty {
+                return "🌐 \(detected.uppercased())"
             }
             return "🌐 ตรวจจับ"
         }
         if let lang = SupportedLanguage.find(byCode: sourceLanguage) {
             return "\(lang.flag) \(lang.shortName)"
         }
-        return sourceLanguage
+        return sourceLanguage.uppercased()
     }
 
     private var targetLanguageDisplayName: String {

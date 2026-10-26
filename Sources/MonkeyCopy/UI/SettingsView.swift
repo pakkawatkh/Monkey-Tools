@@ -219,11 +219,29 @@ public struct SettingsView: View {
                                 Spacer()
                                 Picker("", selection: $settings.translationTargetLang) {
                                     Text("🌐 ตรวจจับอัตโนมัติ (Auto)").tag("auto")
-                                    ForEach(SupportedLanguage.languages) { lang in
-                                        Text("\(lang.flag) \(lang.name)").tag(lang.code)
+                                    Divider()
+                                    Section(header: Text("ภาษาที่ใช้บ่อย")) {
+                                        ForEach(SupportedLanguage.popularLanguages) { lang in
+                                            Text("\(lang.flag) \(lang.name)").tag(lang.code)
+                                        }
+                                    }
+                                    Section(header: Text("เอเชีย & อาเซียน")) {
+                                        ForEach(SupportedLanguage.asianLanguages) { lang in
+                                            Text("\(lang.flag) \(lang.name)").tag(lang.code)
+                                        }
+                                    }
+                                    Section(header: Text("ยุโรป")) {
+                                        ForEach(SupportedLanguage.europeanLanguages) { lang in
+                                            Text("\(lang.flag) \(lang.name)").tag(lang.code)
+                                        }
+                                    }
+                                    Section(header: Text("ตะวันออกกลาง & อื่นๆ")) {
+                                        ForEach(SupportedLanguage.middleEasternLanguages) { lang in
+                                            Text("\(lang.flag) \(lang.name)").tag(lang.code)
+                                        }
                                     }
                                 }
-                                .frame(width: 170)
+                                .frame(width: 190)
                             }
 
                             Text("💡 คุณยังสามารถคลิกสลับระหว่าง Google Translate และ Apple Native ได้โดยตรงจากหน้าต่างป็อปอัปคำแปล")

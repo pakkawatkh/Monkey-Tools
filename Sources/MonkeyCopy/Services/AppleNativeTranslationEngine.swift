@@ -32,14 +32,41 @@ public final class AppleNativeTranslationEngine: TranslationEngine {
         case "ko":
             return result.unicodeScalars.contains { ($0.value >= 0xAC00 && $0.value <= 0xD7AF) || ($0.value >= 0x1100 && $0.value <= 0x11FF) }
 
-        case "ru":
+        case "ru", "uk":
             return result.unicodeScalars.contains { $0.value >= 0x0400 && $0.value <= 0x04FF }
+
+        case "ar", "fa":
+            return result.unicodeScalars.contains { $0.value >= 0x0600 && $0.value <= 0x06FF }
+
+        case "hi":
+            return result.unicodeScalars.contains { $0.value >= 0x0900 && $0.value <= 0x097F }
+
+        case "bn":
+            return result.unicodeScalars.contains { $0.value >= 0x0980 && $0.value <= 0x09FF }
+
+        case "ta":
+            return result.unicodeScalars.contains { $0.value >= 0x0B80 && $0.value <= 0x0BFF }
+
+        case "lo":
+            return result.unicodeScalars.contains { $0.value >= 0x0E80 && $0.value <= 0x0EFF }
+
+        case "my":
+            return result.unicodeScalars.contains { $0.value >= 0x1000 && $0.value <= 0x109F }
+
+        case "km":
+            return result.unicodeScalars.contains { $0.value >= 0x1780 && $0.value <= 0x17FF }
+
+        case "he":
+            return result.unicodeScalars.contains { $0.value >= 0x0590 && $0.value <= 0x05FF }
+
+        case "el":
+            return result.unicodeScalars.contains { $0.value >= 0x0370 && $0.value <= 0x03FF }
 
         case "en":
             return result.unicodeScalars.contains { CharacterSet.letters.contains($0) }
 
         default:
-            // For other languages (es, fr, de, vi):
+            // For other languages (es, fr, de, vi, it, pt, nl, pl, sv, no, da, fi, cs, hu, ro, id, ms, tl, tr):
             // The default macOS dictionary (Oxford English) contains English grammar markers.
             // If the target language is NOT English, reject monolingual English dictionary definitions.
             let lower = result.lowercased()
