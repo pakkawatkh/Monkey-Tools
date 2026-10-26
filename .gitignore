@@ -11,6 +11,11 @@ DerivedData/
 # Built App Bundles
 *.app/
 *.app.dSYM/
+
+# Disk Images & Installers
+*.dmg
+.build_dmg/
+
 /.agents
 skills-lock.json
 /.superpowers

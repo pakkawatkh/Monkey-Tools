@@ -16,7 +16,7 @@
 
 👉 **คลิกดาวน์โหลดที่นี่:**
 - **[Download monkey-tools-Installer.dmg (GitHub Release 2.0.0-Beta)](https://github.com/pakkawatkh/monkey-tools/releases/download/2.0.0-Beta/monkey-tools-Installer.dmg)**
-- หรือดาวน์โหลดไฟล์ตรงจากคลัง: **[monkey-tools-Installer.dmg (Direct)](https://github.com/pakkawatkh/monkey-tools/raw/main/monkey-tools-Installer.dmg)**
+- **[ดูรายการ Release ทั้งหมด (All Releases)](https://github.com/pakkawatkh/monkey-tools/releases)**
 
 ---
 
