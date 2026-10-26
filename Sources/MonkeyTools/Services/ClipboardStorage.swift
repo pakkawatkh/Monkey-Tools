@@ -12,13 +12,16 @@ public final class ClipboardStorage {
             self.storageURL = customURL
         } else {
             let appSupport = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
-            let appDir = appSupport.appendingPathComponent("monkey-copy", isDirectory: true)
+            let appDir = appSupport.appendingPathComponent("monkey-tools", isDirectory: true)
+            let legacyCopyDir = appSupport.appendingPathComponent("monkey-copy", isDirectory: true)
             let bxxsDir = appSupport.appendingPathComponent("bxxs-clipboard", isDirectory: true)
             let macDir = appSupport.appendingPathComponent("MacClipboard", isDirectory: true)
 
             // Auto-migrate from previous directories if present
             if !fileManager.fileExists(atPath: appDir.path) {
-                if fileManager.fileExists(atPath: bxxsDir.path) {
+                if fileManager.fileExists(atPath: legacyCopyDir.path) {
+                    try? fileManager.copyItem(at: legacyCopyDir, to: appDir)
+                } else if fileManager.fileExists(atPath: bxxsDir.path) {
                     try? fileManager.copyItem(at: bxxsDir, to: appDir)
                 } else if fileManager.fileExists(atPath: macDir.path) {
                     try? fileManager.copyItem(at: macDir, to: appDir)
@@ -32,7 +35,7 @@ public final class ClipboardStorage {
             self.imagesDirectory = customImagesURL
         } else {
             let appSupport = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
-            let appDir = appSupport.appendingPathComponent("monkey-copy", isDirectory: true)
+            let appDir = appSupport.appendingPathComponent("monkey-tools", isDirectory: true)
             self.imagesDirectory = appDir.appendingPathComponent("images", isDirectory: true)
         }
 

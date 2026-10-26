@@ -160,4 +160,10 @@ final class ClipboardManagerTests: XCTestCase {
         XCTAssertEqual(manager.filteredItems.count, 1)
         XCTAssertEqual(manager.filteredItems.first?.type, .image)
     }
+
+    func testStorageDirectoryName() {
+        let defaultStorage = ClipboardStorage()
+        XCTAssertTrue(defaultStorage.storageURL.path.contains("monkey-tools"))
+        XCTAssertTrue(defaultStorage.imagesDirectory.path.contains("monkey-tools"))
+    }
 }
