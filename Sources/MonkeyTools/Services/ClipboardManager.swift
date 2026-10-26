@@ -47,9 +47,19 @@ public final class ClipboardManager: ObservableObject {
         }
 
         // Pinned first, then sorted by timestamp descending
-        let pinned = baseItems.filter { $0.isPinned }.sorted { $0.timestamp > $1.timestamp }
-        let unpinned = baseItems.filter { !$0.isPinned }.sorted { $0.timestamp > $1.timestamp }
-        return pinned + unpinned
+        var pinned: [ClipboardItem] = []
+        var unpinned: [ClipboardItem] = []
+        for item in baseItems {
+            if item.isPinned {
+                pinned.append(item)
+            } else {
+                unpinned.append(item)
+            }
+        }
+        pinned.sort { $0.timestamp > $1.timestamp }
+        unpinned.sort { $0.timestamp > $1.timestamp }
+        pinned.append(contentsOf: unpinned)
+        return pinned
     }
 
     /// Add a new text string copied from clipboard

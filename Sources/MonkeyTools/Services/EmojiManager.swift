@@ -2,7 +2,7 @@ import Foundation
 import Combine
 
 public struct EmojiItem: Identifiable, Hashable {
-    public let id = UUID()
+    public var id: String { char }
     public let char: String
     public let name: String
     public let keywords: String
@@ -66,37 +66,39 @@ public final class EmojiManager: ObservableObject {
     public var filteredEmojis: [String] {
         let query = searchQuery.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
         if !query.isEmpty {
-            // Search all emojis
-            return allEmojis.filter { item in
-                item.char.contains(query) ||
-                item.name.lowercased().contains(query) ||
-                item.keywords.lowercased().contains(query)
-            }.map { $0.char }
+            return Self.allEmojiItems.compactMap { item in
+                (item.char.contains(query) ||
+                 item.name.lowercased().contains(query) ||
+                 item.keywords.lowercased().contains(query)) ? item.char : nil
+            }
         }
 
         switch selectedCategory {
         case .recent:
             return recentEmojis
         case .smileys:
-            return smileyList.map { $0.char }
+            return Self.smileyChars
         case .gestures:
-            return gestureList.map { $0.char }
+            return Self.gestureChars
         case .animals:
-            return animalList.map { $0.char }
+            return Self.animalChars
         case .food:
-            return foodList.map { $0.char }
+            return Self.foodChars
         case .symbols:
-            return symbolList.map { $0.char }
+            return Self.symbolChars
         }
     }
 
-    private var allEmojis: [EmojiItem] {
-        return smileyList + gestureList + animalList + foodList + symbolList
-    }
+    private static let allEmojiItems: [EmojiItem] = smileyList + gestureList + animalList + foodList + symbolList
+    private static let smileyChars: [String] = smileyList.map { $0.char }
+    private static let gestureChars: [String] = gestureList.map { $0.char }
+    private static let animalChars: [String] = animalList.map { $0.char }
+    private static let foodChars: [String] = foodList.map { $0.char }
+    private static let symbolChars: [String] = symbolList.map { $0.char }
 
     // MARK: - Emoji Data Lists
 
-    private let smileyList: [EmojiItem] = [
+    private static let smileyList: [EmojiItem] = [
         EmojiItem("😀", "Grinning Face", "smile happy ยิ้ม หัวเราะ"),
         EmojiItem("😃", "Grinning Face with Big Eyes", "smile happy ยิ้ม"),
         EmojiItem("😄", "Grinning Face with Smiling Eyes", "smile happy ยิ้ม"),
@@ -198,7 +200,7 @@ public final class EmojiManager: ObservableObject {
         EmojiItem("🤖", "Robot", "bot หุ่นยนต์ โรบ็อต")
     ]
 
-    private let gestureList: [EmojiItem] = [
+    private static let gestureList: [EmojiItem] = [
         EmojiItem("👋", "Waving Hand", "wave hello bye โบกมือ หวัดดี บาย"),
         EmojiItem("🤚", "Raised Back of Hand", "hand stop มือ"),
         EmojiItem("✋", "Raised Hand", "high five หยุด ห้า"),
@@ -246,7 +248,7 @@ public final class EmojiManager: ObservableObject {
         EmojiItem("👄", "Mouth", "lips ปาก จูบ")
     ]
 
-    private let animalList: [EmojiItem] = [
+    private static let animalList: [EmojiItem] = [
         EmojiItem("🐵", "Monkey Face", "monkey primate ลิง หน้ารูปลิง"),
         EmojiItem("🐒", "Monkey", "monkey animal ลิงทั้งตัว"),
         EmojiItem("🦍", "Gorilla", "gorilla ape คิงคอง กอริลล่า"),
@@ -303,7 +305,7 @@ public final class EmojiManager: ObservableObject {
         EmojiItem("🍄", "Mushroom", "mushroom เห็ด")
     ]
 
-    private let foodList: [EmojiItem] = [
+    private static let foodList: [EmojiItem] = [
         EmojiItem("🍌", "Banana", "banana monkey กล้วย"),
         EmojiItem("🍎", "Red Apple", "apple แอปเปิ้ล"),
         EmojiItem("🍊", "Tangerine", "orange ส้ม"),
@@ -346,7 +348,7 @@ public final class EmojiManager: ObservableObject {
         EmojiItem("🧃", "Beverage Box", "juice น้ำผลไม้ กล่อง")
     ]
 
-    private let symbolList: [EmojiItem] = [
+    private static let symbolList: [EmojiItem] = [
         EmojiItem("❤️", "Red Heart", "heart love หัวใจ รัก แดง"),
         EmojiItem("🧡", "Orange Heart", "heart ส้ม"),
         EmojiItem("💛", "Yellow Heart", "heart เหลือง"),

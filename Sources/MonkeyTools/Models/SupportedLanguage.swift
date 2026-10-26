@@ -73,8 +73,15 @@ public struct SupportedLanguage: Identifiable, Hashable {
     // All supported languages (37 languages in total)
     public static let languages: [SupportedLanguage] = popularLanguages + asianLanguages + europeanLanguages + middleEasternLanguages
 
+    private static let lookupByCode: [String: SupportedLanguage] = {
+        var map = [String: SupportedLanguage](minimumCapacity: languages.count)
+        for lang in languages {
+            map[lang.code.lowercased()] = lang
+        }
+        return map
+    }()
+
     public static func find(byCode code: String) -> SupportedLanguage? {
-        let lower = code.lowercased()
-        return languages.first { $0.code.lowercased() == lower }
+        return lookupByCode[code.lowercased()]
     }
 }

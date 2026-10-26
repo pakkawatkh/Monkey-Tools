@@ -7,7 +7,7 @@ PROJECT_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
 cd "${PROJECT_DIR}"
 
 echo "🔨 Building monkey-tools (Release mode)..."
-swift build -c release
+swift build -c release -Xswiftc -cross-module-optimization
 
 RELEASE_BIN="${PROJECT_DIR}/.build/release/monkey-tools"
 APP_DIR="${PROJECT_DIR}/monkey-tools.app"
@@ -21,6 +21,7 @@ mkdir -p "${MACOS_DIR}"
 mkdir -p "${RESOURCES_DIR}"
 
 cp "${RELEASE_BIN}" "${MACOS_DIR}/monkey-tools"
+strip "${MACOS_DIR}/monkey-tools"
 chmod +x "${MACOS_DIR}/monkey-tools"
 
 if [ -d "${PROJECT_DIR}/Resources" ]; then
