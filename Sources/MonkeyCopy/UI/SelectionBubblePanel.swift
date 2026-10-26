@@ -61,11 +61,20 @@ public final class SelectionBubblePanel: NSPanel {
         var bubbleX = endX + 4
         var bubbleY = centerY - 13 // Centered vertically (26pt height / 2)
 
-        // Prevent overflow beyond screen bounds
-        if let screen = NSScreen.main {
+        // Prevent overflow beyond screen bounds on the specific screen containing this selection
+        let targetPoint = CGPoint(x: endX, y: centerY)
+        let screen = NSScreen.screens.first { $0.frame.contains(targetPoint) }
+                  ?? NSScreen.screens.first { $0.frame.contains(NSEvent.mouseLocation) }
+                  ?? NSScreen.main
+                  ?? NSScreen.screens.first
+
+        if let screen = screen {
             let screenFrame = screen.visibleFrame
             if bubbleX + 30 > screenFrame.maxX {
                 bubbleX = (rect.width <= 2 ? rect.origin.x : rect.minX) - 30
+            }
+            if bubbleX + 30 > screenFrame.maxX {
+                bubbleX = screenFrame.maxX - 30
             }
             if bubbleY + 30 > screenFrame.maxY {
                 bubbleY = screenFrame.maxY - 30
@@ -191,7 +200,7 @@ public final class SelectionBubblePanel: NSPanel {
         globalClickMonitor = NSEvent.addGlobalMonitorForEvents(matching: [.leftMouseDown, .rightMouseDown]) { [weak self] _ in
             guard let self = self, self.isVisible else { return }
             let mouseLocation = NSEvent.mouseLocation
-            if !self.frame.contains(mouseLocation) {
+            if !self.frame.insetBy(dx: -4, dy: -4).contains(mouseLocation) {
                 DispatchQueue.main.async {
                     self.hide()
                 }

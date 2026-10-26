@@ -94,4 +94,46 @@ final class TextSelectionMonitorTests: XCTestCase {
         )
         XCTAssertFalse(popoverReadOnly.isEditable)
     }
+
+    func testValidSelectionTextWithMixedScriptsAndSymbols() {
+        let monitor = TextSelectionMonitor.shared
+
+        // Sentences with punctuation & quotes
+        XCTAssertTrue(monitor.isValidTranslatableText("\"Hello, world!\""))
+        XCTAssertTrue(monitor.isValidTranslatableText("Is this working?"))
+        XCTAssertTrue(monitor.isValidTranslatableText("(Note:สำคัญมาก)"))
+        XCTAssertTrue(monitor.isValidTranslatableText("Total: 500 บาท"))
+        XCTAssertTrue(monitor.isValidTranslatableText("第1章：はじめに"))
+        XCTAssertTrue(monitor.isValidTranslatableText("Русский текст с знаками!"))
+
+        // Pure numbers or symbols without letters must still be rejected
+        XCTAssertFalse(monitor.isValidTranslatableText("$100.00"))
+        XCTAssertFalse(monitor.isValidTranslatableText("--- 12345 ---"))
+        XCTAssertFalse(monitor.isValidTranslatableText("(+66) 81-234-5678"))
+    }
+
+    func testSelectionBubblePanelShowSafety() {
+        let panel = SelectionBubblePanel.shared
+
+        // Show at typical coordinate
+        panel.show(at: CGRect(x: 200, y: 300, width: 50, height: 20), selectedText: "Sample", sourceAppPID: 0, isEditable: false)
+        XCTAssertTrue(panel.frame.origin.x > 0)
+        XCTAssertTrue(panel.frame.origin.y > 0)
+
+        // Show at extreme right edge of screen (should clamp safely)
+        panel.show(at: CGRect(x: 99999, y: 500, width: 1, height: 1), selectedText: "Edge", sourceAppPID: 0, isEditable: false)
+        let mainWidth = NSScreen.main?.visibleFrame.maxX ?? 1440
+        XCTAssertLessThanOrEqual(panel.frame.maxX, mainWidth + 50)
+
+        panel.hide()
+    }
+
+    func testTextSelectionMonitorMonitoringLifecycle() {
+        let monitor = TextSelectionMonitor.shared
+        // Safe to call multiple times without leaking monitors or crashing
+        monitor.startMonitoring()
+        monitor.startMonitoring()
+        monitor.stopMonitoring()
+        monitor.stopMonitoring()
+    }
 }

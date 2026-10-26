@@ -76,7 +76,12 @@ public final class TranslationPopoverPanel: NSPanel, NSWindowDelegate {
         var targetX = screenPoint.x
         var targetY = screenPoint.y - popoverHeight
 
-        if let screen = NSScreen.main {
+        let screen = NSScreen.screens.first { $0.frame.contains(screenPoint) }
+                  ?? NSScreen.screens.first { $0.frame.contains(NSEvent.mouseLocation) }
+                  ?? NSScreen.main
+                  ?? NSScreen.screens.first
+
+        if let screen = screen {
             let visible = screen.visibleFrame
             if targetX + popoverWidth > visible.maxX {
                 targetX = visible.maxX - (popoverWidth + 4)

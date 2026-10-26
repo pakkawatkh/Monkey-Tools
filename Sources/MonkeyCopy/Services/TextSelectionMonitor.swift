@@ -28,6 +28,7 @@ public final class TextSelectionMonitor: ObservableObject {
     private var mouseDownLocation: CGPoint = .zero
     private var isDragging = false
     private var lastClickCount: Int = 1
+    private var isProbeInProgress = false
 
     private init() {}
 
@@ -92,19 +93,20 @@ public final class TextSelectionMonitor: ObservableObject {
         case .leftMouseDragged:
             let current = NSEvent.mouseLocation
             let dist = hypot(current.x - mouseDownLocation.x, current.y - mouseDownLocation.y)
-            if dist > 3.0 {
+            if dist > 7.0 {
                 isDragging = true
             }
 
         case .leftMouseUp:
             let mouseLoc = NSEvent.mouseLocation
             let dist = hypot(mouseLoc.x - mouseDownLocation.x, mouseLoc.y - mouseDownLocation.y)
-            let isDoubleClick = event.clickCount >= 2 || lastClickCount >= 2
-            let isDrag = isDragging || dist > 3.0
+            let isMultiClick = event.clickCount >= 2 || lastClickCount >= 2
+            let isDrag = isDragging || dist > 7.0
+            let isShiftClick = event.modifierFlags.contains(.shift)
             isDragging = false
 
-            if isDrag || isDoubleClick {
-                scheduleSelectionCheck(isDoubleClick: isDoubleClick)
+            if isDrag || isMultiClick || isShiftClick {
+                scheduleSelectionCheck(isDoubleClick: isMultiClick)
             }
 
         default:
@@ -133,14 +135,10 @@ public final class TextSelectionMonitor: ObservableObject {
         let mouseLoc = NSEvent.mouseLocation
 
         // Method 1: Try Accessibility API first (fast for native text fields like TextEdit, Mail, Xcode, Notes)
-        if let axText = queryAXSelectedText(pid: pid) {
-            if isValidTranslatableText(axText.text) {
-                let editable = isElementEditable(pid: pid, mouseLoc: mouseLoc)
-                let event = TextSelectionEvent(text: axText.text, screenRect: axText.bounds, sourceAppPID: pid, isEditable: editable)
-                onSelectionDetected?(event)
-            } else {
-                onSelectionCleared?()
-            }
+        if let axText = queryAXSelectedText(pid: pid), isValidTranslatableText(axText.text) {
+            let editable = isElementEditable(pid: pid, mouseLoc: mouseLoc)
+            let event = TextSelectionEvent(text: axText.text, screenRect: axText.bounds, sourceAppPID: pid, isEditable: editable)
+            onSelectionDetected?(event)
             return
         }
 
@@ -150,6 +148,9 @@ public final class TextSelectionMonitor: ObservableObject {
     }
 
     private func probeNonAXSelection(pid: pid_t, mouseLoc: CGPoint, isDoubleClick: Bool) {
+        guard !isProbeInProgress else { return }
+        isProbeInProgress = true
+
         let pasteboard = NSPasteboard.general
         let oldChangeCount = pasteboard.changeCount
 
@@ -183,6 +184,7 @@ public final class TextSelectionMonitor: ObservableObject {
         guard let keyDown = CGEvent(keyboardEventSource: source, virtualKey: cKeyCode, keyDown: true),
               let keyUp = CGEvent(keyboardEventSource: source, virtualKey: cKeyCode, keyDown: false) else {
             ClipboardMonitor.shared.isCapturingSuppressed = false
+            isProbeInProgress = false
             return
         }
 
@@ -194,21 +196,8 @@ public final class TextSelectionMonitor: ObservableObject {
             keyUp.post(tap: .cgSessionEventTap)
         }
 
-        // 4. Inspect result after 110ms and IMMEDIATELY restore user's original clipboard
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.11) { [weak self] in
-            guard let self = self else {
-                ClipboardMonitor.shared.isCapturingSuppressed = false
-                return
-            }
-
-            let capturedChangeCount = pasteboard.changeCount
-            let capturedText = pasteboard.string(forType: .string) ?? ""
-            let types = pasteboard.types ?? []
-            let isImageType = types.contains {
-                $0 == .tiff || $0 == .png || $0.rawValue.contains("image")
-            }
-
-            // Immediately restore the user's previous clipboard contents
+        // Helper to restore clipboard backup
+        let restoreBackup = {
             pasteboard.clearContents()
             for backup in backupItems {
                 let item = NSPasteboardItem()
@@ -217,22 +206,53 @@ public final class TextSelectionMonitor: ObservableObject {
                 }
                 pasteboard.writeObjects([item])
             }
-
-            // Restore monitoring state after brief debounce
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.12) {
                 ClipboardMonitor.shared.lastChangeCount = pasteboard.changeCount
                 ClipboardMonitor.shared.isCapturingSuppressed = false
             }
+        }
 
-            // If translatable text was captured:
-            if capturedChangeCount != oldChangeCount {
-                // If it is an image without translatable text -> DO NOT SHOW BUBBLE
+        // 4. Condition-based polling:
+        // Poll every 15ms starting at 25ms, up to ~240ms (16 attempts).
+        // As soon as pasteboard.changeCount updates, we evaluate immediately.
+        var attempts = 0
+        let maxAttempts = 16
+        var checkTimer: Timer?
+
+        let cleanup = { [weak self] in
+            checkTimer?.invalidate()
+            checkTimer = nil
+            self?.isProbeInProgress = false
+        }
+
+        checkTimer = Timer.scheduledTimer(withTimeInterval: 0.015, repeats: true) { [weak self] timer in
+            guard let self = self else {
+                timer.invalidate()
+                ClipboardMonitor.shared.isCapturingSuppressed = false
+                return
+            }
+
+            attempts += 1
+            let currentChangeCount = pasteboard.changeCount
+
+            if currentChangeCount != oldChangeCount {
+                timer.invalidate()
+                let capturedText = pasteboard.string(forType: .string) ?? ""
+                let types = pasteboard.types ?? []
+                let isImageType = types.contains {
+                    $0 == .tiff || $0 == .png || $0.rawValue.contains("image")
+                }
+
+                restoreBackup()
+                cleanup()
+
+                // If image without translatable text -> dismiss
                 if isImageType && !self.isValidTranslatableText(capturedText) {
                     self.onSelectionCleared?()
                     return
                 }
 
-                // If captured text is whitespace, pure numbers, punctuation -> DO NOT SHOW BUBBLE
+                // If captured text is whitespace, pure numbers, punctuation -> dismiss
                 if !self.isValidTranslatableText(capturedText) {
                     self.onSelectionCleared?()
                     return
@@ -246,17 +266,22 @@ public final class TextSelectionMonitor: ObservableObject {
                 return
             }
 
-            // Fallback for double-click on words in applications that intercept or slow synthetic copy:
-            // When a user double-clicks, a word is guaranteed to be selected!
-            if isDoubleClick {
-                let editable = self.isElementEditable(pid: pid, mouseLoc: mouseLoc)
-                let rect = CGRect(x: mouseLoc.x, y: mouseLoc.y, width: 1, height: 1)
-                let event = TextSelectionEvent(text: "", screenRect: rect, sourceAppPID: pid, isEditable: editable)
-                self.onSelectionDetected?(event)
-            } else {
-                self.onSelectionCleared?()
+            if attempts >= maxAttempts {
+                timer.invalidate()
+                restoreBackup()
+                cleanup()
+
+                if isDoubleClick {
+                    let editable = self.isElementEditable(pid: pid, mouseLoc: mouseLoc)
+                    let rect = CGRect(x: mouseLoc.x, y: mouseLoc.y, width: 1, height: 1)
+                    let event = TextSelectionEvent(text: "", screenRect: rect, sourceAppPID: pid, isEditable: editable)
+                    self.onSelectionDetected?(event)
+                } else {
+                    self.onSelectionCleared?()
+                }
             }
         }
+        RunLoop.main.add(checkTimer!, forMode: .common)
     }
 
     private func queryAXSelectedText(pid: pid_t) -> (text: String, bounds: CGRect)? {
@@ -271,7 +296,9 @@ public final class TextSelectionMonitor: ObservableObject {
 
         var selectedTextObj: AnyObject?
         let textResult = AXUIElementCopyAttributeValue(element, kAXSelectedTextAttribute as CFString, &selectedTextObj)
-        guard textResult == .success, let text = selectedTextObj as? String else {
+        guard textResult == .success,
+              let text = selectedTextObj as? String,
+              !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
             return nil
         }
 
@@ -295,9 +322,9 @@ public final class TextSelectionMonitor: ObservableObject {
             if boundsResult == .success, let boundsVal = boundsVal {
                 var rect = CGRect.zero
                 if AXValueGetValue(boundsVal as! AXValue, .cgRect, &rect) && rect.width > 0 && rect.height > 0 {
-                    // Convert AX coordinate (top-left origin) to Cocoa screen coordinate (bottom-left origin)
-                    if let mainScreen = NSScreen.main {
-                        let screenHeight = mainScreen.frame.height
+                    // Convert AX coordinate (top-left origin of primary screen) to Cocoa screen coordinate (bottom-left origin)
+                    if let primaryScreen = NSScreen.screens.first {
+                        let screenHeight = primaryScreen.frame.height
                         rect.origin.y = screenHeight - (rect.origin.y + rect.height)
                     }
                     return rect
