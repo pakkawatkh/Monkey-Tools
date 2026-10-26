@@ -51,7 +51,7 @@ public final class TranslationPopoverPanel: NSPanel, NSWindowDelegate {
         return true
     }
 
-    public func show(text: String, near screenPoint: CGPoint, isEditable: Bool = false) {
+    public func show(text: String, near screenPoint: CGPoint, sourceAppPID: pid_t = 0, isEditable: Bool = false) {
         let popoverView = TranslationPopoverView(
             originalText: text,
             isEditable: isEditable,
@@ -60,10 +60,7 @@ public final class TranslationPopoverPanel: NSPanel, NSWindowDelegate {
             },
             onReplace: { [weak self] translated in
                 self?.hide()
-                // Use AutoPaster to paste translated text into active window
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                    AutoPaster.shared.pasteEmoji(translated)
-                }
+                AutoPaster.shared.replaceOriginalText(with: translated, inAppWithPID: sourceAppPID)
             }
         )
 

@@ -65,6 +65,18 @@ final class TextSelectionMonitorTests: XCTestCase {
         XCTAssertFalse(monitor.isElementEditable(pid: 999999))
     }
 
+    func testIsEditorOrChatApp() {
+        let monitor = TextSelectionMonitor.shared
+        // Current process is not an editor/chat app
+        XCTAssertFalse(monitor.isEditorOrChatApp(pid: -1))
+    }
+
+    func testAutoPasterReplaceOriginalTextInterface() {
+        // Test that replaceOriginalText can be invoked safely with invalid PID without crashing
+        AutoPaster.shared.replaceOriginalText(with: "Test Replacement", inAppWithPID: -1)
+        XCTAssertEqual(NSPasteboard.general.string(forType: .string), "Test Replacement")
+    }
+
     func testTranslationPopoverViewIsEditableInit() {
         let popoverEditable = TranslationPopoverView(
             originalText: "Hello",

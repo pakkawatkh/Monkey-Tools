@@ -136,6 +136,46 @@ public final class AutoPaster: ObservableObject {
         }
     }
 
+    /// Replaces the currently selected original text in the target application with the translated text.
+    /// Uses native Accessibility attribute replacement first if possible; otherwise reactivates the app and pastes via Cmd + V.
+    public func replaceOriginalText(with newText: String, inAppWithPID pid: pid_t) {
+        let pasteboard = NSPasteboard.general
+        ClipboardMonitor.shared.markProgrammaticWrite(text: newText)
+        pasteboard.clearContents()
+        pasteboard.setString(newText, forType: .string)
+
+        let targetApp = (pid > 0 ? NSRunningApplication(processIdentifier: pid) : nil) ?? previousApp
+
+        // Attempt 1: Direct Accessibility Replacement
+        // If the target element supports setting kAXSelectedTextAttribute (e.g. TextEdit, Notes, Mail, Xcode),
+        // we can set the text directly and immediately!
+        if pid > 0 {
+            let appElement = AXUIElementCreateApplication(pid)
+            var focusedObj: AnyObject?
+            if AXUIElementCopyAttributeValue(appElement, kAXFocusedUIElementAttribute as CFString, &focusedObj) == .success,
+               let focused = focusedObj {
+                let el = focused as! AXUIElement
+                var isSelSettable: DarwinBoolean = false
+                if AXUIElementIsAttributeSettable(el, kAXSelectedTextAttribute as CFString, &isSelSettable) == .success,
+                   isSelSettable.boolValue {
+                    let setRes = AXUIElementSetAttributeValue(el, kAXSelectedTextAttribute as CFString, newText as CFTypeRef)
+                    if setRes == .success {
+                        targetApp?.activate()
+                        return
+                    }
+                }
+            }
+        }
+
+        // Attempt 2: Reactivate the application and synthesize Cmd + V
+        // Give 160ms for window manager to bring target window to front and restore first responder focus
+        targetApp?.activate()
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.16) { [weak self] in
+            guard let self = self else { return }
+            self.simulateCmdV()
+        }
+    }
+
     /// Synthesizes exactly ONE Command + V keystroke into the active session
     private func simulateCmdV() {
         let source = CGEventSource(stateID: .combinedSessionState)

@@ -311,7 +311,12 @@ public final class TextSelectionMonitor: ObservableObject {
     }
 
     public func isElementEditable(pid: pid_t, mouseLoc: CGPoint? = nil) -> Bool {
+        guard pid > 0 else { return false }
+
         let appElement = AXUIElementCreateApplication(pid)
+
+        // Enable AX on Chromium/Electron apps so they populate inner elements
+        AXUIElementSetAttributeValue(appElement, "AXEnhancedUserInterface" as CFString, kCFBooleanTrue)
 
         // 1. Check focused element of the application
         var focusedElementObj: AnyObject?
@@ -335,7 +340,7 @@ public final class TextSelectionMonitor: ObservableObject {
             }
         }
 
-        // 3. Check element under mouse position if provided
+        // 3. Check element under mouse position and its ancestors (e.g. text node inside an input or textarea in a browser)
         if let mouseLoc = mouseLoc {
             let screenHeight = NSScreen.screens.first?.frame.height ?? 1080
             let axPoint = CGPoint(x: mouseLoc.x, y: screenHeight - mouseLoc.y)
@@ -345,52 +350,84 @@ public final class TextSelectionMonitor: ObservableObject {
                 if isAXElementEditable(el) {
                     return true
                 }
+
+                // Check up to 3 parent levels (e.g. static text child inside an <input> or <textarea>)
+                var current = el
+                for _ in 0..<3 {
+                    var parentObj: AnyObject?
+                    if AXUIElementCopyAttributeValue(current, kAXParentAttribute as CFString, &parentObj) == .success,
+                       let parent = parentObj {
+                        let parentEl = parent as! AXUIElement
+                        if isAXElementEditable(parentEl) {
+                            return true
+                        }
+                        current = parentEl
+                    } else {
+                        break
+                    }
+                }
             }
+        }
+
+        // 4. App-level heuristics:
+        // If the frontmost app is an editor, IDE, or chat app (NOT a static viewer like Preview/Books),
+        // text selected in it is typable/editable.
+        if isEditorOrChatApp(pid: pid) {
+            return true
         }
 
         return false
     }
 
-    public func isAXElementEditable(_ element: AXUIElement) -> Bool {
-        // 1. Check settability of SelectedText (standard in AppKit, WebKit, Chromium for text selection replacement)
-        var isSelSettable: DarwinBoolean = false
-        let selRes = AXUIElementIsAttributeSettable(element, kAXSelectedTextAttribute as CFString, &isSelSettable)
-        if selRes == .success && isSelSettable.boolValue {
-            return true
+    public func isEditorOrChatApp(pid: pid_t) -> Bool {
+        guard let app = NSRunningApplication(processIdentifier: pid),
+              let bundleId = app.bundleIdentifier?.lowercased() else {
+            return false
         }
-
-        // 2. Check settability of Value (used by text fields and inputs)
-        var isValSettable: DarwinBoolean = false
-        let valRes = AXUIElementIsAttributeSettable(element, kAXValueAttribute as CFString, &isValSettable)
-        if valRes == .success && isValSettable.boolValue {
-            // Confirm it's a text-like element rather than a slider, stepper, or checkbox
-            var roleObj: AnyObject?
-            AXUIElementCopyAttributeValue(element, kAXRoleAttribute as CFString, &roleObj)
-            let role = (roleObj as? String) ?? ""
-            if role == "AXTextField" || role == "AXTextArea" || role == "AXSearchField" || role == "AXWebArea" || role.isEmpty {
+        let editorKeywords = [
+            "textedit", "notes", "xcode", "code", "sublime", "atom", "bbedit",
+            "intellij", "goland", "pycharm", "webstorm", "clion", "rider",
+            "dbeaver", "datagrip", "postman", "terminal", "iterm",
+            "word", "excel", "powerpoint", "pages", "numbers", "keynote",
+            "slack", "line", "teams", "telegram", "discord", "whatsapp",
+            "messages", "skype", "wechat", "kiro"
+        ]
+        for kw in editorKeywords {
+            if bundleId.contains(kw) {
                 return true
             }
         }
+        return false
+    }
 
-        // 3. Check subrole for explicit editable marker
-        var subroleObj: AnyObject?
-        AXUIElementCopyAttributeValue(element, kAXSubroleAttribute as CFString, &subroleObj)
-        let subrole = (subroleObj as? String) ?? ""
-        if subrole == "AXEditableText" {
-            return true
-        }
-
-        // 4. If both settability checks succeeded and both reported false, the element is explicitly read-only (e.g. read-only web page, PDF, static text)
-        if selRes == .success && valRes == .success && !isSelSettable.boolValue && !isValSettable.boolValue {
-            return false
-        }
-
-        // 5. Fallback for roles that are inherently editable if settability check was unsupported (-25204)
+    public func isAXElementEditable(_ element: AXUIElement) -> Bool {
         var roleObj: AnyObject?
         AXUIElementCopyAttributeValue(element, kAXRoleAttribute as CFString, &roleObj)
         let role = (roleObj as? String) ?? ""
-        if role == "AXTextField" || role == "AXTextArea" || role == "AXSearchField" {
+
+        var subroleObj: AnyObject?
+        AXUIElementCopyAttributeValue(element, kAXSubroleAttribute as CFString, &subroleObj)
+        let subrole = (subroleObj as? String) ?? ""
+
+        // 1. Roles that are inherently editable text fields or text areas
+        if role == "AXTextField" || role == "AXTextArea" || role == "AXSearchField" || subrole == "AXEditableText" {
             return true
+        }
+
+        // 2. Settability of SelectedText (AppKit NSTextView, WebKit editable text)
+        var isSelSettable: DarwinBoolean = false
+        if AXUIElementIsAttributeSettable(element, kAXSelectedTextAttribute as CFString, &isSelSettable) == .success,
+           isSelSettable.boolValue {
+            return true
+        }
+
+        // 3. Settability of Value (single line inputs, text fields)
+        var isValSettable: DarwinBoolean = false
+        if AXUIElementIsAttributeSettable(element, kAXValueAttribute as CFString, &isValSettable) == .success,
+           isValSettable.boolValue {
+            if role != "AXSlider" && role != "AXCheckBox" && role != "AXButton" && role != "AXProgressIndicator" && role != "AXScrollArea" && role != "AXWebArea" {
+                return true
+            }
         }
 
         return false
