@@ -63,4 +63,20 @@ final class TranslationServiceTests: XCTestCase {
         XCTAssertEqual(service.resolveTargetLanguage(for: "สรุปผล (ทุก card)"), "en")
         XCTAssertEqual(service.resolveTargetLanguage(for: "สวัสดี"), "en")
     }
+
+    func testGoogleTranslateBinariesWord() async throws {
+        let engine = GoogleTranslationEngine()
+        let result = try await engine.translate(text: "binaries", from: "auto", to: "th")
+        XCTAssertEqual(result.targetLanguage, "th")
+        XCTAssertFalse(result.translatedText.isEmpty)
+        XCTAssertTrue(result.translatedText.contains("ไบนารี") || result.translatedText.contains("ฐานสอง"))
+    }
+
+    func testAppleNativeTranslateBinariesWord() async throws {
+        let engine = AppleNativeTranslationEngine()
+        let result = try await engine.translate(text: "binaries", from: "auto", to: "th")
+        XCTAssertEqual(result.targetLanguage, "th")
+        XCTAssertFalse(result.translatedText.isEmpty)
+        XCTAssertTrue(result.translatedText.contains("ไบนารี") || result.translatedText.contains("ฐานสอง"))
+    }
 }
