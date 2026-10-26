@@ -1,10 +1,10 @@
-# 🐵 monkey-copy 📋
+# 🐵 monkey-tools 📋
 > **Windows-style Clipboard History (`Win + V`) & Emoji Picker for macOS**  
 > แอพพลิเคชัน Clipboard Manager สุดน่ารักและทรงพลังบน MacBook ใช้งานง่าย รวดเร็ว ดีไซน์ Clean Dark Theme พร้อมรองรับทั้งข้อความ รูปภาพ และอิโมจิในตัว!
 
-[![Release](https://img.shields.io/badge/Release-v1.0.0-success?style=for-the-badge&logo=github)](https://github.com/pakkawatkh/monkey-copy/releases/tag/v1.0.0)
-[![Platform](https://img.shields.io/badge/Platform-macOS%2013%2B-lightgrey?style=for-the-badge&logo=apple)](https://github.com/pakkawatkh/monkey-copy)
-[![License](https://img.shields.io/badge/License-MIT-blue?style=for-the-badge)](https://github.com/pakkawatkh/monkey-copy)
+[![Release](https://img.shields.io/badge/Release-v1.0.0-success?style=for-the-badge&logo=github)](https://github.com/pakkawatkh/monkey-tools/releases/tag/v1.0.0)
+[![Platform](https://img.shields.io/badge/Platform-macOS%2013%2B-lightgrey?style=for-the-badge&logo=apple)](https://github.com/pakkawatkh/monkey-tools)
+[![License](https://img.shields.io/badge/License-MIT-blue?style=for-the-badge)](https://github.com/pakkawatkh/monkey-tools)
 
 ---
 
@@ -12,11 +12,11 @@
 
 คุณสามารถดาวน์โหลดไฟล์ตัวติดตั้ง `.dmg` เวอร์ชัน 1.0.0 ล่าสุดได้โดยตรงจากลิงก์นี้:
 
-[![Download DMG](https://img.shields.io/badge/Download-monkey--copy--Installer.dmg%20(v1.0.0)-blue?style=for-the-badge&logo=apple)](https://github.com/pakkawatkh/monkey-copy/releases/download/v1.0.0/monkey-copy-Installer.dmg)
+[![Download DMG](https://img.shields.io/badge/Download-monkey--tools--Installer.dmg%20(v1.0.0)-blue?style=for-the-badge&logo=apple)](https://github.com/pakkawatkh/monkey-tools/releases/download/v1.0.0/monkey-tools-Installer.dmg)
 
 👉 **คลิกดาวน์โหลดที่นี่:**
-- **[Download monkey-copy-Installer.dmg (GitHub Release v1.0.0)](https://github.com/pakkawatkh/monkey-copy/releases/download/v1.0.0/monkey-copy-Installer.dmg)**
-- หรือดาวน์โหลดไฟล์ตรงจากคลัง: **[monkey-copy-Installer.dmg (Direct)](https://github.com/pakkawatkh/monkey-copy/raw/main/monkey-copy-Installer.dmg)**
+- **[Download monkey-tools-Installer.dmg (GitHub Release v1.0.0)](https://github.com/pakkawatkh/monkey-tools/releases/download/v1.0.0/monkey-tools-Installer.dmg)**
+- หรือดาวน์โหลดไฟล์ตรงจากคลัง: **[monkey-tools-Installer.dmg (Direct)](https://github.com/pakkawatkh/monkey-tools/raw/main/monkey-tools-Installer.dmg)**
 
 ---
 
@@ -51,13 +51,13 @@
 ## 🚀 วิธีติดตั้ง (Installation Guide)
 
 1. **ดาวน์โหลดไฟล์ตัวติดตั้ง:**  
-   ดาวน์โหลดไฟล์ **`monkey-copy-Installer.dmg`** จากลิงก์ด้านบน
+   ดาวน์โหลดไฟล์ **`monkey-tools-Installer.dmg`** จากลิงก์ด้านบน
 2. **เปิดไฟล์ DMG:**  
-   ดับเบิ้ลคลิกที่ไฟล์ `monkey-copy-Installer.dmg` ที่ดาวน์โหลดมา
+   ดับเบิ้ลคลิกที่ไฟล์ `monkey-tools-Installer.dmg` ที่ดาวน์โหลดมา
 3. **ติดตั้งลงเครื่อง:**  
-   ลากไอคอน **monkey-copy** ไปวางที่ไอคอนโฟลเดอร์ **Applications**
+   ลากไอคอน **monkey-tools** ไปวางที่ไอคอนโฟลเดอร์ **Applications**
 4. **เปิดใช้งานแอพ:**  
-   เปิดแอพพลิเคชัน **monkey-copy** จากโฟลเดอร์ Applications, Spotlight (`Cmd + Space` แล้วพิมพ์ monkey-copy) หรือ Launchpad
+   เปิดแอพพลิเคชัน **monkey-tools** จากโฟลเดอร์ Applications, Spotlight (`Cmd + Space` แล้วพิมพ์ monkey-tools) หรือ Launchpad
 
 ---
 
@@ -67,8 +67,8 @@
 
 1. เปิด **System Settings** บน Mac
 2. ไปที่เมนู **Privacy & Security** (ความเป็นส่วนตัวและความปลอดภัย) > **Accessibility** (การช่วยการเข้าถึง)
-3. มองหาชื่อ **monkey-copy** แล้วเปิดสวิตช์ให้เป็น **สีฟ้า (อนุญาต)**
-   *(หากยังไม่ขึ้นในรายการ ให้กดเครื่องหมาย `+` แล้วเลือก monkey-copy จากโฟลเดอร์ Applications)*
+3. มองหาชื่อ **monkey-tools** แล้วเปิดสวิตช์ให้เป็น **สีฟ้า (อนุญาต)**
+   *(หากยังไม่ขึ้นในรายการ ให้กดเครื่องหมาย `+` แล้วเลือก monkey-tools จากโฟลเดอร์ Applications)*
 
 > [!TIP]
 > การตั้งค่านี้ทำเพียงครั้งเดียว ระบบจะจดจำสิทธิ์อย่างถาวร แม้จะปิดเปิดเครื่องใหม่ก็ไม่ต้องตั้งค่าซ้ำครับ
@@ -106,7 +106,7 @@
 
 | คีย์ลัด | การทำงาน |
 | :--- | :--- |
-| **`Cmd + Shift + V`** *(ปรับแต่งได้)* | เปิด / ปิด หน้าต่าง monkey-copy |
+| **`Cmd + Shift + V`** *(ปรับแต่งได้)* | เปิด / ปิด หน้าต่าง monkey-tools |
 | **`↑` / `↓`** | เลื่อนเลือกรายการในประวัติ |
 | **`Enter`** | วางรายการที่เลือกอยู่ลงในโปรแกรมเดิม |
 | **`Esc`** | ปิดหน้าต่าง |
@@ -117,7 +117,7 @@
 ## ⚙️ การตั้งค่าและปรับแต่งคีย์ลัด (Preferences)
 
 คุณสามารถเปิดหน้าต่าง Settings ได้ 2 ทาง:
-1. กดไอคอนรูปฟันเฟือง **⚙️** ที่มุมขวาบนของหน้าต่าง monkey-copy
+1. กดไอคอนรูปฟันเฟือง **⚙️** ที่มุมขวาบนของหน้าต่าง monkey-tools
 2. หรือคลิกที่ไอคอนลิง 🐵 บนแถบ Menu Bar ด้านบน แล้วเลือก **Settings...** (หรือกด `Cmd + ,`)
 
 ### สิ่งที่ปรับแต่งได้:
@@ -134,8 +134,8 @@
 
 ```bash
 # Clone repository
-git clone https://github.com/pakkawatkh/monkey-copy.git
-cd monkey-copy
+git clone https://github.com/pakkawatkh/monkey-tools.git
+cd monkey-tools
 
 # รัน Unit Tests (Swift Testing & XCTest)
 swift test
