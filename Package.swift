@@ -2,27 +2,27 @@
 import PackageDescription
 
 let package = Package(
-    name: "monkey-copy",
+    name: "monkey-tools",
     platforms: [
         .macOS(.v13)
     ],
     products: [
         .executable(
-            name: "monkey-copy",
-            targets: ["MonkeyCopy"]
+            name: "monkey-tools",
+            targets: ["MonkeyTools"]
         )
     ],
     dependencies: [],
     targets: [
         .executableTarget(
-            name: "MonkeyCopy",
+            name: "MonkeyTools",
             dependencies: [],
-            path: "Sources/MonkeyCopy"
+            path: "Sources/MonkeyTools"
         ),
         .testTarget(
-            name: "MonkeyCopyTests",
-            dependencies: ["MonkeyCopy"],
-            path: "Tests/MonkeyCopyTests"
+            name: "MonkeyToolsTests",
+            dependencies: ["MonkeyTools"],
+            path: "Tests/MonkeyToolsTests"
         )
     ]
 )

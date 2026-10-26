@@ -1,5 +1,5 @@
 import XCTest
-@testable import MonkeyCopy
+@testable import MonkeyTools
 
 final class TranslationSettingsTests: XCTestCase {
     func testTranslationSettingsDefaults() {
