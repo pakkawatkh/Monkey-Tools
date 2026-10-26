@@ -11,7 +11,7 @@ public final class SettingsWindowController: NSWindowController {
             backing: .buffered,
             defer: false
         )
-        window.title = "monkey-copy Preferences"
+        window.title = "monkey-tools Preferences"
         window.isReleasedWhenClosed = false
         window.appearance = NSAppearance(named: .darkAqua)
         window.center()

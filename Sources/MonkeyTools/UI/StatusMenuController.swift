@@ -17,7 +17,7 @@ public final class StatusMenuController: NSObject {
         let monkeyIcon = createMonkeyTemplateIcon()
         button.image = monkeyIcon
         button.imagePosition = .imageOnly
-        button.toolTip = "monkey-copy (คลิกเพื่อเปิดการตั้งค่า / Settings)"
+        button.toolTip = "monkey-tools (คลิกเพื่อเปิดการตั้งค่า / Settings)"
 
         button.target = self
         button.action = #selector(statusItemClicked(_:))

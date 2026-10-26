@@ -126,7 +126,7 @@ public final class TextSelectionMonitor: ObservableObject {
     public func checkSelectedText(isDoubleClick: Bool = false) {
         guard let frontApp = NSWorkspace.shared.frontmostApplication else { return }
 
-        // Don't trigger for monkey-copy's own windows
+        // Don't trigger for monkey-tools's own windows
         if frontApp.bundleIdentifier == Bundle.main.bundleIdentifier {
             return
         }
@@ -170,7 +170,7 @@ public final class TextSelectionMonitor: ObservableObject {
             }
         }
 
-        // 2. Suppress clipboard monitor capture so monkey-copy never records this probe
+        // 2. Suppress clipboard monitor capture so monkey-tools never records this probe
         ClipboardMonitor.shared.isCapturingSuppressed = true
 
         // 3. Post momentary Cmd + C into active session

@@ -82,7 +82,7 @@ public final class LocalizationManager: ObservableObject {
         "cat_middle_east": ["th": "🌍 ตะวันออกกลาง & อื่นๆ", "en": "🌍 Middle East & Others", "zh": "🌍 中东及其他"],
 
         // Settings Window
-        "settings_title": ["th": "การตั้งค่า monkey-copy", "en": "monkey-copy Settings", "zh": "monkey-copy 设置"],
+        "settings_title": ["th": "การตั้งค่า monkey-tools", "en": "monkey-tools Settings", "zh": "monkey-tools 设置"],
         "settings_general": ["th": "ทั่วไป (General)", "en": "General", "zh": "通用"],
         "settings_hotkey": ["th": "คีย์ลัด (Hotkeys)", "en": "Hotkeys", "zh": "快捷键"],
         "settings_translator": ["th": "การแปลภาษา (Selection Translator)", "en": "Selection Translator", "zh": "划词翻译"],
@@ -106,14 +106,14 @@ public final class LocalizationManager: ObservableObject {
         "settings_tip_text": ["th": "💡 คุณยังสามารถคลิกสลับระหว่าง Google Translate และ Apple Native ได้โดยตรงจากหน้าต่างป็อปอัปคำแปล", "en": "💡 You can also toggle between Google Translate and Apple Native directly in the translation popover.", "zh": "💡 您也可以直接在翻译弹窗中切换 Google Translate 和 Apple 原生翻译。"],
 
         // Status Menu Bar
-        "menu_show_monkey": ["th": "เปิด monkey-copy", "en": "Show monkey-copy", "zh": "打开 monkey-copy"],
+        "menu_show_monkey": ["th": "เปิด monkey-tools", "en": "Show monkey-tools", "zh": "打开 monkey-tools"],
         "menu_history_count": ["th": "ประวัติ:", "en": "History:", "zh": "历史记录："],
         "menu_clear_unpinned": ["th": "ล้างประวัติที่ไม่ตรึง", "en": "Clear Unpinned History", "zh": "清空未固定记录"],
         "menu_clear_all": ["th": "ล้างประวัติทั้งหมด", "en": "Clear All History", "zh": "清空所有记录"],
         "menu_access_granted": ["th": "✓ ได้รับสิทธิ์ Accessibility แล้ว", "en": "✓ Accessibility Granted", "zh": "✓ 已获得辅助功能权限"],
         "menu_access_enable": ["th": "⚠️ เปิดการตั้งค่า Accessibility...", "en": "⚠️ Enable Accessibility...", "zh": "⚠️ 开启辅助功能权限..."],
         "menu_settings_item": ["th": "การตั้งค่า...", "en": "Settings...", "zh": "偏好设置..."],
-        "menu_quit_item": ["th": "ออกจาก monkey-copy", "en": "Quit monkey-copy", "zh": "退出 monkey-copy"]
+        "menu_quit_item": ["th": "ออกจาก monkey-tools", "en": "Quit monkey-tools", "zh": "退出 monkey-tools"]
     ]
 
     private init() {

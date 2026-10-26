@@ -5,10 +5,10 @@ public final class AppDelegate: NSObject, NSApplicationDelegate {
 
     public func applicationDidFinishLaunching(_ notification: Notification) {
         // Prevent duplicate instances
-        let bundleId = Bundle.main.bundleIdentifier ?? "com.local.monkey-copy"
+        let bundleId = Bundle.main.bundleIdentifier ?? "com.local.monkey-tools"
         let instances = NSRunningApplication.runningApplications(withBundleIdentifier: bundleId)
         if instances.count > 1 {
-            print("[monkey-copy] Another instance is already running. Exiting duplicate.")
+            print("[monkey-tools] Another instance is already running. Exiting duplicate.")
             NSApp.terminate(nil)
             return
         }
@@ -39,7 +39,7 @@ public final class AppDelegate: NSObject, NSApplicationDelegate {
             TextSelectionMonitor.shared.startMonitoring()
         }
 
-        print("[monkey-copy] Application started successfully. Press your shortcut to show clipboard.")
+        print("[monkey-tools] Application started successfully. Press your shortcut to show clipboard.")
     }
 
     public func applicationWillTerminate(_ notification: Notification) {
