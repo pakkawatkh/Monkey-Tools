@@ -107,41 +107,42 @@ public final class StatusMenuController: NSObject {
 
     public func showMenu() {
         let menu = NSMenu()
+        let loc = LocalizationManager.shared
 
         let shortcutDisplay = AppSettings.shared.hotkeyDisplayString
-        let showItem = NSMenuItem(title: "Show monkey-copy (\(shortcutDisplay))", action: #selector(togglePanel), keyEquivalent: "")
+        let showItem = NSMenuItem(title: "\(loc["menu_show_monkey"]) (\(shortcutDisplay))", action: #selector(togglePanel), keyEquivalent: "")
         showItem.target = self
         menu.addItem(showItem)
 
         menu.addItem(NSMenuItem.separator())
 
         let count = ClipboardManager.shared.items.count
-        let countItem = NSMenuItem(title: "History: \(count) items", action: nil, keyEquivalent: "")
+        let countItem = NSMenuItem(title: "\(loc["menu_history_count"]) \(count) \(loc["items_count"])", action: nil, keyEquivalent: "")
         countItem.isEnabled = false
         menu.addItem(countItem)
 
-        let clearUnpinned = NSMenuItem(title: "Clear Unpinned History", action: #selector(clearUnpinnedHistory), keyEquivalent: "")
+        let clearUnpinned = NSMenuItem(title: loc["menu_clear_unpinned"], action: #selector(clearUnpinnedHistory), keyEquivalent: "")
         clearUnpinned.target = self
         menu.addItem(clearUnpinned)
 
-        let clearAll = NSMenuItem(title: "Clear All History", action: #selector(clearAllHistory), keyEquivalent: "")
+        let clearAll = NSMenuItem(title: loc["menu_clear_all"], action: #selector(clearAllHistory), keyEquivalent: "")
         clearAll.target = self
         menu.addItem(clearAll)
 
         menu.addItem(NSMenuItem.separator())
 
-        let accessStatus = AutoPaster.shared.isAccessibilityGranted ? "✓ Accessibility Granted" : "⚠️ Enable Accessibility..."
+        let accessStatus = AutoPaster.shared.isAccessibilityGranted ? loc["menu_access_granted"] : loc["menu_access_enable"]
         let accessItem = NSMenuItem(title: accessStatus, action: #selector(openAccessibilitySettings), keyEquivalent: "")
         accessItem.target = self
         menu.addItem(accessItem)
 
-        let settingsItem = NSMenuItem(title: "Settings...", action: #selector(openSettings), keyEquivalent: ",")
+        let settingsItem = NSMenuItem(title: loc["menu_settings_item"], action: #selector(openSettings), keyEquivalent: ",")
         settingsItem.target = self
         menu.addItem(settingsItem)
 
         menu.addItem(NSMenuItem.separator())
 
-        let quitItem = NSMenuItem(title: "Quit monkey-copy", action: #selector(quitApp), keyEquivalent: "q")
+        let quitItem = NSMenuItem(title: loc["menu_quit_item"], action: #selector(quitApp), keyEquivalent: "q")
         quitItem.target = self
         menu.addItem(quitItem)
 

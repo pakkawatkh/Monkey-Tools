@@ -16,6 +16,7 @@ public final class AppSettings: ObservableObject {
         static let selectionTranslateEnabled = "app_selection_translate_enabled"
         static let translationEngineMode = "app_translation_engine_mode"
         static let translationTargetLang = "app_translation_target_lang"
+        static let appLanguage = "app_ui_language"
     }
 
     @Published public var hotkeyKeyCode: UInt32 {
@@ -74,6 +75,13 @@ public final class AppSettings: ObservableObject {
         }
     }
 
+    @Published public var appLanguage: String {
+        didSet {
+            UserDefaults.standard.set(appLanguage, forKey: Keys.appLanguage)
+            LocalizationManager.shared.setLanguage(fromCode: appLanguage)
+        }
+    }
+
     public init() {
         let defaults = UserDefaults.standard
 
@@ -87,6 +95,7 @@ public final class AppSettings: ObservableObject {
         let savedSelectionTranslate = defaults.object(forKey: Keys.selectionTranslateEnabled) as? Bool
         let savedEngineRaw = defaults.string(forKey: Keys.translationEngineMode)
         let savedTargetLang = defaults.string(forKey: Keys.translationTargetLang)
+        let savedAppLanguage = defaults.string(forKey: Keys.appLanguage)
 
         self.hotkeyKeyCode = savedKeyCode ?? 9
         self.hotkeyModifiers = savedModifiers ?? UInt32(cmdKey | shiftKey)
@@ -97,6 +106,7 @@ public final class AppSettings: ObservableObject {
         self.selectionTranslateEnabled = savedSelectionTranslate ?? true
         self.translationEngineMode = (savedEngineRaw.flatMap(TranslationEngineMode.init(rawValue:))) ?? .google
         self.translationTargetLang = savedTargetLang ?? "auto"
+        self.appLanguage = savedAppLanguage ?? "system"
     }
 
     public func setHotKey(keyCode: UInt32, modifiers: UInt32, display: String) {

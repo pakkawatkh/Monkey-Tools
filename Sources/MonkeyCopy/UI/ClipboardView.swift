@@ -10,6 +10,7 @@ public struct ClipboardView: View {
     @ObservedObject var autoPaster: AutoPaster = .shared
     @ObservedObject var settings: AppSettings = .shared
     @ObservedObject var emojiManager: EmojiManager = .shared
+    @ObservedObject var loc: LocalizationManager = .shared
 
     public var onSelect: (ClipboardItem) -> Void
     public var onClose: () -> Void
@@ -79,16 +80,16 @@ public struct ClipboardView: View {
             isSearchFocused = true
             autoPaster.refreshAccessibilityStatus()
         }
-        .alert("Clear clipboard history?", isPresented: $showingClearConfirmation) {
-            Button("Cancel", role: .cancel) {}
-            Button("Clear (Keep Pinned)", role: .none) {
+        .alert(loc["clear_history_alert_title"], isPresented: $showingClearConfirmation) {
+            Button(loc["cancel"], role: .cancel) {}
+            Button(loc["clear_keep_pinned"], role: .none) {
                 manager.clearAll(includingPinned: false)
             }
-            Button("Clear Everything", role: .destructive) {
+            Button(loc["clear_everything"], role: .destructive) {
                 manager.clearAll(includingPinned: true)
             }
         } message: {
-            Text("Do you want to clear unpinned history or everything?")
+            Text(loc["clear_history_alert_msg"])
         }
     }
 
@@ -106,8 +107,8 @@ public struct ClipboardView: View {
             HStack(spacing: 6) {
                 // Tab Switcher (Clipboard vs Emoji)
                 HStack(spacing: 2) {
-                    tabButton(title: "Clipboard", icon: "doc.on.clipboard", tab: .clipboard)
-                    tabButton(title: "Emoji", icon: "face.smiling", tab: .emoji)
+                    tabButton(title: loc["tab_clipboard"], icon: "doc.on.clipboard", tab: .clipboard)
+                    tabButton(title: loc["tab_emoji"], icon: "face.smiling", tab: .emoji)
                 }
                 .padding(2)
                 .background(Color.white.opacity(0.08))
@@ -128,7 +129,7 @@ public struct ClipboardView: View {
                         .overlay(Circle().stroke(Color.white.opacity(0.12), lineWidth: 1))
                 }
                 .buttonStyle(.plain)
-                .help("Settings...")
+                .help(loc["menu_settings_item"])
 
                 // Close button
                 Button(action: onClose) {
@@ -141,7 +142,7 @@ public struct ClipboardView: View {
                         .overlay(Circle().stroke(Color.white.opacity(0.12), lineWidth: 1))
                 }
                 .buttonStyle(.plain)
-                .help("Close (Esc)")
+                .help(loc["shortcut_esc"])
             }
 
             // Search Bar
@@ -181,7 +182,7 @@ public struct ClipboardView: View {
             if activeTab == .clipboard {
                 ZStack(alignment: .leading) {
                     if manager.searchQuery.isEmpty {
-                        Text("Search history... (↑↓)")
+                        Text(loc["search_placeholder"])
                             .font(.system(size: 12))
                             .foregroundColor(Color.white.opacity(0.55))
                     }
@@ -203,7 +204,7 @@ public struct ClipboardView: View {
             } else {
                 ZStack(alignment: .leading) {
                     if emojiManager.searchQuery.isEmpty {
-                        Text("Search emojis... (e.g. smile, heart, ลิง)")
+                        Text(loc["search_emoji_placeholder"])
                             .font(.system(size: 12))
                             .foregroundColor(Color.white.opacity(0.55))
                     }
@@ -240,13 +241,13 @@ public struct ClipboardView: View {
                 .foregroundColor(Color(red: 0.4, green: 0.7, blue: 1.0))
                 .font(.system(size: 11))
 
-            Text("Enable Accessibility to Auto-Paste")
+            Text(loc["enable_accessibility"])
                 .font(.system(size: 10))
                 .foregroundColor(Color.white.opacity(0.9))
 
             Spacer()
 
-            Button("Enable") {
+            Button(loc["enable_btn"]) {
                 AutoPaster.shared.openAccessibilitySettings()
                 DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
                     autoPaster.refreshAccessibilityStatus()
@@ -309,19 +310,19 @@ public struct ClipboardView: View {
                 .foregroundColor(Color.white.opacity(0.35))
 
             if manager.searchQuery.isEmpty {
-                Text("Clipboard is empty")
+                Text(loc["clipboard_empty"])
                     .font(.system(size: 13, weight: .semibold))
                     .foregroundColor(.white)
-                Text("Copy text or images (⌘C) to build your history.")
+                Text(loc["clipboard_empty_hint"])
                     .font(.system(size: 11))
                     .foregroundColor(Color.white.opacity(0.70))
                     .multilineTextAlignment(.center)
                     .padding(.horizontal, 24)
             } else {
-                Text("No matching results")
+                Text(loc["no_results"])
                     .font(.system(size: 13, weight: .semibold))
                     .foregroundColor(.white)
-                Text("Try searching for text or 'image'.")
+                Text(loc["no_results_hint"])
                     .font(.system(size: 11))
                     .foregroundColor(Color.white.opacity(0.70))
             }
@@ -332,16 +333,16 @@ public struct ClipboardView: View {
     private var bottomBar: some View {
         HStack(spacing: 8) {
             if activeTab == .clipboard {
-                Text("\(manager.filteredItems.count) items")
+                Text("\(manager.filteredItems.count) \(loc["items_count"])")
                     .font(.system(size: 10, weight: .medium, design: .monospaced))
                     .foregroundColor(Color.white.opacity(0.75))
 
                 Spacer()
 
                 HStack(spacing: 4) {
-                    Text("↑↓ Navigate")
+                    Text("↑↓")
                     Text("•")
-                    Text("↵ Paste")
+                    Text(loc["shortcut_enter_paste"])
                 }
                 .font(.system(size: 10, weight: .medium))
                 .foregroundColor(Color.white.opacity(0.65))
@@ -364,18 +365,18 @@ public struct ClipboardView: View {
                 }
                 .buttonStyle(.plain)
                 .disabled(manager.items.isEmpty)
-                .help("Clear history")
+                .help(loc["clear_history"])
             } else {
                 HStack(spacing: 4) {
                     Text("💡")
-                    Text("Click any emoji to paste directly")
+                    Text(loc["click_emoji_hint"])
                         .font(.system(size: 10, weight: .medium))
                         .foregroundColor(Color.white.opacity(0.75))
                 }
 
                 Spacer()
 
-                Text("Esc Close")
+                Text(loc["shortcut_esc"])
                     .font(.system(size: 10, weight: .medium))
                     .foregroundColor(Color.white.opacity(0.65))
             }

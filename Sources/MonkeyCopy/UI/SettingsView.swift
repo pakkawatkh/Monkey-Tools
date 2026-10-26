@@ -5,6 +5,7 @@ import AppKit
 public struct SettingsView: View {
     @ObservedObject var settings = AppSettings.shared
     @ObservedObject var autoPaster = AutoPaster.shared
+    @ObservedObject var loc = LocalizationManager.shared
     @State private var isRecordingCustom = false
     @State private var localMonitor: Any?
 
@@ -16,7 +17,7 @@ public struct SettingsView: View {
             HStack(spacing: 12) {
                 Text("🐵")
                     .font(.system(size: 22))
-                Text("monkey-copy Settings")
+                Text(loc["settings_title"])
                     .font(.headline)
                 Spacer()
             }
@@ -29,12 +30,12 @@ public struct SettingsView: View {
                 VStack(alignment: .leading, spacing: 20) {
                     // MARK: - Hotkey Section
                     VStack(alignment: .leading, spacing: 12) {
-                        Text("คีย์ลัดสำหรับเปิด Clipboard (Activation Shortcut)")
+                        Text(loc["settings_hotkey_heading"])
                             .font(.system(size: 13, weight: .bold))
 
                         // Current active shortcut badge
                         HStack(spacing: 12) {
-                            Text("คีย์ลัดปัจจุบัน:")
+                            Text(loc["settings_custom_hotkey"] + ":")
                                 .font(.system(size: 13))
                                 .foregroundColor(.secondary)
 
@@ -57,7 +58,7 @@ public struct SettingsView: View {
                             }) {
                                 HStack(spacing: 6) {
                                     Image(systemName: isRecordingCustom ? "record.circle.fill" : "keyboard")
-                                    Text(isRecordingCustom ? "กดปุ่มบนคีย์บอร์ดเลย..." : "กดเพื่อบันทึกคีย์ลัดใหม่")
+                                    Text(isRecordingCustom ? loc["settings_press_shortcut"] : loc["settings_click_to_record"])
                                 }
                                 .font(.system(size: 12, weight: .medium))
                             }
@@ -120,21 +121,41 @@ public struct SettingsView: View {
 
                     // MARK: - General Section
                     VStack(alignment: .leading, spacing: 14) {
-                        Text("การตั้งค่าทั่วไป (General)")
+                        Text(loc["settings_general"])
                             .font(.system(size: 13, weight: .bold))
+
+                        // App UI Language Picker
+                        HStack {
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(loc["app_language"])
+                                    .font(.system(size: 13))
+                                Text(loc["app_language_desc"])
+                                    .font(.system(size: 11))
+                                    .foregroundColor(.secondary)
+                            }
+                            Spacer()
+                            Picker("", selection: $settings.appLanguage) {
+                                ForEach(AppLanguage.allCases) { lang in
+                                    Text(lang.displayName).tag(lang.rawValue)
+                                }
+                            }
+                            .frame(width: 200)
+                        }
+
+                        Divider()
 
                         // Max history count
                         HStack {
-                            Text("จำนวนประวัติสูงสุดที่บันทึก:")
+                            Text(loc["settings_max_records"])
                                 .font(.system(size: 13))
                             Spacer()
                             Picker("", selection: $settings.maxHistoryCount) {
-                                Text("50 รายการ").tag(50)
-                                Text("100 รายการ").tag(100)
-                                Text("200 รายการ").tag(200)
-                                Text("500 รายการ").tag(500)
+                                Text("50 \(loc["records_count_suffix"])").tag(50)
+                                Text("100 \(loc["records_count_suffix"])").tag(100)
+                                Text("200 \(loc["records_count_suffix"])").tag(200)
+                                Text("500 \(loc["records_count_suffix"])").tag(500)
                             }
-                            .frame(width: 130)
+                            .frame(width: 140)
                         }
 
                         Divider()
@@ -142,9 +163,9 @@ public struct SettingsView: View {
                         // Auto paste toggle
                         Toggle(isOn: $settings.autoPasteEnabled) {
                             VStack(alignment: .leading, spacing: 2) {
-                                Text("วางข้อความให้อัตโนมัติ (Auto-Paste)")
+                                Text(loc["settings_auto_paste"])
                                     .font(.system(size: 13))
-                                Text("จำลองการกด Cmd+V ลงในแอพเดิมทันทีหลังจากเลือกข้อความ")
+                                Text(loc["settings_auto_paste_desc"])
                                     .font(.system(size: 11))
                                     .foregroundColor(.secondary)
                             }
@@ -155,9 +176,9 @@ public struct SettingsView: View {
                         // Launch at Login
                         Toggle(isOn: $settings.launchAtLogin) {
                             VStack(alignment: .leading, spacing: 2) {
-                                Text("เปิดแอพโดยอัตโนมัติเมื่อเปิดเครื่อง (Launch at Login)")
+                                Text(loc["settings_launch_login"])
                                     .font(.system(size: 13))
-                                Text("เริ่มทำงานในแถบ Menu Bar ทันทีเมื่อเข้าสู่ระบบ")
+                                Text(loc["settings_launch_login_desc"])
                                     .font(.system(size: 11))
                                     .foregroundColor(.secondary)
                             }
@@ -170,15 +191,15 @@ public struct SettingsView: View {
 
                     // MARK: - Translation Section
                     VStack(alignment: .leading, spacing: 14) {
-                        Text("การแปลภาษา (Selection Translator)")
+                        Text(loc["settings_translator"])
                             .font(.system(size: 13, weight: .bold))
 
                         // Selection translate toggle
                         Toggle(isOn: $settings.selectionTranslateEnabled) {
                             VStack(alignment: .leading, spacing: 2) {
-                                Text("แสดงไอคอนแปลภาษาเมื่อคุมดำข้อความ (Selection Bubble)")
+                                Text(loc["settings_bubble_toggle"])
                                     .font(.system(size: 13))
-                                Text("เมื่อใช้เมาส์คลุมดำข้อความในโปรแกรมใดๆ จะมีไอคอนเล็กๆ ลอยขึ้นมาให้กดแปลภาษา")
+                                Text(loc["settings_bubble_desc"])
                                     .font(.system(size: 11))
                                     .foregroundColor(.secondary)
                             }
@@ -190,7 +211,7 @@ public struct SettingsView: View {
                             // Translation Engine Mode
                             HStack {
                                 VStack(alignment: .leading, spacing: 2) {
-                                    Text("เครื่องมือแปลภาษา (Translation Engine):")
+                                    Text(loc["settings_engine_label"])
                                         .font(.system(size: 13))
                                     Text(settings.translationEngineMode.description)
                                         .font(.system(size: 11))
@@ -210,32 +231,32 @@ public struct SettingsView: View {
                             // Target Language
                             HStack {
                                 VStack(alignment: .leading, spacing: 2) {
-                                    Text("ภาษาปลายทางที่จำไว้ (Target Language):")
+                                    Text(loc["settings_target_label"])
                                         .font(.system(size: 13))
-                                    Text("แปลเป็นภาษานี้เสมอจนกว่าจะเลือกเปลี่ยนใหม่")
+                                    Text(loc["settings_target_desc"])
                                         .font(.system(size: 11))
                                         .foregroundColor(.secondary)
                                 }
                                 Spacer()
                                 Picker("", selection: $settings.translationTargetLang) {
-                                    Text("🌐 ตรวจจับอัตโนมัติ (Auto)").tag("auto")
+                                    Text(loc["trans_auto"]).tag("auto")
                                     Divider()
-                                    Section(header: Text("ภาษาที่ใช้บ่อย")) {
+                                    Section(header: Text(loc["cat_popular"])) {
                                         ForEach(SupportedLanguage.popularLanguages) { lang in
                                             Text("\(lang.flag) \(lang.name)").tag(lang.code)
                                         }
                                     }
-                                    Section(header: Text("เอเชีย & อาเซียน")) {
+                                    Section(header: Text(loc["cat_asia"])) {
                                         ForEach(SupportedLanguage.asianLanguages) { lang in
                                             Text("\(lang.flag) \(lang.name)").tag(lang.code)
                                         }
                                     }
-                                    Section(header: Text("ยุโรป")) {
+                                    Section(header: Text(loc["cat_europe"])) {
                                         ForEach(SupportedLanguage.europeanLanguages) { lang in
                                             Text("\(lang.flag) \(lang.name)").tag(lang.code)
                                         }
                                     }
-                                    Section(header: Text("ตะวันออกกลาง & อื่นๆ")) {
+                                    Section(header: Text(loc["cat_middle_east"])) {
                                         ForEach(SupportedLanguage.middleEasternLanguages) { lang in
                                             Text("\(lang.flag) \(lang.name)").tag(lang.code)
                                         }
@@ -244,7 +265,7 @@ public struct SettingsView: View {
                                 .frame(width: 190)
                             }
 
-                            Text("💡 คุณยังสามารถคลิกสลับระหว่าง Google Translate และ Apple Native ได้โดยตรงจากหน้าต่างป็อปอัปคำแปล")
+                            Text(loc["settings_tip_text"])
                                 .font(.system(size: 11))
                                 .foregroundColor(Color(red: 0.4, green: 0.7, blue: 1.0))
                                 .padding(8)

@@ -9,6 +9,7 @@ public struct TranslationPopoverView: View {
 
     @ObservedObject var settings = AppSettings.shared
     @ObservedObject var speech = SpeechService.shared
+    @ObservedObject var loc = LocalizationManager.shared
 
     @State private var sourceLanguage: String = "auto"
     @State private var targetLanguage: String = "th"
@@ -46,7 +47,7 @@ public struct TranslationPopoverView: View {
                     // Original Text Card
                     VStack(alignment: .leading, spacing: 4) {
                         HStack {
-                            Text("ข้อความต้นฉบับ")
+                            Text(loc["trans_original"])
                                 .font(.system(size: 9, weight: .semibold))
                                 .foregroundColor(Color.white.opacity(0.50))
                                 .textCase(.uppercase)
@@ -60,7 +61,7 @@ public struct TranslationPopoverView: View {
                                         .font(.system(size: 10))
                                         .foregroundColor(speech.currentlySpeakingText == originalText ? Color(red: 0.4, green: 0.7, blue: 1.0) : Color.white.opacity(0.65))
                                     if speech.currentlySpeakingText == originalText {
-                                        Text("กำลังอ่าน...")
+                                        Text(loc["trans_reading"])
                                             .font(.system(size: 9))
                                             .foregroundColor(Color(red: 0.4, green: 0.7, blue: 1.0))
                                     }
@@ -71,7 +72,7 @@ public struct TranslationPopoverView: View {
                                 .clipShape(RoundedRectangle(cornerRadius: 4))
                             }
                             .buttonStyle(.plain)
-                            .help("ฟังเสียงอ่านข้อความต้นฉบับ")
+                            .help(loc["trans_listen_orig"])
                         }
 
                         Text(originalText)
@@ -87,7 +88,7 @@ public struct TranslationPopoverView: View {
                     // Translated Result Card
                     VStack(alignment: .leading, spacing: 4) {
                         HStack {
-                            Text("คำแปล (\(settings.translationEngineMode.title))")
+                            Text("\(loc["trans_result"]) (\(settings.translationEngineMode.title))")
                                 .font(.system(size: 9, weight: .semibold))
                                 .foregroundColor(Color.white.opacity(0.50))
                                 .textCase(.uppercase)
@@ -104,7 +105,7 @@ public struct TranslationPopoverView: View {
                                             .font(.system(size: 10))
                                             .foregroundColor(speech.currentlySpeakingText == result.translatedText ? Color(red: 0.4, green: 0.7, blue: 1.0) : Color.white.opacity(0.65))
                                         if speech.currentlySpeakingText == result.translatedText {
-                                            Text("กำลังอ่าน...")
+                                            Text(loc["trans_reading"])
                                                 .font(.system(size: 9))
                                                 .foregroundColor(Color(red: 0.4, green: 0.7, blue: 1.0))
                                         }
@@ -115,7 +116,7 @@ public struct TranslationPopoverView: View {
                                     .clipShape(RoundedRectangle(cornerRadius: 4))
                                 }
                                 .buttonStyle(.plain)
-                                .help("ฟังเสียงอ่านคำแปล")
+                                .help(loc["trans_listen_trans"])
                             }
                         }
 
@@ -210,11 +211,11 @@ public struct TranslationPopoverView: View {
             }
             .buttonStyle(.plain)
             .fixedSize()
-            .help("เครื่องมือแปลภาษาปัจจุบัน: \(settings.translationEngineMode.title) (คลิกเพื่อสลับ Google / Apple)")
+            .help(loc["trans_engine_help"])
 
             // Source Language Picker Menu
             Menu {
-                Button("🌐 ตรวจจับอัตโนมัติ (Auto)") {
+                Button(loc["trans_auto"]) {
                     sourceLanguage = "auto"
                     performTranslation()
                 }
@@ -252,11 +253,11 @@ public struct TranslationPopoverView: View {
             }
             .buttonStyle(.plain)
             .fixedSize()
-            .help("สลับภาษาต้นทางและปลายทาง (Swap Languages)")
+            .help(loc["trans_swap"])
 
             // Target Language Picker Menu
             Menu {
-                Button("🌐 ตรวจจับอัตโนมัติ (Auto)") {
+                Button(loc["trans_auto"]) {
                     settings.translationTargetLang = "auto"
                     targetLanguage = TranslationService.shared.resolveTargetLanguage(for: originalText, preferredTarget: "auto")
                     performTranslation()
@@ -298,7 +299,7 @@ public struct TranslationPopoverView: View {
             }
             .buttonStyle(.plain)
             .fixedSize()
-            .help("ปิด (Esc)")
+            .help(loc["shortcut_esc"])
         }
     }
 
@@ -310,21 +311,21 @@ public struct TranslationPopoverView: View {
             }
         }
         Divider()
-        Menu("🌏 เอเชีย & อาเซียน") {
+        Menu(loc["cat_asia"]) {
             ForEach(SupportedLanguage.asianLanguages) { lang in
                 Button("\(lang.flag) \(lang.name)") {
                     onSelect(lang.code)
                 }
             }
         }
-        Menu("🌍 ยุโรป") {
+        Menu(loc["cat_europe"]) {
             ForEach(SupportedLanguage.europeanLanguages) { lang in
                 Button("\(lang.flag) \(lang.name)") {
                     onSelect(lang.code)
                 }
             }
         }
-        Menu("🌍 ตะวันออกกลาง & อื่นๆ") {
+        Menu(loc["cat_middle_east"]) {
             ForEach(SupportedLanguage.middleEasternLanguages) { lang in
                 Button("\(lang.flag) \(lang.name)") {
                     onSelect(lang.code)
@@ -341,7 +342,7 @@ public struct TranslationPopoverView: View {
             if let detected = translationResult?.sourceLanguage, !detected.isEmpty {
                 return "🌐 \(detected.uppercased())"
             }
-            return "🌐 ตรวจจับ"
+            return loc["trans_auto_short"]
         }
         if let lang = SupportedLanguage.find(byCode: sourceLanguage) {
             return "\(lang.flag) \(lang.shortName)"
@@ -379,7 +380,7 @@ public struct TranslationPopoverView: View {
                 HStack(spacing: 4) {
                     Image(systemName: copiedConfirmation ? "checkmark" : "doc.on.doc")
                         .font(.system(size: 10))
-                    Text(copiedConfirmation ? "คัดลอกแล้ว!" : "คัดลอก")
+                    Text(copiedConfirmation ? loc["trans_copied"] : loc["trans_copy"])
                         .font(.system(size: 11, weight: .medium))
                 }
                 .foregroundColor(copiedConfirmation ? .green : .white)
@@ -397,7 +398,7 @@ public struct TranslationPopoverView: View {
                     HStack(spacing: 4) {
                         Image(systemName: "arrow.triangle.2.circlepath")
                             .font(.system(size: 10))
-                        Text("แทนที่คำเดิม")
+                        Text(loc["trans_replace"])
                             .font(.system(size: 11, weight: .medium))
                     }
                     .foregroundColor(Color(red: 0.4, green: 0.7, blue: 1.0))
@@ -412,7 +413,7 @@ public struct TranslationPopoverView: View {
 
             Spacer()
 
-            Text("Esc ปิด")
+            Text(loc["shortcut_esc"])
                 .font(.system(size: 9))
                 .foregroundColor(Color.white.opacity(0.40))
 
