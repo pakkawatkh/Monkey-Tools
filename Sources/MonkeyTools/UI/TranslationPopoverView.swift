@@ -17,6 +17,7 @@ public struct TranslationPopoverView: View {
     @State private var isLoading = false
     @State private var errorMessage: String?
     @State private var copiedConfirmation = false
+    @State private var dragInitialOrigin: CGPoint = .zero
 
     public init(
         originalText: String,
@@ -286,7 +287,33 @@ public struct TranslationPopoverView: View {
             .menuStyle(.borderlessButton)
             .fixedSize()
 
-            Spacer()
+            // Draggable header area to move the window freely
+            Rectangle()
+                .fill(Color.clear)
+                .contentShape(Rectangle())
+                .frame(maxWidth: .infinity, maxHeight: 22)
+                .overlay(
+                    HStack(spacing: 3) {
+                        Circle().fill(Color.white.opacity(0.25)).frame(width: 3, height: 3)
+                        Circle().fill(Color.white.opacity(0.25)).frame(width: 3, height: 3)
+                        Circle().fill(Color.white.opacity(0.25)).frame(width: 3, height: 3)
+                    }
+                )
+                .gesture(
+                    DragGesture(minimumDistance: 1, coordinateSpace: .global)
+                        .onChanged { value in
+                            let panel = TranslationPopoverPanel.shared
+                            if dragInitialOrigin == .zero {
+                                dragInitialOrigin = panel.frame.origin
+                            }
+                            let newX = dragInitialOrigin.x + value.translation.width
+                            let newY = dragInitialOrigin.y - value.translation.height
+                            panel.setFrameOrigin(CGPoint(x: newX, y: newY))
+                        }
+                        .onEnded { _ in
+                            dragInitialOrigin = .zero
+                        }
+                )
 
             // Close button (at the far right)
             Button(action: onClose) {

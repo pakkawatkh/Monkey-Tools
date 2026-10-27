@@ -16,7 +16,7 @@ public final class TranslationPopoverPanel: NSPanel, NSWindowDelegate {
 
         super.init(
             contentRect: NSRect(x: 0, y: 0, width: initialWidth, height: initialHeight),
-            styleMask: [.borderless, .resizable, .nonactivatingPanel],
+            styleMask: [.titled, .resizable, .fullSizeContentView, .nonactivatingPanel],
             backing: .buffered,
             defer: false
         )
@@ -25,12 +25,19 @@ public final class TranslationPopoverPanel: NSPanel, NSWindowDelegate {
         self.maxSize = NSSize(width: 800, height: 650)
         self.level = .statusBar
         self.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
+        self.titleVisibility = .hidden
+        self.titlebarAppearsTransparent = true
+        self.isMovableByWindowBackground = true
         self.backgroundColor = .clear
         self.isOpaque = false
         self.hasShadow = true
         self.appearance = NSAppearance(named: .darkAqua)
         self.hidesOnDeactivate = false
         self.delegate = self
+
+        self.standardWindowButton(.closeButton)?.isHidden = true
+        self.standardWindowButton(.miniaturizeButton)?.isHidden = true
+        self.standardWindowButton(.zoomButton)?.isHidden = true
     }
 
     public func windowDidResize(_ notification: Notification) {
@@ -69,6 +76,7 @@ public final class TranslationPopoverPanel: NSPanel, NSWindowDelegate {
         hosting.layer?.cornerRadius = 12
         hosting.layer?.masksToBounds = true
         self.contentView = hosting
+        self.invalidateShadow()
 
         // Position popover near the trigger point using remembered or default size
         let popoverWidth = max(300, currentSize.width)
