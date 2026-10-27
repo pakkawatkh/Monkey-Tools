@@ -17,7 +17,6 @@ public struct TranslationPopoverView: View {
     @State private var isLoading = false
     @State private var errorMessage: String?
     @State private var copiedConfirmation = false
-    @State private var dragInitialOrigin: CGPoint = .zero
 
     public init(
         originalText: String,
@@ -287,32 +286,15 @@ public struct TranslationPopoverView: View {
             .menuStyle(.borderlessButton)
             .fixedSize()
 
-            // Draggable header area to move the window freely
-            Rectangle()
-                .fill(Color.clear)
-                .contentShape(Rectangle())
-                .frame(maxWidth: .infinity, maxHeight: 22)
+            // Native draggable header area to move the window with zero latency
+            WindowDragHandleView()
+                .frame(maxWidth: .infinity, maxHeight: 24)
                 .overlay(
                     HStack(spacing: 3) {
-                        Circle().fill(Color.white.opacity(0.25)).frame(width: 3, height: 3)
-                        Circle().fill(Color.white.opacity(0.25)).frame(width: 3, height: 3)
-                        Circle().fill(Color.white.opacity(0.25)).frame(width: 3, height: 3)
+                        Circle().fill(Color.white.opacity(0.30)).frame(width: 3.5, height: 3.5)
+                        Circle().fill(Color.white.opacity(0.30)).frame(width: 3.5, height: 3.5)
+                        Circle().fill(Color.white.opacity(0.30)).frame(width: 3.5, height: 3.5)
                     }
-                )
-                .gesture(
-                    DragGesture(minimumDistance: 1, coordinateSpace: .global)
-                        .onChanged { value in
-                            let panel = TranslationPopoverPanel.shared
-                            if dragInitialOrigin == .zero {
-                                dragInitialOrigin = panel.frame.origin
-                            }
-                            let newX = dragInitialOrigin.x + value.translation.width
-                            let newY = dragInitialOrigin.y - value.translation.height
-                            panel.setFrameOrigin(CGPoint(x: newX, y: newY))
-                        }
-                        .onEnded { _ in
-                            dragInitialOrigin = .zero
-                        }
                 )
 
             // Close button (at the far right)
@@ -328,6 +310,7 @@ public struct TranslationPopoverView: View {
             .fixedSize()
             .help(loc["shortcut_esc"])
         }
+        .background(WindowDragHandleView())
     }
 
     @ViewBuilder
@@ -517,35 +500,64 @@ public struct TranslationPopoverView: View {
     }
 }
 
+// Native macOS WindowServer drag handle (100% smooth, 0ms latency, glued to mouse)
+public struct WindowDragHandleView: NSViewRepresentable {
+    public init() {}
+
+    public func makeNSView(context: Context) -> WindowDragNSView {
+        return WindowDragNSView()
+    }
+
+    public func updateNSView(_ nsView: WindowDragNSView, context: Context) {}
+
+    public final class WindowDragNSView: NSView {
+        public override var mouseDownCanMoveWindow: Bool {
+            return true
+        }
+
+        public override func mouseDown(with event: NSEvent) {
+            // Hands off dragging directly to macOS WindowServer compositor
+            self.window?.performDrag(with: event)
+        }
+    }
+}
+
 public struct ResizeGripHandle: View {
-    @State private var dragInitialSize: CGSize = .zero
+    @State private var initialMouseLocation: CGPoint = .zero
+    @State private var initialWindowFrame: CGRect = .zero
 
     public init() {}
 
     public var body: some View {
         Image(systemName: "arrow.down.right.and.arrow.up.left")
             .font(.system(size: 8, weight: .bold))
-            .foregroundColor(Color.white.opacity(0.35))
-            .frame(width: 14, height: 14)
+            .foregroundColor(Color.white.opacity(0.40))
+            .frame(width: 16, height: 16)
             .contentShape(Rectangle())
             .gesture(
-                DragGesture(minimumDistance: 1, coordinateSpace: .global)
-                    .onChanged { value in
+                DragGesture(minimumDistance: 0)
+                    .onChanged { _ in
+                        let currentMouse = NSEvent.mouseLocation
                         let panel = TranslationPopoverPanel.shared
-                        if dragInitialSize == .zero {
-                            dragInitialSize = panel.frame.size
+                        if initialMouseLocation == .zero {
+                            initialMouseLocation = currentMouse
+                            initialWindowFrame = panel.frame
                         }
-                        let newW = max(300, min(800, dragInitialSize.width + value.translation.width))
-                        let newH = max(200, min(650, dragInitialSize.height - value.translation.height))
-                        let oldFrame = panel.frame
-                        let newY = oldFrame.maxY - newH
-                        panel.setFrame(NSRect(x: oldFrame.minX, y: newY, width: newW, height: newH), display: true)
+                        let deltaX = currentMouse.x - initialMouseLocation.x
+                        let deltaY = currentMouse.y - initialMouseLocation.y
+
+                        let newW = max(300, min(800, initialWindowFrame.width + deltaX))
+                        let newH = max(200, min(650, initialWindowFrame.height - deltaY))
+                        let newY = initialWindowFrame.maxY - newH
+
+                        panel.setFrame(NSRect(x: initialWindowFrame.minX, y: newY, width: newW, height: newH), display: true)
                     }
                     .onEnded { _ in
-                        dragInitialSize = .zero
+                        initialMouseLocation = .zero
+                        initialWindowFrame = .zero
                         TranslationPopoverPanel.shared.saveCurrentSize()
                     }
             )
-            .help("ลากเพื่อยืดหดขยายขนาดหน้าต่าง (Drag to resize)")
+            .help("Drag to resize")
     }
 }
