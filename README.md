@@ -4,7 +4,7 @@
 
 [![Release](https://img.shields.io/badge/Release-v2.0.0--Beta-orange?style=for-the-badge&logo=github)](https://github.com/pakkawatkh/monkey-tools/releases/tag/v2.0.0-Beta)
 [![Platform](https://img.shields.io/badge/Platform-macOS%2013%2B-lightgrey?style=for-the-badge&logo=apple)](https://github.com/pakkawatkh/monkey-tools)
-[![License](https://img.shields.io/badge/License-MIT-blue?style=for-the-badge)](https://github.com/pakkawatkh/monkey-tools)
+[![License](https://img.shields.io/badge/License-Proprietary-red?style=for-the-badge)](LICENSE)
 
 ---
 
@@ -194,4 +194,5 @@ swift test
 ---
 
 ## 📄 License
-Released under the [MIT License](LICENSE). Free for personal and commercial use.
+Copyright © 2026 Pakkawat.k. All Rights Reserved.  
+This software and its documentation are proprietary. Unauthorized copying, distribution, or commercial exploitation is strictly prohibited. See the [LICENSE](LICENSE) file for complete terms.
