@@ -9,7 +9,10 @@ public final class SelectionBubblePanel: NSPanel {
     private var isCurrentSelectionEditable: Bool = false
     private var currentSourceAppPID: pid_t = 0
     private var autoDismissTimer: Timer?
-    private var globalClickMonitor: Any?
+    private var globalEventMonitor: Any?
+    private var localKeyMonitor: Any?
+    private var localMouseMonitor: Any?
+    private var workspaceObserver: NSObjectProtocol?
 
     public init() {
         super.init(
@@ -91,7 +94,7 @@ public final class SelectionBubblePanel: NSPanel {
         self.alphaValue = 1.0
         self.orderFrontRegardless()
 
-        startClickMonitoring()
+        startEventMonitoring()
 
         // Auto-dismiss after 6 seconds if untouched
         autoDismissTimer?.invalidate()
@@ -103,7 +106,7 @@ public final class SelectionBubblePanel: NSPanel {
     public func hide() {
         autoDismissTimer?.invalidate()
         autoDismissTimer = nil
-        stopClickMonitoring()
+        stopEventMonitoring()
 
         NSAnimationContext.runAnimationGroup({ context in
             context.duration = 0.12
@@ -195,23 +198,80 @@ public final class SelectionBubblePanel: NSPanel {
         }
     }
 
-    private func startClickMonitoring() {
-        stopClickMonitoring()
-        globalClickMonitor = NSEvent.addGlobalMonitorForEvents(matching: [.leftMouseDown, .rightMouseDown]) { [weak self] _ in
+    private func startEventMonitoring() {
+        stopEventMonitoring()
+
+        // 1. Global event monitor:
+        // Dismiss immediately if user clicks outside the bubble, presses any key, or scrolls
+        globalEventMonitor = NSEvent.addGlobalMonitorForEvents(
+            matching: [.leftMouseDown, .rightMouseDown, .otherMouseDown, .keyDown, .scrollWheel]
+        ) { [weak self] event in
             guard let self = self, self.isVisible else { return }
+
+            switch event.type {
+            case .keyDown, .scrollWheel:
+                DispatchQueue.main.async {
+                    self.hide()
+                }
+
+            case .leftMouseDown, .rightMouseDown, .otherMouseDown:
+                let mouseLocation = NSEvent.mouseLocation
+                if !self.frame.insetBy(dx: -4, dy: -4).contains(mouseLocation) {
+                    DispatchQueue.main.async {
+                        self.hide()
+                    }
+                }
+
+            default:
+                break
+            }
+        }
+
+        // 2. Local monitors (when monkey-tools receives keyboard or mouse events):
+        localKeyMonitor = NSEvent.addLocalMonitorForEvents(matching: [.keyDown]) { [weak self] event in
+            DispatchQueue.main.async {
+                self?.hide()
+            }
+            return event
+        }
+
+        localMouseMonitor = NSEvent.addLocalMonitorForEvents(matching: [.leftMouseDown, .rightMouseDown, .otherMouseDown]) { [weak self] event in
+            guard let self = self, self.isVisible else { return event }
             let mouseLocation = NSEvent.mouseLocation
             if !self.frame.insetBy(dx: -4, dy: -4).contains(mouseLocation) {
                 DispatchQueue.main.async {
                     self.hide()
                 }
             }
+            return event
+        }
+
+        // 3. Workspace active app change observer:
+        workspaceObserver = NSWorkspace.shared.notificationCenter.addObserver(
+            forName: NSWorkspace.didActivateApplicationNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            self?.hide()
         }
     }
 
-    private func stopClickMonitoring() {
-        if let monitor = globalClickMonitor {
+    private func stopEventMonitoring() {
+        if let monitor = globalEventMonitor {
             NSEvent.removeMonitor(monitor)
-            globalClickMonitor = nil
+            globalEventMonitor = nil
+        }
+        if let monitor = localKeyMonitor {
+            NSEvent.removeMonitor(monitor)
+            localKeyMonitor = nil
+        }
+        if let monitor = localMouseMonitor {
+            NSEvent.removeMonitor(monitor)
+            localMouseMonitor = nil
+        }
+        if let observer = workspaceObserver {
+            NSWorkspace.shared.notificationCenter.removeObserver(observer)
+            workspaceObserver = nil
         }
     }
 }

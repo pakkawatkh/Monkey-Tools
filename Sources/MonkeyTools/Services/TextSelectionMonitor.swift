@@ -90,6 +90,12 @@ public final class TextSelectionMonitor: ObservableObject {
             isDragging = false
             lastClickCount = event.clickCount
 
+            // Dismiss active bubble immediately if mouse is pressed down anywhere outside the bubble
+            let mouseLoc = NSEvent.mouseLocation
+            if SelectionBubblePanel.shared.isVisible && !SelectionBubblePanel.shared.frame.insetBy(dx: -4, dy: -4).contains(mouseLoc) {
+                onSelectionCleared?()
+            }
+
         case .leftMouseDragged:
             let current = NSEvent.mouseLocation
             let dist = hypot(current.x - mouseDownLocation.x, current.y - mouseDownLocation.y)
@@ -107,6 +113,11 @@ public final class TextSelectionMonitor: ObservableObject {
 
             if isDrag || isMultiClick || isShiftClick {
                 scheduleSelectionCheck(isDoubleClick: isMultiClick)
+            } else {
+                // User single-clicked (which deselects text in macOS apps)
+                if !SelectionBubblePanel.shared.frame.insetBy(dx: -4, dy: -4).contains(mouseLoc) {
+                    onSelectionCleared?()
+                }
             }
 
         default:

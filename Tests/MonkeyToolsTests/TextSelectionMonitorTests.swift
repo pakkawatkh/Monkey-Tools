@@ -136,4 +136,15 @@ final class TextSelectionMonitorTests: XCTestCase {
         monitor.stopMonitoring()
         monitor.stopMonitoring()
     }
+
+    func testSelectionBubblePanelDismissLifecycle() {
+        let panel = SelectionBubblePanel.shared
+        panel.show(at: CGRect(x: 100, y: 100, width: 20, height: 20), selectedText: "DismissTest")
+        XCTAssertTrue(panel.isVisible)
+
+        panel.hide()
+        // Ensure hide finishes and invalidates monitors safely
+        RunLoop.main.run(until: Date().addingTimeInterval(0.15))
+        XCTAssertEqual(panel.alphaValue, 0.0)
+    }
 }
