@@ -1,6 +1,6 @@
 # 🐵 monkey-tools 📋
 > **Windows-style Clipboard History (`Win + V`), Continuous Emoji Picker & Smart Selection Translator for macOS**  
-> แอพพลิเคชันสารพัดประโยชน์สุดน่ารักและทรงพลังบน macOS รวมทั้งระบบประวัติคลิปบอร์ด (Clipboard Manager), แผงเลือกอิโมจิ (Emoji Picker) และเครื่องมือแปลภาษาทันใจจากการคุมดำ (Selection Translator) ครบจบในแอพเดียว! ดีไซน์ Clean Dark Theme ใช้งานง่าย รวดเร็ว เบาเครื่อง!
+> A lightweight, powerful, and privacy-conscious all-in-one productivity suite for macOS. Seamlessly unites Windows-style Clipboard History, an instant continuous Emoji Picker, and a smart floating Selection Translator into a single menu bar utility. Crafted with Swift & SwiftUI, featuring a clean, dark acrylic design that is fast, responsive, and easy on system resources.
 
 [![Release](https://img.shields.io/badge/Release-v2.0.0--Beta-orange?style=for-the-badge&logo=github)](https://github.com/pakkawatkh/monkey-tools/releases/tag/v2.0.0-Beta)
 [![Platform](https://img.shields.io/badge/Platform-macOS%2013%2B-lightgrey?style=for-the-badge&logo=apple)](https://github.com/pakkawatkh/monkey-tools)
@@ -8,194 +8,190 @@
 
 ---
 
-## 📥 ดาวน์โหลดตัวติดตั้ง (Download v2.0.0-Beta)
+## 📥 Download Installer (v2.0.0-Beta)
 
-คุณสามารถดาวน์โหลดไฟล์ตัวติดตั้ง `.dmg` เวอร์ชัน v2.0.0-Beta ล่าสุดได้โดยตรงจากลิงก์นี้:
+You can download the latest official `.dmg` installer directly from the link below:
 
 [![Download DMG](https://img.shields.io/badge/Download-monkey--tools--Installer.dmg%20(v2.0.0--Beta)-blue?style=for-the-badge&logo=apple)](https://github.com/pakkawatkh/monkey-tools/releases/download/v2.0.0-Beta/monkey-tools-Installer.dmg)
 
-👉 **คลิกดาวน์โหลดที่นี่:**
+👉 **Direct Download Links:**
 - **[Download monkey-tools-Installer.dmg (GitHub Release v2.0.0-Beta)](https://github.com/pakkawatkh/monkey-tools/releases/download/v2.0.0-Beta/monkey-tools-Installer.dmg)**
-- **[ดูรายการ Release ทั้งหมด (All Releases)](https://github.com/pakkawatkh/monkey-tools/releases)**
+- **[View All Releases on GitHub](https://github.com/pakkawatkh/monkey-tools/releases)**
 
 ---
 
-## 🚀 มีอะไรใหม่ในเวอร์ชัน v2.0.0-Beta (Release Notes)
+## 🚀 What's New in v2.0.0-Beta (Release Notes)
 
-- 🌟 **Rebranded to monkey-tools:** ปรับโฉมชื่อแอพพลิเคชันใหม่ ยกระดับสู่ศูนย์รวมเครื่องมือมัลติฟังก์ชันสำหรับคนทำงานบน Mac
-- 🌐 **Selection Translator (ระบบแปลภาษาทันใจจากการคุมดำ):**
-  - แสดงไอคอนลูกแก้วลอย (Floating Bubble 🌐) อัตโนมัติทันทีที่ใช้เมาส์ไฮไลท์ข้อความในแอพใดๆ
-  - รองรับการแปลภาษาครอบคลุมถึง **37 ภาษาทั่วโลก** (จัดหมวดหมู่: ภาษาใช้บ่อย, เอเชีย & อาเซียน, ยุโรป, ตะวันออกกลาง)
-  - รองรับ 2 เครื่องมือแปลภาษา: **Apple Native Translation Engine** (ออฟไลน์ รวดเร็ว ปลอดภัย) และ **Google Translate** (ออนไลน์ แปลแม่นยำ)
-  - 🔊 **Text-to-Speech:** ฟังเสียงอ่านออกเสียงข้อความต้นฉบับและคำแปล
-  - 🔄 **แทนที่คำเดิม (Replace Original Text):** แทนที่ข้อความที่คุมดำในช่องพิมพ์และโปรแกรมแชทได้ทันที
-  - ↔️ **สลับภาษา (Swap Languages):** สลับภาษาต้นทางและปลายทางได้ในคลิกเดียว
-  - 📐 **ปรับขนาดหน้าต่างได้ (Resizable):** ลากยืดหดมุมหน้าต่างเพื่อปรับขนาดตามต้องการ พร้อมจดจำขนาดไว้ให้อัตโนมัติ
-- 🌍 **App Language Localization:** เลือกลิ้นภาษาของหน้าต่างและการตั้งค่าได้ 3 ภาษา: **ภาษาไทย (Thai)** 🇹🇭, **อังกฤษ (English)** 🇺🇸 และ **จีนประยุกต์ (Simplified Chinese)** 🇨🇳 หรือตั้งให้ตามภาษาเครื่อง (System)
-- ⚡ **Condition-Based Selection & Multi-Monitor Support:**
-  - ตรวจจับการไฮไลท์เร็วขึ้น 3 เท่า รองรับเบราว์เซอร์ Chrome, Safari, Slack, IDEs
-  - รองรับการทำงานแบบหลายหน้าจอ (Multi-Monitor) ไม่หลุดขอบจอ
-  - รองรับการเลือกข้อความทั้ง Double Click, Triple Click และ Shift + Click
-- 📦 **Seamless Auto-Migration:** ย้ายประวัติคลิปบอร์ดเดิมจาก `monkey-copy` มายัง `monkey-tools` ให้อัตโนมัติ
-
----
-
-## 🚀 ประวัติเวอร์ชันก่อนหน้า (v1.0.0)
-
-- 🐵 **Windows-Style Clipboard History:** กดคีย์ลัดเรียกหน้าต่างประวัติคลิปบอร์ดแบบลอย สไตล์ Windows `Win + V`
-- 🖼️ **รองรับทั้งข้อความและรูปภาพ:** คัดลอกรูปภาพจากการแคปหน้าจอ (`Cmd+Shift+4`), รูปจากเบราว์เซอร์ หรือไฟล์จาก Finder พร้อมพรีวิวรูปภาพ
-- 😊 **Continuous Emoji Picker:** เลือกอิโมจิพร้อมช่องค้นหาภาษาไทยและอังกฤษ **คลิกพิมพ์ได้เรื่อยๆ โดยหน้าต่างไม่ปิด**
-- ⚡ **Auto-Paste อัตโนมัติ:** วางข้อความและอิโมจิลงในโปรแกรมที่กำลังใช้งานอยู่ให้อัตโนมัติทันที
-- 🔒 **Persistent Code Signing:** ระบบใบรับรองแบบถาวร สิทธิ์ Accessibility ไม่หลุดแม้ปิดเปิดเครื่องใหม่
-- 🌙 **Clean High-Contrast Dark Theme:** ดีไซน์ Dark Acrylic ทันสมัย ตัวหนังสือคมชัด อ่านง่าย สบายตาทุกมุมมอง
-- 🗑️ **Icon-Only Clear Button:** ปุ่มล้างประวัติแบบไอคอนถังขยะมินิมอล สะอาดตา
-- ⌨️ **Custom Hotkeys:** เลือกระหว่าง `Cmd + Shift + V`, `Option + V` หรือบันทึกปุ่มลัดตามใจชอบ
-- 📦 **One-Click DMG Installer:** ติดตั้งง่ายเพียงลากลงโฟลเดอร์ Applications
+- 🌟 **Rebranded to monkey-tools:** Renamed the entire project from `monkey-copy` to `monkey-tools`, evolving from a simple clipboard utility into a comprehensive productivity toolkit.
+- 📦 **Seamless Auto-Migration:** Automatically detects and migrates existing clipboard history and data from `monkey-copy` to `monkey-tools` without data loss.
+- 🌐 **Smart Selection Translator (Instant Highlight Translation):**
+  - **Floating Action Bubble (🌐):** A compact, non-intrusive bubble appears near highlighted text across any macOS application.
+  - **Dual Engine Architecture:**
+    - 🍎 **Apple Native:** Offline local dictionary lookup with high privacy.
+    - 🌐 **Google Translate:** Powered by a resilient 3-tier translation engine (`clients5` Chrome extension endpoint, `gtx` single translate, and MyMemory fallback) eliminating HTTP 429 rate limit issues.
+  - **37 Major World Languages:** Grouped logically into Popular, Asia & ASEAN, Europe, and Middle East.
+  - 🔊 **Text-to-Speech (TTS):** Native high-fidelity speech audio playback for both source and translated text.
+  - 🔄 **Replace In-Place (Replace Original Text):** Replace highlighted text inside editable text fields, IDEs, and chat applications in a single click.
+  - ↔️ **Swap Languages:** Instantly swap source and target languages.
+  - 📐 **Resizable Window:** Freely resize the translation popover with automatic persistent sizing.
+  - 🖥️ **Multi-Monitor & Smart Clamping:** Ensures the floating window stays strictly within screen bounds across multiple monitors.
+- 🌍 **App Language Localization:** Choose UI language between **English** 🇺🇸, **Thai (ภาษาไทย)** 🇹🇭, **Simplified Chinese (简体中文)** 🇨🇳, or follow **System Default**.
+- ⚡ **Performance & Binary Optimization:**
+  - Binary executable size reduced by **63%** (2.3 MB ➔ 850 KB) via Swift cross-module optimization and symbol stripping.
+  - App bundle size reduced by **54%** (2.8 MB ➔ 1.3 MB).
+  - Compact installer DMG at only **1.1 MB**.
+  - $O(1)$ static language lookups and zero-allocation deterministic emoji identifiers.
 
 ---
 
-## ✨ ฟีเจอร์เด่น (Key Features)
+## 🚀 Previous Version Highlights (v1.0.0)
 
-- 🌐 **Selection Translator:** คุมดำข้อความในเว็บ หน้าต่างเอกสาร หรือแชท จะมีไอคอนลอยขึ้นมาให้กดแปลภาษาได้ทันที รองรับ 37 ภาษาทั่วโลก
-- 🔄 **Replace In-Place (แทนที่คำเดิม):** แปลคำศัพท์หรือประโยคแล้วกดปุ่มแทนที่ลงในช่องพิมพ์เดิมได้ทันที เหมาะกับการตอบอีเมลหรือแชทต่างภาษา
-- 🔊 **Text-to-Speech (ฟังเสียงอ่าน):** กดฟังเสียงอ่านออกเสียงคำศัพท์และประโยคได้ทั้งภาษาต้นฉบับและคำแปล
-- 🌍 **Multi-Language Interface:** เลือกลิ้นภาษาของแอพได้ 3 ภาษา (ไทย, อังกฤษ, จีน) หรือตั้งตามภาษาเครื่อง
-- ⌨️ **Global Shortcut:** กดคีย์ลัดเรียกหน้าต่างคลิปบอร์ดได้จากทุกโปรแกรม (ค่าเริ่มต้น `Command + Shift + V` หรือเลือกเปลี่ยนเป็น `Option + V` ได้)
-- 📝 **เก็บบันทึกประวัติการ Copy อัตโนมัติ:** คัดลอกข้อความติดต่อกันหลายๆ ครั้งได้โดยไม่หาย มีช่องค้นหา (Live Search) แบบเรียลไทม์
-- 🖼️ **รองรับการ Copy รูปภาพ (Image Clipboard):** รองรับทั้งภาพจากการแคปหน้าจอ (Screenshot `Cmd+Shift+4`), รูปจากเว็บเบราว์เซอร์ และไฟล์ภาพจาก Finder พร้อมพรีวิวภาพขนาดย่อ
-- 😊 **Emoji Picker ในตัว:** มีแท็บอิโมจิให้เลือก พร้อมระบบค้นหาเป็นภาษาไทยและอังกฤษ (เช่น พิมพ์ "ลิง", "ยิ้ม", "ไฟ") และ**สามารถคลิกเลือกพิมพ์อิโมจิติดต่อกันได้เรื่อยๆ โดยหน้าต่างไม่ปิด!**
-- ⚡ **Auto-Paste วางให้อัตโนมัติ:** เมื่อกดเลือกข้อความ, รูปภาพ หรืออิโมจิ แอพจะนำไปวางลงในโปรแกรมที่คุณกำลังพิมพ์อยู่ให้อัตโนมัติทันที
-- 📌 **Pinning (ปักหมุด):** ปักหมุดข้อความที่ใช้บ่อยให้อยู่ด้านบนสุดเสมอ
-- 🌙 **Clean Dark Theme:** ดีไซน์กระจกฝ้าสีเข้ม (Dark Frosted Glass) โค้งมนทุกมุม สบายตา ไม่บดบังพื้นที่ทำงาน
-- 🐵 **ไอคอนลิงบน Menu Bar:** ไอคอนหน้ารูปลิงบนแถบเมนูด้านบน คมชัด ปรับสีตามโหมดสว่าง/มืดของ macOS อัตโนมัติ
-- 🔒 **สิทธิ์ถาวรไม่หลุด:** ใช้ระบบ Persistent Certificate หมดปัญหาสิทธิ์หลุดเวลาปิดเปิดเครื่องใหม่
+- 🐵 **Windows-Style Clipboard History:** Global shortcut opens a dark acrylic floating clipboard history, similar to Windows `Win + V`.
+- 🖼️ **Text & Image Clipboard Support:** Captures text, code snippets, URLs, screenshots (`Cmd + Shift + 4`), web images, and files from Finder with image thumbnails.
+- 😊 **Continuous Emoji Picker:** Emoji picker with real-time search. **Clicking emojis inserts them continuously without dismissing the window.**
+- ⚡ **Auto-Paste:** Automatically pastes selected clips or emojis into the active application.
+- 🔒 **Persistent Code Signing:** Self-contained developer certificate prevents macOS Accessibility permissions from resetting across reboots.
+- 🌙 **Clean High-Contrast Dark Theme:** Modern frosted dark glass UI with crisp readability.
+- 🗑️ **Minimalist Clean Action:** Clear unpinned history with one click while keeping pinned favorites intact.
+- ⌨️ **Customizable Hotkeys:** Switch between `Cmd + Shift + V`, `Option + V`, or record your own combination.
 
 ---
 
-## 🚀 วิธีติดตั้ง (Installation Guide)
+## ✨ Key Features
 
-1. **ดาวน์โหลดไฟล์ตัวติดตั้ง:**  
-   ดาวน์โหลดไฟล์ **`monkey-tools-Installer.dmg`** จากลิงก์ด้านบน
-2. **เปิดไฟล์ DMG:**  
-   ดับเบิ้ลคลิกที่ไฟล์ `monkey-tools-Installer.dmg` ที่ดาวน์โหลดมา
-3. **ติดตั้งลงเครื่อง:**  
-   ลากไอคอน **monkey-tools** ไปวางที่ไอคอนโฟลเดอร์ **Applications**
-4. **เปิดใช้งานแอพ:**  
-   เปิดแอพพลิเคชัน **monkey-tools** จากโฟลเดอร์ Applications, Spotlight (`Cmd + Space` แล้วพิมพ์ monkey-tools) หรือ Launchpad
+- 🌐 **Selection Translator:** Highlight text in web browsers, PDFs, code editors, or chat apps to trigger instant translations across 37 world languages.
+- 🔄 **Replace In-Place:** Translate foreign text or draft replies and replace selected text immediately. Ideal for multilingual chats, customer support, and email drafting.
+- 🔊 **Text-to-Speech:** Listen to native pronunciation for source and translated text.
+- 🌍 **Multi-Language Interface:** Available in English, Thai, Simplified Chinese, or System Default.
+- ⌨️ **Global Shortcut:** Summon clipboard history anywhere (default `Command + Shift + V` or `Option + V`).
+- 📝 **Automatic Clipboard Tracking:** Constantly saves clipboard entries with real-time instant search.
+- 🖼️ **Image Clipboard:** Caches screenshots and images to disk with fast image thumbnails.
+- 😊 **Continuous Emoji Insertion:** Search emojis and insert multiple emojis sequentially without reopening the picker.
+- 📌 **Pinning Support:** Pin frequently used clips and templates to keep them permanently at the top.
+- 🐵 **Adaptive Menu Bar Icon:** High-resolution monkey glyph that automatically adapts to macOS Light/Dark mode.
 
 ---
 
-## 🔒 การตั้งค่าสิทธิ์ให้วางอัตโนมัติ (Accessibility Permission)
+## 🚀 Installation Guide
 
-เพื่อให้แอพสามารถกด `Cmd + V` วางข้อความ รูปภาพ อิโมจิ และแทนที่คำเดิมลงในโปรแกรมอื่นให้คุณโดยอัตโนมัติ:
+1. **Download the Installer:**  
+   Download **`monkey-tools-Installer.dmg`** from the link above.
+2. **Open the DMG:**  
+   Double-click the downloaded `monkey-tools-Installer.dmg` file.
+3. **Install to Applications:**  
+   Drag the **monkey-tools** icon into the **Applications** folder shortcut.
+4. **Launch the App:**  
+   Open **monkey-tools** from your Applications folder, Spotlight (`Cmd + Space` then type `monkey-tools`), or Launchpad.
 
-1. เปิด **System Settings** บน Mac
-2. ไปที่เมนู **Privacy & Security** (ความเป็นส่วนตัวและความปลอดภัย) > **Accessibility** (การช่วยการเข้าถึง)
-3. มองหาชื่อ **monkey-tools** แล้วเปิดสวิตช์ให้เป็น **สีฟ้า (อนุญาต)**
-   *(หากยังไม่ขึ้นในรายการ ให้กดเครื่องหมาย `+` แล้วเลือก monkey-tools จากโฟลเดอร์ Applications)*
+---
+
+## 🔒 Accessibility Permission Setup
+
+To enable auto-pasting (`Cmd + V`), text selection detection, and in-place replacement:
+
+1. Open **System Settings** on your Mac.
+2. Navigate to **Privacy & Security** > **Accessibility**.
+3. Toggle the switch next to **monkey-tools** to **ON (Blue)**.  
+   *(If monkey-tools is not listed, click the `+` icon and select monkey-tools from your Applications folder).*
 
 > [!TIP]
-> การตั้งค่านี้ทำเพียงครั้งเดียว ระบบจะจดจำสิทธิ์อย่างถาวร แม้จะปิดเปิดเครื่องใหม่ก็ไม่ต้องตั้งค่าซ้ำครับ
+> This is a one-time setup. Thanks to monkey-tools' persistent code signing, permissions remain intact even across macOS restarts.
 
 ---
 
-## 📖 วิธีใช้งาน (How to Use)
+## 📖 How to Use
 
-### 1. การใช้งานประวัติคลิปบอร์ด (Clipboard History)
-- **คัดลอกข้อมูล:** กด `Cmd + C` คัดลอกข้อความ ลิงก์ โค้ด หรือรูปภาพตามปกติ
-- **เปิดหน้าต่างคลิปบอร์ด:** กดปุ่ม **`Command + Shift + V`** (หรือคลิกที่ไอคอนลิง 🐵 บน Menu Bar ด้านบน)
-- **วางข้อความ/รูปภาพ:**
-  - ใช้ **ลูกศรขึ้น/ลง (`↑` / `↓`)** แล้วกด **`Enter`**
-  - หรือใช้ **เมาส์คลิก** ที่รายการนั้นโดยตรง
-  - ข้อความหรือภาพจะถูกวางลงในโปรแกรมที่คุณกำลังพิมพ์อยู่ทันที และหน้าต่างจะปิดลงอัตโนมัติ
-- **ค้นหาประวัติ:** พิมพ์คำค้นหาในช่องค้นหาด้านบนเพื่อกรองข้อความหรือรูปภาพที่ต้องการ
-- **ปักหมุด (Pin):** เลื่อนเมาส์ชี้ที่การ์ดแล้วกดไอคอนรูปหมุด 📌 เพื่อให้รายการนั้นอยู่บนสุดเสมอ
-
----
-
-### 2. การใช้งานตัวเลือกอิโมจิ (Emoji Picker)
-- เมื่อเปิดหน้าต่างขึ้นมา ให้คลิกที่แท็บ **`[ 😊 Emoji ]`** ด้านบน
-- **ค้นหาอิโมจิ:** พิมพ์คำค้นหาในช่อง Search ได้ทั้งภาษาไทยและอังกฤษ เช่น:
-  - `"ลิง"` หรือ `"monkey"` ➔ 🐵 🐒 🦍 🦧
-  - `"รัก"`, `"หัวใจ"` หรือ `"heart"` ➔ ❤️ 💕 💖 🫶
-  - `"ไฟ"` หรือ `"fire"` ➔ 🔥 💥
-  - `"ยิ้ม"` หรือ `"smile"` ➔ 😀 😊 🥰
-- **พิมพ์อิโมจิ:** คลิกที่อิโมจิตัวที่ต้องการเพื่อวางลงในโปรแกรมได้ทันที
-- **กดได้ต่อเนื่อง:** **หน้าต่างจะไม่ปิดลงเมื่อกดอิโมจิ** ทำให้คุณสามารถกดจิ้มอิโมจิหลายตัวติดต่อกันได้ตามใจชอบ (เช่น `🐵🍌✨🔥`)
-- **ปิดหน้าต่าง:** เมื่อเลือกอิโมจิเสร็จแล้ว สามารถกดปุ่ม **`Esc`**, คลิกปุ่ม **`✕`** หรือคลิกเมาส์ที่พื้นที่นอกหน้าต่างเพื่อปิดได้ทันที
+### 1. Clipboard History
+- **Copy anything:** Use `Cmd + C` to copy text, links, code, or images normally.
+- **Open history:** Press **`Command + Shift + V`** (or click the monkey icon 🐵 in the Menu Bar).
+- **Paste item:**
+  - Use **Arrow keys (`↑` / `↓`)** and press **`Enter`**.
+  - Or **click** an item with your mouse.
+  - The item will be pasted directly into your active app, and the window closes automatically.
+- **Search history:** Type keywords in the top search box to filter entries in real time.
+- **Pin item:** Hover over an entry and click the pin icon 📌 to keep it at the top.
 
 ---
 
-### 3. การใช้งานระบบแปลภาษาจากการคุมดำ (Selection Translator)
-- **คุมดำข้อความ:** ใช้เมาส์ลากคลุมดำ หรือดับเบิ้ลคลิกเลือกคำในเว็บเบราว์เซอร์, ไฟล์ PDF, โปรแกรมแชท หรือเอกสาร
-- **กดแปลภาษา:** จะมีไอคอนลูกแก้วลอยรูปโลก **🌐** ปรากฏขึ้นข้างๆ ข้อความที่เลือก คลิกที่ไอคอนเพื่อเปิดหน้าต่างแปลภาษาทันที
-- **ฟังก์ชันในหน้าต่างแปลภาษา:**
-  - 🔄 **สลับ Engine:** คลิกไอคอน Google / Apple เพื่อสลับเครื่องมือแปลภาษา
-  - ↔️ **สลับภาษา:** กดปุ่มสลับภาษาตรงกลางเพื่อสลับภาษาต้นทางและปลายทาง
-  - 🔊 **ฟังเสียงอ่าน:** คลิกไอคอนลำโพงเพื่อฟังการออกเสียง
-  - 📋 **คัดลอกคำแปล:** กดปุ่มคัดลอกเพื่อนำคำแปลไปใช้งาน
-  - ✍️ **แทนที่คำเดิม:** หากแปลข้อความในช่องที่พิมพ์ได้ (เช่น แชท, TextEditor, Input) จะมีปุ่ม **"แทนที่คำเดิม"** เพื่อเปลี่ยนข้อความเดิมเป็นคำแปลได้ทันทีในคลิกเดียว!
-  - 📐 **ปรับขนาดหน้าต่าง:** ลากขอบหรือมุมของหน้าต่างเพื่อยืดหดขนาดได้อิสระ
+### 2. Emoji Picker (Continuous Typing)
+- Open monkey-tools and click the **`[ 😊 Emoji ]`** tab at the top.
+- **Search emojis:** Type keywords in English or Thai (e.g., `monkey`, `heart`, `fire`, `smile`).
+- **Insert emoji:** Click any emoji to paste it into your active document.
+- **Continuous typing:** **The window remains open when selecting emojis**, allowing you to insert multiple emojis in sequence (e.g., `🐵🍌✨🔥`).
+- **Dismiss picker:** Press **`Esc`**, click the **`✕`** close button, or click outside the window.
 
 ---
 
-### 4. การเปลี่ยนภาษาของโปรแกรม (App Language)
-คุณสามารถปรับเปลี่ยนภาษาที่ใช้แสดงผลในเมนูและหน้าต่างทั้งหมดของ `monkey-tools` ได้:
-1. เปิดหน้าต่าง **Settings** (กดไอคอน ⚙️ หรือคลิกเมนูบาร์ > Settings)
-2. ไปที่แท็บ **ทั่วไป (General)**
-3. ในหัวข้อ **ภาษาของโปรแกรม (App Language):**
-   - 🇹🇭 **ไทย (Thai)**
+### 3. Selection Translator
+- **Select text:** Highlight any word or sentence in a browser, PDF, chat app, or code editor.
+- **Trigger translation:** A floating globe icon **🌐** appears near your selection. Click it to open the translation popover.
+- **Features in translation popover:**
+  - 🔄 **Engine Toggle:** Click the Google / Apple icon in the header to switch between translation engines.
+  - ↔️ **Swap Languages:** Click the middle swap button to reverse source and target languages.
+  - 🔊 **Listen:** Click the speaker icon to hear pronunciation.
+  - 📋 **Copy:** Copy translated text to your clipboard.
+  - ✍️ **Replace:** If selected text is in an editable input (text box, editor, chat input), click **"Replace"** to overwrite original text with the translation.
+  - 📐 **Resize:** Drag the bottom-right grip to resize the window freely. Dimensions are remembered automatically.
+
+---
+
+### 4. Changing App Language
+You can change the UI language across all monkey-tools windows and menus:
+1. Open **Settings** (click ⚙️ in monkey-tools or right-click the Menu Bar icon > Settings).
+2. Go to the **General** tab.
+3. Under **App Language**, choose:
    - 🇺🇸 **English**
-   - 🇨🇳 **中文 (简体)**
-   - 🌐 **ตามภาษาเครื่อง (System Default)**
+   - 🇹🇭 **ไทย (Thai)**
+   - 🇨🇳 **中文 (Simplified Chinese)**
+   - 🌐 **System Default**
 
 ---
 
-## ⌨️ สรุปคีย์ลัด (Keyboard Shortcuts)
+## ⌨️ Keyboard Shortcuts Reference
 
-| คีย์ลัด | การทำงาน |
+| Shortcut | Description |
 | :--- | :--- |
-| **`Cmd + Shift + V`** *(ปรับแต่งได้)* | เปิด / ปิด หน้าต่าง monkey-tools |
-| **`↑` / `↓`** | เลื่อนเลือกรายการในประวัติ |
-| **`Enter`** | วางรายการที่เลือกอยู่ลงในโปรแกรมเดิม |
-| **`Esc`** | ปิดหน้าต่างประวัติคลิปบอร์ด / ปิดหน้าต่างแปลภาษา |
-| **พิมพ์ตัวอักษร** | ค้นหาในประวัติข้อความ หรือค้นหาอิโมจิ |
+| **`Cmd + Shift + V`** *(Customizable)* | Toggle monkey-tools clipboard & emoji window |
+| **`↑` / `↓`** | Navigate through clipboard history items |
+| **`Enter`** | Paste selected item into active application |
+| **`Esc`** | Close clipboard panel / translation popover |
+| **Type characters** | Instantly search clipboard history or emoji catalog |
 
 ---
 
-## ⚙️ การตั้งค่าและปรับแต่ง (Preferences)
+## ⚙️ Preferences & Customization
 
-คุณสามารถเปิดหน้าต่าง Settings ได้ 2 ทาง:
-1. กดไอคอนรูปฟันเฟือง **⚙️** ที่มุมขวาบนของหน้าต่าง monkey-tools
-2. หรือคลิกที่ไอคอนลิง 🐵 บนแถบ Menu Bar ด้านบน แล้วเลือก **Settings...** (หรือกด `Cmd + ,`)
+Open Settings in two ways:
+1. Click the gear icon **⚙️** in the top-right corner of the monkey-tools window.
+2. Or click the monkey icon 🐵 in the Menu Bar and select **Settings...** (or press `Cmd + ,`).
 
-### สิ่งที่ปรับแต่งได้:
-- 🌍 **App Language:** ภาษาแสดงผลของโปรแกรม (ไทย, อังกฤษ, จีน, ภาษาเครื่อง)
-- 🌐 **Selection Translator:** เปิด/ปิดไอคอนแปลภาษาลอย, เลือก Translation Engine เริ่มต้น (Google / Apple), และเลือกภาษาปลายทางที่ใช้ประจำ
-- ⌨️ **เปลี่ยนคีย์ลัด:** เลือก Preset สำเร็จรูป เช่น `Option + V` (สไตล์ Win+V มือเดียว), `Command + Shift + V` หรือกดปุ่มบันทึกคีย์ลัดใหม่ด้วยตัวเอง
-- 🔢 **กำหนดจำนวนประวัติสูงสุดที่บันทึก:** เลือกได้ 50, 100, 200, หรือ 500 รายการ
-- 🚀 **Launch at Login:** เปิดแอพอัตโนมัติเมื่อเปิดเครื่อง
-- ⚡ **Auto-Paste:** เปิด/ปิดการวางอัตโนมัติ
+### Available Options:
+- 🌍 **App Language:** Choose UI language (English, Thai, Chinese, System Default).
+- 🌐 **Selection Translator:** Enable/disable floating bubble, choose default engine (Google / Apple), and set default target language.
+- ⌨️ **Custom Shortcut:** Choose from presets like `Option + V` (Windows Win+V style) or record a custom key combination.
+- 🔢 **History Limit:** Store 50, 100, 200, or up to 500 clipboard entries.
+- 🚀 **Launch at Login:** Automatically start monkey-tools when your Mac boots.
+- ⚡ **Auto-Paste:** Enable/disable simulated auto-pasting upon selection.
 
 ---
 
-## 🛠️ สำหรับนักพัฒนา (Build from Source)
+## 🛠️ Build from Source
 
-ต้องการคอมไพล์โปรเจกต์ด้วยตนเอง:
+To compile and package the project manually:
 
 ```bash
-# Clone repository
+# Clone the repository
 git clone https://github.com/pakkawatkh/monkey-tools.git
 cd monkey-tools
 
-# รัน Unit Tests (Swift Testing & XCTest)
+# Run full unit test suite (39 tests)
 swift test
 
-# คอมไพล์ Release และสร้างตัวติดตั้ง .app และ .dmg
+# Build release application bundle and DMG installer
 ./scripts/create_dmg.sh
 ```
 
 ---
 
 ## 📄 License
-MIT License - สามารถนำไปใช้งาน ปรับปรุง และแจกจ่ายได้อย่างอิสระ
+Released under the [MIT License](LICENSE). Free for personal and commercial use.
