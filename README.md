@@ -2,25 +2,39 @@
 > **Windows-style Clipboard History (`Win + V`), Continuous Emoji Picker & Smart Selection Translator for macOS**  
 > A lightweight, powerful, and privacy-conscious all-in-one productivity suite for macOS. Seamlessly unites Windows-style Clipboard History, an instant continuous Emoji Picker, and a smart floating Selection Translator into a single menu bar utility. Crafted with Swift & SwiftUI, featuring a clean, dark acrylic design that is fast, responsive, and easy on system resources.
 
-[![Release](https://img.shields.io/badge/Release-v2.0.0--Beta-orange?style=for-the-badge&logo=github)](https://github.com/pakkawatkh/monkey-tools/releases/tag/v2.0.0-Beta)
+[![Release](https://img.shields.io/badge/Release-v2.0.1-orange?style=for-the-badge&logo=github)](https://github.com/pakkawatkh/monkey-tools/releases/tag/v2.0.1)
 [![Platform](https://img.shields.io/badge/Platform-macOS%2013%2B-lightgrey?style=for-the-badge&logo=apple)](https://github.com/pakkawatkh/monkey-tools)
 [![License](https://img.shields.io/badge/License-Proprietary-red?style=for-the-badge)](LICENSE)
 
 ---
 
-## 📥 Download Installer (v2.0.0-Beta)
+## 📥 Download Installer (v2.0.1)
 
 You can download the latest official `.dmg` installer directly from the link below:
 
-[![Download DMG](https://img.shields.io/badge/Download-monkey--tools--Installer.dmg%20(v2.0.0--Beta)-blue?style=for-the-badge&logo=apple)](https://github.com/pakkawatkh/monkey-tools/releases/download/v2.0.0-Beta/monkey-tools-Installer.dmg)
+[![Download DMG](https://img.shields.io/badge/Download-monkey--tools--Installer.dmg%20(v2.0.1)-blue?style=for-the-badge&logo=apple)](https://github.com/pakkawatkh/monkey-tools/releases/download/v2.0.1/monkey-tools-Installer.dmg)
 
 👉 **Direct Download Links:**
-- **[Download monkey-tools-Installer.dmg (GitHub Release v2.0.0-Beta)](https://github.com/pakkawatkh/monkey-tools/releases/download/v2.0.0-Beta/monkey-tools-Installer.dmg)**
+- **[Download monkey-tools-Installer.dmg (GitHub Release v2.0.1)](https://github.com/pakkawatkh/monkey-tools/releases/download/v2.0.1/monkey-tools-Installer.dmg)**
 - **[View All Releases on GitHub](https://github.com/pakkawatkh/monkey-tools/releases)**
 
 ---
 
-## 🚀 What's New in v2.0.0-Beta (Release Notes)
+## 🚀 What's New in v2.0.1 (Release Notes)
+
+- 🖱️ **120Hz Native Smooth Drag-to-Move:** Re-architected translation popover drag movement using native AppKit `window.performDrag` for butter-smooth, zero-lag window dragging that stays perfectly pinned to the cursor.
+- 📐 **Omni-Directional Window Resizing:** Translation popover now supports smooth resizing from all 4 borders and 4 corners natively, alongside the corner grip handle.
+- ⚡ **Instant Bubble Dismissal on Any Action:** Floating translation bubble (`SelectionBubblePanel`) now automatically and immediately dismisses upon any non-translate user action:
+  - Typing or pressing any key (`keyDown`, `Esc`, `Backspace`, arrows, shortcuts)
+  - Clicking anywhere outside the bubble (left, right, or middle click, deselecting text)
+  - Scrolling trackpad or mouse wheel (`scrollWheel`)
+  - Switching applications or window deactivation
+- 🌐 **3-Tier Resilient Translation Engine:** Eliminates HTTP 429 rate limit errors with Chrome extension endpoint, single-translate fallback, and automated fallback tiers.
+- 📜 **Proprietary License:** Added official All Rights Reserved proprietary license to ensure codebase integrity and ownership.
+
+---
+
+## 🚀 Previous Version Highlights (v2.0.0-Beta)
 
 - 🌟 **Rebranded to monkey-tools:** Renamed the entire project from `monkey-copy` to `monkey-tools`, evolving from a simple clipboard utility into a comprehensive productivity toolkit.
 - 📦 **Seamless Auto-Migration:** Automatically detects and migrates existing clipboard history and data from `monkey-copy` to `monkey-tools` without data loss.
