@@ -125,7 +125,17 @@ final class TextSelectionMonitorTests: XCTestCase {
         let mainWidth = NSScreen.main?.visibleFrame.maxX ?? 1440
         XCTAssertLessThanOrEqual(panel.frame.maxX, mainWidth + 50)
 
-        panel.hide()
+        panel.orderOut(nil)
+
+        // Showing with empty or invalid text should NEVER make panel visible
+        panel.show(at: CGRect(x: 200, y: 300, width: 50, height: 20), selectedText: "", sourceAppPID: 0, isEditable: false)
+        XCTAssertFalse(panel.isVisible)
+
+        panel.show(at: CGRect(x: 200, y: 300, width: 50, height: 20), selectedText: "   ", sourceAppPID: 0, isEditable: false)
+        XCTAssertFalse(panel.isVisible)
+
+        panel.show(at: CGRect(x: 200, y: 300, width: 50, height: 20), selectedText: "12345", sourceAppPID: 0, isEditable: false)
+        XCTAssertFalse(panel.isVisible)
     }
 
     func testTextSelectionMonitorMonitoringLifecycle() {

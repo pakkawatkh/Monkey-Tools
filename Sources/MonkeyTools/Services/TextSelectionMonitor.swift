@@ -281,15 +281,7 @@ public final class TextSelectionMonitor: ObservableObject {
                 timer.invalidate()
                 restoreBackup()
                 cleanup()
-
-                if isDoubleClick {
-                    let editable = self.isElementEditable(pid: pid, mouseLoc: mouseLoc)
-                    let rect = CGRect(x: mouseLoc.x, y: mouseLoc.y, width: 1, height: 1)
-                    let event = TextSelectionEvent(text: "", screenRect: rect, sourceAppPID: pid, isEditable: editable)
-                    self.onSelectionDetected?(event)
-                } else {
-                    self.onSelectionCleared?()
-                }
+                self.onSelectionCleared?()
             }
         }
         RunLoop.main.add(checkTimer!, forMode: .common)
