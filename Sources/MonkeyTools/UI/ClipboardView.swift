@@ -1,11 +1,6 @@
 import SwiftUI
 
 public struct ClipboardView: View {
-    public enum ActiveTab {
-        case clipboard
-        case emoji
-    }
-
     @ObservedObject var manager: ClipboardManager = .shared
     @ObservedObject var autoPaster: AutoPaster = .shared
     @ObservedObject var settings: AppSettings = .shared
@@ -16,7 +11,6 @@ public struct ClipboardView: View {
     public var onClose: () -> Void
 
     @FocusState private var isSearchFocused: Bool
-    @State private var activeTab: ActiveTab = .clipboard
     @State private var showingClearConfirmation = false
 
     public init(onSelect: @escaping (ClipboardItem) -> Void, onClose: @escaping () -> Void) {
@@ -43,7 +37,7 @@ public struct ClipboardView: View {
             }
 
             // Main Content Area
-            if activeTab == .clipboard {
+            if manager.activeTab == .clipboard {
                 let items = manager.filteredItems
                 if items.isEmpty {
                     emptyStateView
@@ -150,24 +144,24 @@ public struct ClipboardView: View {
         }
     }
 
-    private func tabButton(title: String, icon: String, tab: ActiveTab) -> some View {
+    private func tabButton(title: String, icon: String, tab: ClipboardActiveTab) -> some View {
         Button(action: {
             withAnimation(.easeInOut(duration: 0.15)) {
-                activeTab = tab
+                manager.activeTab = tab
             }
         }) {
             HStack(spacing: 4) {
                 Image(systemName: icon)
-                    .font(.system(size: 10, weight: activeTab == tab ? .semibold : .medium))
+                    .font(.system(size: 10, weight: manager.activeTab == tab ? .semibold : .medium))
                 Text(title)
-                    .font(.system(size: 11, weight: activeTab == tab ? .semibold : .medium))
+                    .font(.system(size: 11, weight: manager.activeTab == tab ? .semibold : .medium))
             }
-            .foregroundColor(activeTab == tab ? .white : Color.white.opacity(0.70))
+            .foregroundColor(manager.activeTab == tab ? .white : Color.white.opacity(0.70))
             .padding(.horizontal, 10)
             .padding(.vertical, 5)
             .background(
                 RoundedRectangle(cornerRadius: 6)
-                    .fill(activeTab == tab ? Color.white.opacity(0.18) : Color.clear)
+                    .fill(manager.activeTab == tab ? Color.white.opacity(0.18) : Color.clear)
             )
         }
         .buttonStyle(.plain)
@@ -179,7 +173,7 @@ public struct ClipboardView: View {
                 .foregroundColor(Color.white.opacity(0.65))
                 .font(.system(size: 12, weight: .medium))
 
-            if activeTab == .clipboard {
+            if manager.activeTab == .clipboard {
                 ZStack(alignment: .leading) {
                     if manager.searchQuery.isEmpty {
                         Text(loc["search_placeholder"])
@@ -299,6 +293,13 @@ public struct ClipboardView: View {
                     }
                 }
             }
+            .onChange(of: manager.searchQuery) { _ in
+                if let first = items.first {
+                    withAnimation(.easeInOut(duration: 0.1)) {
+                        proxy.scrollTo(first.id, anchor: .top)
+                    }
+                }
+            }
         }
     }
 
@@ -332,7 +333,7 @@ public struct ClipboardView: View {
 
     private var bottomBar: some View {
         HStack(spacing: 8) {
-            if activeTab == .clipboard {
+            if manager.activeTab == .clipboard {
                 Text("\(manager.filteredItems.count) \(loc["items_count"])")
                     .font(.system(size: 10, weight: .medium, design: .monospaced))
                     .foregroundColor(Color.white.opacity(0.75))

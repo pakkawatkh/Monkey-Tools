@@ -3,12 +3,22 @@ import Combine
 import AppKit
 import CryptoKit
 
+public enum ClipboardActiveTab: String, CaseIterable {
+    case clipboard
+    case emoji
+}
+
 public final class ClipboardManager: ObservableObject {
     public static let shared = ClipboardManager()
 
     @Published public private(set) var items: [ClipboardItem] = []
-    @Published public var searchQuery: String = ""
+    @Published public var searchQuery: String = "" {
+        didSet {
+            selectedIndex = 0
+        }
+    }
     @Published public var selectedIndex: Int = 0
+    @Published public var activeTab: ClipboardActiveTab = .clipboard
     @Published public var maxHistoryCount: Int = 100
 
     private let storage: ClipboardStorage
@@ -178,20 +188,29 @@ public final class ClipboardManager: ObservableObject {
     public func selectPrevious() {
         let count = filteredItems.count
         guard count > 0 else { return }
-        selectedIndex = (selectedIndex - 1 + count) % count
+        if selectedIndex <= 0 || selectedIndex >= count {
+            selectedIndex = count - 1
+        } else {
+            selectedIndex -= 1
+        }
     }
 
     /// Select next item (down arrow key)
     public func selectNext() {
         let count = filteredItems.count
         guard count > 0 else { return }
-        selectedIndex = (selectedIndex + 1) % count
+        if selectedIndex < 0 || selectedIndex >= count - 1 {
+            selectedIndex = 0
+        } else {
+            selectedIndex += 1
+        }
     }
 
     /// Get currently selected item if any
     public var selectedItem: ClipboardItem? {
         let list = filteredItems
-        guard selectedIndex >= 0 && selectedIndex < list.count else { return nil }
-        return list[selectedIndex]
+        guard !list.isEmpty else { return nil }
+        let clampedIndex = max(0, min(selectedIndex, list.count - 1))
+        return list[clampedIndex]
     }
 }

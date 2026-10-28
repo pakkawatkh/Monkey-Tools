@@ -78,35 +78,65 @@ public final class ClipboardPanel: NSPanel {
         }
     }
 
+    public override func sendEvent(_ event: NSEvent) {
+        if event.type == .keyDown {
+            if handlePanelKeyDown(event) {
+                return
+            }
+        }
+        super.sendEvent(event)
+    }
+
     public override func keyDown(with event: NSEvent) {
+        if handlePanelKeyDown(event) {
+            return
+        }
+        super.keyDown(with: event)
+    }
+
+    private func handlePanelKeyDown(_ event: NSEvent) -> Bool {
         // Esc key closes panel
         if event.keyCode == 53 {
             closePanel()
-            return
+            return true
         }
 
-        // Return key pastes selected item
-        if event.keyCode == 36 {
-            if let selected = ClipboardManager.shared.selectedItem {
-                pasteAndClose(item: selected)
+        // Return / Enter key (36 = Return, 76 = Numpad Enter)
+        if event.keyCode == 36 || event.keyCode == 76 {
+            if ClipboardManager.shared.activeTab == .clipboard {
+                if let selected = ClipboardManager.shared.selectedItem {
+                    pasteAndClose(item: selected)
+                    return true
+                }
+            } else {
+                if let first = EmojiManager.shared.filteredEmojis.first {
+                    EmojiManager.shared.useEmoji(first)
+                    AutoPaster.shared.pasteEmoji(first)
+                    closePanel()
+                    return true
+                }
             }
-            return
+            return true
         }
 
-        // Up arrow
+        // Up arrow (126)
         if event.keyCode == 126 {
-            ClipboardManager.shared.selectPrevious()
-            return
+            if ClipboardManager.shared.activeTab == .clipboard {
+                ClipboardManager.shared.selectPrevious()
+                return true
+            }
         }
 
-        // Down arrow
+        // Down arrow (125)
         if event.keyCode == 125 {
-            ClipboardManager.shared.selectNext()
-            return
+            if ClipboardManager.shared.activeTab == .clipboard {
+                ClipboardManager.shared.selectNext()
+                return true
+            }
         }
 
         // Cmd + 1..9 quick paste
-        if event.modifierFlags.contains(.command) {
+        if event.modifierFlags.contains(.command) && ClipboardManager.shared.activeTab == .clipboard {
             let digitKeyCodes: [UInt16: Int] = [
                 18: 0, // 1
                 19: 1, // 2
@@ -123,12 +153,12 @@ public final class ClipboardPanel: NSPanel {
                 let items = ClipboardManager.shared.filteredItems
                 if targetIndex < items.count {
                     pasteAndClose(item: items[targetIndex])
-                    return
+                    return true
                 }
             }
         }
 
-        super.keyDown(with: event)
+        return false
     }
 
     public func toggleVisibility() {
@@ -149,9 +179,10 @@ public final class ClipboardPanel: NSPanel {
         // Position window near mouse cursor or centered on current screen
         positionAtMouseOrCenter()
 
-        // Reset search query
+        // Reset search query, selection, and tab
         ClipboardManager.shared.searchQuery = ""
         ClipboardManager.shared.selectedIndex = 0
+        ClipboardManager.shared.activeTab = .clipboard
         EmojiManager.shared.searchQuery = ""
 
         self.makeKeyAndOrderFront(nil)

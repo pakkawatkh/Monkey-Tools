@@ -51,8 +51,22 @@ public struct ClipboardItemRow: View {
                             .foregroundColor(Color.white.opacity(0.65))
                     }
 
-                    // Action buttons (Pin & Delete)
-                    HStack(spacing: 2) {
+                    // Action buttons (Pin & Delete) and Enter badge
+                    HStack(spacing: 4) {
+                        if isSelected {
+                            HStack(spacing: 3) {
+                                Image(systemName: "return")
+                                    .font(.system(size: 8, weight: .bold))
+                                Text("Enter")
+                                    .font(.system(size: 9, weight: .semibold))
+                            }
+                            .foregroundColor(Color(red: 0.7, green: 0.9, blue: 1.0))
+                            .padding(.horizontal, 5)
+                            .padding(.vertical, 2)
+                            .background(Color(red: 0.15, green: 0.38, blue: 0.75).opacity(0.85))
+                            .clipShape(RoundedRectangle(cornerRadius: 4))
+                        }
+
                         Button(action: onTogglePin) {
                             Image(systemName: item.isPinned ? "pin.slash" : "pin")
                                 .font(.system(size: 11))
@@ -73,7 +87,7 @@ public struct ClipboardItemRow: View {
                         .buttonStyle(.plain)
                         .help("Delete from history")
                     }
-                    .opacity(isHovered || item.isPinned ? 1.0 : 0.0)
+                    .opacity(isHovered || item.isPinned || isSelected ? 1.0 : 0.0)
                 }
 
                 // Content preview (Image or Text)

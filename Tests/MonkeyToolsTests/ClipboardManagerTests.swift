@@ -166,4 +166,52 @@ final class ClipboardManagerTests: XCTestCase {
         XCTAssertTrue(defaultStorage.storageURL.path.contains("monkey-tools"))
         XCTAssertTrue(defaultStorage.imagesDirectory.path.contains("monkey-tools"))
     }
+
+    func testKeyboardSelectionNavigation() {
+        manager.add(text: "Item 1")
+        manager.add(text: "Item 2")
+        manager.add(text: "Item 3")
+        // Items are in reverse chronological order: [Item 3, Item 2, Item 1]
+        XCTAssertEqual(manager.filteredItems.count, 3)
+        XCTAssertEqual(manager.selectedIndex, 0)
+        XCTAssertEqual(manager.selectedItem?.text, "Item 3")
+
+        // Down arrow: next item
+        manager.selectNext()
+        XCTAssertEqual(manager.selectedIndex, 1)
+        XCTAssertEqual(manager.selectedItem?.text, "Item 2")
+
+        manager.selectNext()
+        XCTAssertEqual(manager.selectedIndex, 2)
+        XCTAssertEqual(manager.selectedItem?.text, "Item 1")
+
+        // Down arrow at bottom wraps around to top
+        manager.selectNext()
+        XCTAssertEqual(manager.selectedIndex, 0)
+        XCTAssertEqual(manager.selectedItem?.text, "Item 3")
+
+        // Up arrow from top wraps around to bottom
+        manager.selectPrevious()
+        XCTAssertEqual(manager.selectedIndex, 2)
+        XCTAssertEqual(manager.selectedItem?.text, "Item 1")
+
+        // Up arrow: previous item
+        manager.selectPrevious()
+        XCTAssertEqual(manager.selectedIndex, 1)
+        XCTAssertEqual(manager.selectedItem?.text, "Item 2")
+    }
+
+    func testSearchQueryResetsSelectedIndex() {
+        manager.add(text: "Apple MacBook")
+        manager.add(text: "Google Pixel")
+        manager.add(text: "Apple iPhone")
+
+        manager.selectedIndex = 2
+        XCTAssertEqual(manager.selectedIndex, 2)
+
+        // Typing in search query must reset selectedIndex to 0
+        manager.searchQuery = "Apple"
+        XCTAssertEqual(manager.selectedIndex, 0)
+        XCTAssertEqual(manager.filteredItems.count, 2)
+    }
 }
