@@ -55,5 +55,9 @@ hdiutil create -volname "monkey-tools Installer" -srcfolder "${DMG_TMP}" -ov -fo
 # Clean up temporary staging directory
 rm -rf "${DMG_TMP}"
 
+# Sync latest DMG to docs for direct website downloads
+mkdir -p "${PROJECT_DIR}/docs"
+cp -f "${DMG_OUTPUT}" "${PROJECT_DIR}/docs/monkey-tools-Installer.dmg"
+
 echo "🎉 DMG Installer successfully created!"
 ls -lh "${DMG_OUTPUT}"
