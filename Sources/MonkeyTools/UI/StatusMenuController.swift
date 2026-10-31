@@ -153,7 +153,14 @@ public final class StatusMenuController: NSObject {
         let menu = NSMenu()
         let loc = LocalizationManager.shared
 
-        if UpdateCheckService.shared.updateAvailable {
+        if UpdateInstallerService.shared.isInstalling {
+            let pct = Int(UpdateInstallerService.shared.downloadProgress * 100)
+            let updateTitle = "⏳ \(loc["update_downloading"]) (\(pct)%)"
+            let updateItem = NSMenuItem(title: updateTitle, action: #selector(openUpdateDownload), keyEquivalent: "")
+            updateItem.target = self
+            menu.addItem(updateItem)
+            menu.addItem(NSMenuItem.separator())
+        } else if UpdateCheckService.shared.updateAvailable {
             let version = UpdateCheckService.shared.latestUpdateInfo?.latestVersion ?? ""
             let updateTitle = "✨ \(loc["menu_update_available"]) (v\(version))"
             let updateItem = NSMenuItem(title: updateTitle, action: #selector(openUpdateDownload), keyEquivalent: "")
@@ -245,11 +252,9 @@ public final class StatusMenuController: NSObject {
     }
 
     @objc private func openUpdateDownload() {
-        if let downloadUrlStr = UpdateCheckService.shared.latestUpdateInfo?.downloadUrl,
-           let url = URL(string: downloadUrlStr) {
-            NSWorkspace.shared.open(url)
-        } else if let fallback = URL(string: "https://pakkawatkh.github.io/tiffy-app/monkey-tools/") {
-            NSWorkspace.shared.open(fallback)
+        SettingsWindowController.shared.showSettings()
+        if !UpdateInstallerService.shared.isInstalling, let info = UpdateCheckService.shared.latestUpdateInfo {
+            UpdateInstallerService.shared.startUpdate(with: info)
         }
     }
 

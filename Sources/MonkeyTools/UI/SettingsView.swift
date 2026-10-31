@@ -35,6 +35,7 @@ public struct SettingsView: View {
     @ObservedObject var loc = LocalizationManager.shared
     @ObservedObject var networkMonitor = NetworkMonitorService.shared
     @ObservedObject var updateService = UpdateCheckService.shared
+    @ObservedObject var installer = UpdateInstallerService.shared
     @State private var selectedTab: SettingsTab = .clipboard
     @State private var isRecordingCustom = false
     @State private var localMonitor: Any?
@@ -473,7 +474,7 @@ public struct SettingsView: View {
                 }
 
                 if updateService.updateAvailable, let info = updateService.latestUpdateInfo {
-                    VStack(alignment: .leading, spacing: 8) {
+                    VStack(alignment: .leading, spacing: 10) {
                         HStack(spacing: 8) {
                             Text("✨")
                             VStack(alignment: .leading, spacing: 2) {
@@ -489,19 +490,53 @@ public struct SettingsView: View {
                             Spacer()
                         }
 
-                        Button(action: {
-                            if let url = URL(string: info.downloadUrl) {
-                                NSWorkspace.shared.open(url)
+                        if installer.isInstalling {
+                            VStack(alignment: .leading, spacing: 6) {
+                                HStack {
+                                    Text(installer.installStatusText)
+                                        .font(.system(size: 11, weight: .medium))
+                                    Spacer()
+                                    Text("\(Int(installer.downloadProgress * 100))%")
+                                        .font(.system(size: 11, weight: .bold, design: .monospaced))
+                                        .foregroundColor(.secondary)
+                                }
+                                ProgressView(value: installer.downloadProgress, total: 1.0)
+                                    .progressViewStyle(.linear)
                             }
-                        }) {
-                            HStack(spacing: 6) {
-                                Image(systemName: "arrow.down.circle.fill")
-                                Text(loc["update_download_button"])
+                            .padding(.vertical, 4)
+                        } else {
+                            HStack(spacing: 12) {
+                                Button(action: {
+                                    installer.startUpdate(with: info)
+                                }) {
+                                    HStack(spacing: 6) {
+                                        Image(systemName: "arrow.triangle.2.circlepath.circle.fill")
+                                        Text(loc["update_button_install"])
+                                    }
+                                    .font(.system(size: 12, weight: .semibold))
+                                }
+                                .buttonStyle(.borderedProminent)
+                                .tint(.orange)
+
+                                Button(action: {
+                                    if let url = URL(string: info.downloadUrl) {
+                                        NSWorkspace.shared.open(url)
+                                    }
+                                }) {
+                                    Text(loc["update_download_button"])
+                                        .font(.system(size: 11))
+                                        .underline()
+                                        .foregroundColor(.secondary)
+                                }
+                                .buttonStyle(.plain)
                             }
-                            .font(.system(size: 12, weight: .semibold))
                         }
-                        .buttonStyle(.borderedProminent)
-                        .tint(.orange)
+
+                        if let err = installer.installError {
+                            Text(err)
+                                .font(.system(size: 11))
+                                .foregroundColor(.red)
+                        }
                     }
                     .padding(10)
                     .frame(maxWidth: .infinity, alignment: .leading)
