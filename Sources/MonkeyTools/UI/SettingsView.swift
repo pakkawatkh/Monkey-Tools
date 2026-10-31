@@ -6,6 +6,7 @@ public struct SettingsView: View {
     @ObservedObject var settings = AppSettings.shared
     @ObservedObject var autoPaster = AutoPaster.shared
     @ObservedObject var loc = LocalizationManager.shared
+    @ObservedObject var networkMonitor = NetworkMonitorService.shared
     @State private var isRecordingCustom = false
     @State private var localMonitor: Any?
 
@@ -182,6 +183,55 @@ public struct SettingsView: View {
                                     .font(.system(size: 11))
                                     .foregroundColor(.secondary)
                             }
+                        }
+                    }
+                    .padding()
+                    .background(Color.primary.opacity(0.02))
+                    .clipShape(RoundedRectangle(cornerRadius: 10))
+                    .overlay(RoundedRectangle(cornerRadius: 10).stroke(Color.primary.opacity(0.08), lineWidth: 1))
+
+                    // MARK: - Network Monitor Section
+                    VStack(alignment: .leading, spacing: 14) {
+                        Text(loc["settings_network_heading"])
+                            .font(.system(size: 13, weight: .bold))
+
+                        Toggle(isOn: $settings.networkMonitorEnabled) {
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(loc["settings_network_enable"])
+                                    .font(.system(size: 13))
+                            }
+                        }
+
+                        if settings.networkMonitorEnabled {
+                            Divider()
+
+                            HStack {
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text(loc["settings_network_unit"])
+                                        .font(.system(size: 13))
+                                }
+                                Spacer()
+                                Picker("", selection: $settings.networkSpeedUnit) {
+                                    Text(loc["unit_auto_bytes"]).tag(NetworkSpeedUnit.autoBytes)
+                                    Text(loc["unit_bits"]).tag(NetworkSpeedUnit.bits)
+                                    Text(loc["unit_fixed_kb"]).tag(NetworkSpeedUnit.fixedKB)
+                                    Text(loc["unit_fixed_mb"]).tag(NetworkSpeedUnit.fixedMB)
+                                }
+                                .pickerStyle(.menu)
+                                .frame(width: 190)
+                            }
+
+                            // Live speed preview badge
+                            HStack(spacing: 8) {
+                                Text("⚡")
+                                Text(networkMonitor.formattedSpeedString.isEmpty ? "⬇ 0 B/s  ⬆ 0 B/s" : networkMonitor.formattedSpeedString)
+                                    .font(.system(size: 12, weight: .semibold, design: .monospaced))
+                                    .foregroundColor(.secondary)
+                            }
+                            .padding(8)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .background(Color.primary.opacity(0.04))
+                            .clipShape(RoundedRectangle(cornerRadius: 6))
                         }
                     }
                     .padding()
