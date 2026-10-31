@@ -1,6 +1,6 @@
 # 🐵 monkey-tools 📋
-> **Windows-style Clipboard History (`Win + V`), Continuous Emoji Picker & Smart Selection Translator for macOS**  
-> A lightweight, powerful, and privacy-conscious all-in-one productivity suite for macOS. Seamlessly unites Windows-style Clipboard History, an instant continuous Emoji Picker, and a smart floating Selection Translator into a single menu bar utility. Crafted with Swift & SwiftUI, featuring a clean, dark acrylic design that is fast, responsive, and easy on system resources.
+> **Windows-style Clipboard History (`Win + V`), Continuous Emoji Picker, Smart Selection Translator & Real-Time Network Monitor for macOS**  
+> A lightweight, powerful, and privacy-conscious all-in-one productivity suite for macOS. Seamlessly unites Windows-style Clipboard History, an instant continuous Emoji Picker, a smart floating Selection Translator, and a real-time system Network Monitor into a single menu bar utility. Crafted with Swift & SwiftUI, featuring a clean, dark acrylic design that is fast, responsive, and easy on system resources.
 
 [![Release](https://img.shields.io/badge/Release-v2.0.1-orange?style=for-the-badge&logo=github)](https://github.com/pakkawatkh/monkey-tools/releases/tag/v2.0.1)
 [![Platform](https://img.shields.io/badge/Platform-macOS%2013%2B-lightgrey?style=for-the-badge&logo=apple)](https://github.com/pakkawatkh/monkey-tools)
@@ -20,8 +20,14 @@ You can download the latest official `.dmg` installer directly from the link bel
 
 ---
 
-## 🚀 What's New in v2.0.1 (Release Notes)
+## 🚀 What's New (Release Highlights)
 
+- 🌐 **Real-time System Network Monitor:** 
+  - Live download (`⬇`) and upload (`⬆`) bandwidth speed displayed directly on the macOS Menu Bar.
+  - Powered by native Darwin BSD `getifaddrs` kernel counters sampling every 1 second with near-zero energy/CPU usage (< 0.1%).
+  - Smooth typography with `NSFont.monospacedDigitSystemFont` eliminating horizontal width jitter.
+  - Customizable in Settings: Toggle on/off, and choose speed unit between **Auto Bytes** (`B/s`, `KB/s`, `MB/s`, `GB/s`), **Bits** (`Kbps`, `Mbps`, `Gbps`), **Fixed KB/s**, or **Fixed MB/s**.
+  - Dropdown menu status integration displaying real-time speed and cumulative session data transfer totals.
 - 🖱️ **120Hz Native Smooth Drag-to-Move:** Re-architected translation popover drag movement using native AppKit `window.performDrag` for butter-smooth, zero-lag window dragging that stays perfectly pinned to the cursor.
 - 📐 **Omni-Directional Window Resizing:** Translation popover now supports smooth resizing from all 4 borders and 4 corners natively, alongside the corner grip handle.
 - ⚡ **Instant Bubble Dismissal on Any Action:** Floating translation bubble (`SelectionBubblePanel`) now automatically and immediately dismisses upon any non-translate user action:
