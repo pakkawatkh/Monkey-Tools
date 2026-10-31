@@ -24,6 +24,20 @@ final class NetworkMonitorServiceTests: XCTestCase {
         XCTAssertEqual(rates.upSpeed, 0)
     }
 
+    func testCalculateRatesLarge64BitValues() {
+        let service = NetworkMonitorService()
+        // 80 GB previously, 85 GB currently (5 GB downloaded over 2.0s = 2.5 GB/s)
+        let eightyGB: UInt64 = 80 * 1024 * 1024 * 1024
+        let eightyFiveGB: UInt64 = 85 * 1024 * 1024 * 1024
+        let rates = service.calculateRates(
+            previousIn: eightyGB, currentIn: eightyFiveGB,
+            previousOut: 1_000_000_000, currentOut: 1_050_000_000,
+            timeDelta: 2.0
+        )
+        XCTAssertEqual(rates.downSpeed, 2.5 * 1024 * 1024 * 1024, accuracy: 1.0)
+        XCTAssertEqual(rates.upSpeed, 25_000_000, accuracy: 1.0)
+    }
+
     func testSampleInterfaceBytesDoesNotCrash() {
         let service = NetworkMonitorService()
         let sample = service.sampleInterfaceBytes()

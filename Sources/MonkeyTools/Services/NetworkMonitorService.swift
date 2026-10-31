@@ -27,6 +27,55 @@ public final class NetworkMonitorService: ObservableObject {
     public init() {}
 
     public func sampleInterfaceBytes() -> (ibytes: UInt64, obytes: UInt64) {
+        var mib: [Int32] = [CTL_NET, PF_ROUTE, 0, 0, NET_RT_IFLIST2, 0]
+        var len: Int = 0
+        guard sysctl(&mib, 6, nil, &len, nil, 0) == 0, len > 0 else {
+            return fallbackSampleGetifaddrs()
+        }
+
+        let buffer = UnsafeMutablePointer<UInt8>.allocate(capacity: len)
+        defer { buffer.deallocate() }
+
+        guard sysctl(&mib, 6, buffer, &len, nil, 0) == 0 else {
+            return fallbackSampleGetifaddrs()
+        }
+
+        var totalIn: UInt64 = 0
+        var totalOut: UInt64 = 0
+
+        var cursor = buffer
+        let end = buffer.advanced(by: len)
+        var nameBuf = [CChar](repeating: 0, count: Int(IF_NAMESIZE))
+
+        while cursor < end {
+            let msgHdr = cursor.withMemoryRebound(to: if_msghdr.self, capacity: 1) { $0.pointee }
+            if msgHdr.ifm_type == RTM_IFINFO2 {
+                let ifm2 = cursor.withMemoryRebound(to: if_msghdr2.self, capacity: 1) { $0.pointee }
+                let flags = ifm2.ifm_flags
+                let isUp = (flags & Int32(IFF_UP)) != 0
+                let isRunning = (flags & Int32(IFF_RUNNING)) != 0
+                let isLoopback = (flags & Int32(IFF_LOOPBACK)) != 0
+
+                if isUp && isRunning && !isLoopback {
+                    if if_indextoname(UInt32(ifm2.ifm_index), &nameBuf) != nil {
+                        let name = String(cString: nameBuf)
+                        // Filter for physical interfaces (en*, bridge*, pdp_ip*)
+                        // This prevents 32-bit overflow and avoids double-counting virtual VPN tunnels (utun*) or AirDrop (awdl0)
+                        if name.hasPrefix("en") || name.hasPrefix("bridge") || name.hasPrefix("pdp_ip") {
+                            let data = ifm2.ifm_data
+                            totalIn += data.ifi_ibytes
+                            totalOut += data.ifi_obytes
+                        }
+                    }
+                }
+            }
+            cursor = cursor.advanced(by: Int(msgHdr.ifm_msglen))
+        }
+
+        return (totalIn, totalOut)
+    }
+
+    private func fallbackSampleGetifaddrs() -> (ibytes: UInt64, obytes: UInt64) {
         var ifap: UnsafeMutablePointer<ifaddrs>?
         guard getifaddrs(&ifap) == 0, let first = ifap else {
             return (0, 0)
@@ -40,13 +89,15 @@ public final class NetworkMonitorService: ObservableObject {
         while let current = cursor {
             let ifa = current.pointee
             let flags = Int32(ifa.ifa_flags)
-            // Interface must be up and running, but not loopback
             if (flags & IFF_UP) != 0 && (flags & IFF_RUNNING) != 0 && (flags & IFF_LOOPBACK) == 0 {
                 if let addr = ifa.ifa_addr, addr.pointee.sa_family == UInt8(AF_LINK) {
-                    if let data = ifa.ifa_data {
-                        let ifData = data.assumingMemoryBound(to: if_data.self)
-                        totalIn += UInt64(ifData.pointee.ifi_ibytes)
-                        totalOut += UInt64(ifData.pointee.ifi_obytes)
+                    let name = String(cString: ifa.ifa_name)
+                    if name.hasPrefix("en") || name.hasPrefix("bridge") || name.hasPrefix("pdp_ip") {
+                        if let data = ifa.ifa_data {
+                            let ifData = data.assumingMemoryBound(to: if_data.self)
+                            totalIn += UInt64(ifData.pointee.ifi_ibytes)
+                            totalOut += UInt64(ifData.pointee.ifi_obytes)
+                        }
                     }
                 }
             }
