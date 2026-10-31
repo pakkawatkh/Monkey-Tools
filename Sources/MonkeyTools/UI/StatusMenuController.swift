@@ -4,6 +4,7 @@ import Combine
 public final class StatusMenuController: NSObject {
     private var statusItem: NSStatusItem?
     private var cancellables = Set<AnyCancellable>()
+    private let fixedSpeedBarLength: CGFloat = 176.0
 
     public override init() {
         super.init()
@@ -51,7 +52,8 @@ public final class StatusMenuController: NSObject {
         let speedText = NetworkMonitorService.shared.formattedSpeedString
 
         if isEnabled && !speedText.isEmpty {
-            let font = NSFont.monospacedDigitSystemFont(ofSize: 10.5, weight: .medium)
+            statusItem?.length = fixedSpeedBarLength
+            let font = NSFont.monospacedSystemFont(ofSize: 10.0, weight: .medium)
             let attrTitle = NSAttributedString(string: " " + speedText, attributes: [
                 .font: font,
                 .foregroundColor: NSColor.labelColor
@@ -59,6 +61,7 @@ public final class StatusMenuController: NSObject {
             button.attributedTitle = attrTitle
             button.imagePosition = .imageLeft
         } else {
+            statusItem?.length = NSStatusItem.variableLength
             button.attributedTitle = NSAttributedString(string: "")
             button.title = ""
             button.imagePosition = .imageOnly

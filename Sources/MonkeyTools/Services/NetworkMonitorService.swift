@@ -181,16 +181,16 @@ public final class NetworkMonitorService: ObservableObject {
             self.sessionDownloadBytes += downDelta
             self.sessionUploadBytes += upDelta
 
-            let downStr = unit.formatSpeed(bytesPerSec: downRate)
-            let upStr = unit.formatSpeed(bytesPerSec: upRate)
-            self.formattedSpeedString = "⬇ \(downStr)  ⬆ \(upStr)"
+            let downStr = unit.formatFixedSlotSpeed(bytesPerSec: downRate)
+            let upStr = unit.formatFixedSlotSpeed(bytesPerSec: upRate)
+            self.formattedSpeedString = "⬇\(downStr) ⬆\(upStr)"
         }
     }
 
     public func refreshFormatting() {
         let unit = currentUnit
-        let downStr = unit.formatSpeed(bytesPerSec: downloadSpeed)
-        let upStr = unit.formatSpeed(bytesPerSec: uploadSpeed)
-        self.formattedSpeedString = "⬇ \(downStr)  ⬆ \(upStr)"
+        let downStr = unit.formatFixedSlotSpeed(bytesPerSec: downloadSpeed)
+        let upStr = unit.formatFixedSlotSpeed(bytesPerSec: uploadSpeed)
+        self.formattedSpeedString = "⬇\(downStr) ⬆\(upStr)"
     }
 }

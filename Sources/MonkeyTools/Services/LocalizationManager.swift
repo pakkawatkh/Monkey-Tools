@@ -32,6 +32,9 @@ public final class LocalizationManager: ObservableObject {
     private let stringsTable: [String: [String: String]] = [
         // Tab / Navigation
         "tab_clipboard": ["th": "คลิปบอร์ด", "en": "Clipboard", "zh": "剪贴板"],
+        "tab_translator": ["th": "แปลภาษา", "en": "Translator", "zh": "划词翻译"],
+        "tab_network": ["th": "ความเร็วเน็ต", "en": "Network", "zh": "网络监控"],
+        "tab_general": ["th": "ทั่วไป", "en": "General", "zh": "通用"],
         "tab_emoji": ["th": "อีโมจิ", "en": "Emoji", "zh": "表情符号"],
         "tab_all": ["th": "ทั้งหมด", "en": "All", "zh": "全部"],
         "tab_text": ["th": "ข้อความ", "en": "Text", "zh": "文本"],

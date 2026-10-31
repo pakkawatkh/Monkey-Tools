@@ -27,4 +27,23 @@ final class NetworkSpeedUnitTests: XCTestCase {
         XCTAssertEqual(NetworkSpeedUnit.formatDataSize(bytes: 1024 * 1024 * 150), "150 MB")
         XCTAssertEqual(NetworkSpeedUnit.formatDataSize(bytes: 1024 * 1024 * 1024 * 3), "3.0 GB")
     }
+
+    func testFixedSlotSpeedFormattingHasConsistentLength() {
+        let testValues: [Double] = [
+            0,
+            512,
+            1024 * 1.5,
+            1024 * 120.5,
+            1024 * 1024 * 2.4,
+            1024 * 1024 * 45.8,
+            1024 * 1024 * 120.5,
+            1024 * 1024 * 1024 * 1.2
+        ]
+
+        let expectedLength = 10 // 5 chars number + 1 space + 4 chars unit = 10 chars
+        for val in testValues {
+            let slotStr = NetworkSpeedUnit.autoBytes.formatFixedSlotSpeed(bytesPerSec: val)
+            XCTAssertEqual(slotStr.count, expectedLength, "String '\(slotStr)' count \(slotStr.count) does not match expected \(expectedLength)")
+        }
+    }
 }
