@@ -4,19 +4,29 @@ public struct UpdateInfo: Codable, Equatable {
     public let latestVersion: String
     public let releaseDate: String
     public let downloadUrl: String
-    public let pageUrl: String
+    public let zipUrl: String?
+    public let pageUrl: String?
     public let releaseNotes: String
+
+    public var preferredDownloadURL: URL? {
+        if let zip = zipUrl, let url = URL(string: zip) {
+            return url
+        }
+        return URL(string: downloadUrl)
+    }
 
     public init(
         latestVersion: String,
         releaseDate: String,
         downloadUrl: String,
-        pageUrl: String,
+        zipUrl: String? = nil,
+        pageUrl: String? = nil,
         releaseNotes: String
     ) {
         self.latestVersion = latestVersion
         self.releaseDate = releaseDate
         self.downloadUrl = downloadUrl
+        self.zipUrl = zipUrl
         self.pageUrl = pageUrl
         self.releaseNotes = releaseNotes
     }
