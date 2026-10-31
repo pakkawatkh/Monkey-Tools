@@ -119,6 +119,18 @@ public final class LocalizationManager: ObservableObject {
         "menu_network_speed": ["th": "เน็ตสด", "en": "Network Speed", "zh": "实时网速"],
         "menu_network_session_total": ["th": "ยอดเซสชัน", "en": "Session Data", "zh": "本次流量"],
 
+        // Software Update
+        "update_heading": ["th": "🔄 การอัปเดตโปรแกรม (Software Update)", "en": "🔄 Software Update", "zh": "🔄 软件更新"],
+        "update_current_version": ["th": "เวอร์ชันปัจจุบัน", "en": "Current Version", "zh": "当前版本"],
+        "update_last_checked": ["th": "ตรวจสอบล่าสุด", "en": "Last Checked", "zh": "上次检查"],
+        "update_check_button": ["th": "ตรวจสอบการอัปเดต", "en": "Check for Updates", "zh": "检查更新"],
+        "update_checking": ["th": "กำลังตรวจสอบ...", "en": "Checking for updates...", "zh": "正在检查更新..."],
+        "update_available_title": ["th": "✨ มีเวอร์ชันใหม่พร้อมให้ดาวน์โหลด!", "en": "✨ A new version is available!", "zh": "✨ 发现新版本！"],
+        "update_download_button": ["th": "ดาวน์โหลดตัวติดตั้ง DMG", "en": "Download DMG Installer", "zh": "下载 DMG 安装包"],
+        "update_up_to_date": ["th": "✓ คุณกำลังใช้เวอร์ชันล่าสุดแล้ว", "en": "✓ You're using the latest version", "zh": "✓ 已是最新版本"],
+        "menu_check_updates": ["th": "ตรวจสอบการอัปเดต...", "en": "Check for Updates...", "zh": "检查更新..."],
+        "menu_update_available": ["th": "✨ มีเวอร์ชันใหม่ - คลิกเพื่อดาวน์โหลด", "en": "✨ Update Available - Click to Download", "zh": "✨ 发现新版本 - 点击下载"],
+
         // Status Menu Bar
         "menu_show_monkey": ["th": "เปิด monkey-tools", "en": "Show monkey-tools", "zh": "打开 monkey-tools"],
         "menu_history_count": ["th": "ประวัติ:", "en": "History:", "zh": "历史记录："],
