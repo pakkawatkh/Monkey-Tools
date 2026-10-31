@@ -153,6 +153,15 @@ public final class StatusMenuController: NSObject {
         let menu = NSMenu()
         let loc = LocalizationManager.shared
 
+        if UpdateCheckService.shared.updateAvailable {
+            let version = UpdateCheckService.shared.latestUpdateInfo?.latestVersion ?? ""
+            let updateTitle = "✨ \(loc["menu_update_available"]) (v\(version))"
+            let updateItem = NSMenuItem(title: updateTitle, action: #selector(openUpdateDownload), keyEquivalent: "")
+            updateItem.target = self
+            menu.addItem(updateItem)
+            menu.addItem(NSMenuItem.separator())
+        }
+
         let shortcutDisplay = AppSettings.shared.hotkeyDisplayString
         let showItem = NSMenuItem(title: "\(loc["menu_show_monkey"]) (\(shortcutDisplay))", action: #selector(togglePanel), keyEquivalent: "")
         showItem.target = self
@@ -199,6 +208,10 @@ public final class StatusMenuController: NSObject {
         settingsItem.target = self
         menu.addItem(settingsItem)
 
+        let checkUpdateItem = NSMenuItem(title: loc["menu_check_updates"], action: #selector(checkForUpdatesManually), keyEquivalent: "")
+        checkUpdateItem.target = self
+        menu.addItem(checkUpdateItem)
+
         menu.addItem(NSMenuItem.separator())
 
         let quitItem = NSMenuItem(title: loc["menu_quit_item"], action: #selector(quitApp), keyEquivalent: "q")
@@ -229,6 +242,20 @@ public final class StatusMenuController: NSObject {
 
     @objc private func openSettings() {
         SettingsWindowController.shared.showSettings()
+    }
+
+    @objc private func openUpdateDownload() {
+        if let downloadUrlStr = UpdateCheckService.shared.latestUpdateInfo?.downloadUrl,
+           let url = URL(string: downloadUrlStr) {
+            NSWorkspace.shared.open(url)
+        } else if let fallback = URL(string: "https://pakkawatkh.github.io/tiffy-app/monkey-tools/") {
+            NSWorkspace.shared.open(fallback)
+        }
+    }
+
+    @objc private func checkForUpdatesManually() {
+        SettingsWindowController.shared.showSettings()
+        UpdateCheckService.shared.checkForUpdates(force: true)
     }
 
     @objc private func quitApp() {

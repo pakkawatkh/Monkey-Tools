@@ -39,6 +39,9 @@ public final class AppDelegate: NSObject, NSApplicationDelegate {
             TextSelectionMonitor.shared.startMonitoring()
         }
 
+        // Check for updates once per 24 hours in background
+        UpdateCheckService.shared.checkForUpdates(force: false)
+
         print("[monkey-tools] Application started successfully. Press your shortcut to show clipboard.")
     }
 

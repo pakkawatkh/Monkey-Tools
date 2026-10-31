@@ -34,6 +34,7 @@ public struct SettingsView: View {
     @ObservedObject var autoPaster = AutoPaster.shared
     @ObservedObject var loc = LocalizationManager.shared
     @ObservedObject var networkMonitor = NetworkMonitorService.shared
+    @ObservedObject var updateService = UpdateCheckService.shared
     @State private var selectedTab: SettingsTab = .clipboard
     @State private var isRecordingCustom = false
     @State private var localMonitor: Any?
@@ -431,6 +432,93 @@ public struct SettingsView: View {
             .clipShape(RoundedRectangle(cornerRadius: 10))
             .overlay(RoundedRectangle(cornerRadius: 10).stroke(Color.primary.opacity(0.08), lineWidth: 1))
 
+            // Software Update Section
+            VStack(alignment: .leading, spacing: 14) {
+                Text(loc["update_heading"])
+                    .font(.system(size: 13, weight: .bold))
+
+                HStack {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(loc["update_current_version"] + ":")
+                            .font(.system(size: 13))
+                        Text("v\(updateService.currentAppVersion)")
+                            .font(.system(size: 12, weight: .semibold, design: .monospaced))
+                            .foregroundColor(.secondary)
+                    }
+
+                    Spacer()
+
+                    Button(action: {
+                        updateService.checkForUpdates(force: true)
+                    }) {
+                        HStack(spacing: 6) {
+                            if updateService.isChecking {
+                                ProgressView()
+                                    .controlSize(.small)
+                            } else {
+                                Image(systemName: "arrow.triangle.2.circlepath")
+                            }
+                            Text(updateService.isChecking ? loc["update_checking"] : loc["update_check_button"])
+                        }
+                        .font(.system(size: 12, weight: .medium))
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .disabled(updateService.isChecking)
+                }
+
+                if let lastCheck = updateService.lastCheckDate {
+                    Text("\(loc["update_last_checked"]): \(formatDate(lastCheck))")
+                        .font(.system(size: 11))
+                        .foregroundColor(.secondary)
+                }
+
+                if updateService.updateAvailable, let info = updateService.latestUpdateInfo {
+                    VStack(alignment: .leading, spacing: 8) {
+                        HStack(spacing: 8) {
+                            Text("✨")
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text("\(loc["update_available_title"]) (v\(info.latestVersion))")
+                                    .font(.system(size: 13, weight: .bold))
+                                    .foregroundColor(.orange)
+                                if !info.releaseNotes.isEmpty {
+                                    Text(info.releaseNotes)
+                                        .font(.system(size: 11))
+                                        .foregroundColor(.secondary)
+                                }
+                            }
+                            Spacer()
+                        }
+
+                        Button(action: {
+                            if let url = URL(string: info.downloadUrl) {
+                                NSWorkspace.shared.open(url)
+                            }
+                        }) {
+                            HStack(spacing: 6) {
+                                Image(systemName: "arrow.down.circle.fill")
+                                Text(loc["update_download_button"])
+                            }
+                            .font(.system(size: 12, weight: .semibold))
+                        }
+                        .buttonStyle(.borderedProminent)
+                        .tint(.orange)
+                    }
+                    .padding(10)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(Color.orange.opacity(0.12))
+                    .clipShape(RoundedRectangle(cornerRadius: 8))
+                    .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color.orange.opacity(0.3), lineWidth: 1))
+                } else if updateService.lastCheckDate != nil && !updateService.isChecking {
+                    Text(loc["update_up_to_date"])
+                        .font(.system(size: 11, weight: .medium))
+                        .foregroundColor(.green)
+                }
+            }
+            .padding()
+            .background(Color.primary.opacity(0.02))
+            .clipShape(RoundedRectangle(cornerRadius: 10))
+            .overlay(RoundedRectangle(cornerRadius: 10).stroke(Color.primary.opacity(0.08), lineWidth: 1))
+
             // System Permissions
             VStack(alignment: .leading, spacing: 10) {
                 Text("สิทธิ์การควบคุมระบบ (System Permissions)")
@@ -523,5 +611,12 @@ public struct SettingsView: View {
             NSEvent.removeMonitor(monitor)
             localMonitor = nil
         }
+    }
+
+    private func formatDate(_ date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.dateStyle = .short
+        formatter.timeStyle = .short
+        return formatter.string(from: date)
     }
 }
