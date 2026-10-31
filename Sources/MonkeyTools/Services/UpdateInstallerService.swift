@@ -106,9 +106,24 @@ public final class UpdateInstallerService: NSObject, ObservableObject, URLSessio
         downloadTask: URLSessionDownloadTask,
         didFinishDownloadingTo location: URL
     ) {
-        DispatchQueue.global(qos: .userInitiated).async { [weak self] in
-            guard let self = self else { return }
-            self.processDownloadedPayload(at: location)
+        // MUST copy file synchronously before this delegate method returns,
+        // because URLSession purges the temporary file at `location` immediately upon return!
+        let fileManager = FileManager.default
+        let updateUUID = UUID().uuidString
+        let tempWorkingDir = URL(fileURLWithPath: NSTemporaryDirectory()).appendingPathComponent("monkey-tools-update-\(updateUUID)")
+
+        do {
+            try fileManager.createDirectory(at: tempWorkingDir, withIntermediateDirectories: true)
+            let isZip = updateInfo?.preferredDownloadURL?.pathExtension.lowercased() == "zip"
+            let stagedPayload = tempWorkingDir.appendingPathComponent(isZip ? "payload.zip" : "payload.dmg")
+            try fileManager.copyItem(at: location, to: stagedPayload)
+
+            DispatchQueue.global(qos: .userInitiated).async { [weak self] in
+                guard let self = self else { return }
+                self.processDownloadedPayload(at: stagedPayload, workingDir: tempWorkingDir, isZip: isZip)
+            }
+        } catch {
+            failWithError(error)
         }
     }
 
@@ -118,59 +133,28 @@ public final class UpdateInstallerService: NSObject, ObservableObject, URLSessio
         didCompleteWithError error: Error?
     ) {
         if let error = error {
-            DispatchQueue.main.async {
-                self.isInstalling = false
-                self.installError = error.localizedDescription
-                self.installStatusText = LocalizationManager.shared["update_failed"]
-                self.activeCompletion?(.failure(error))
-            }
+            failWithError(error)
         }
     }
 
     // MARK: - Payload Extraction & Installation
 
-    private func processDownloadedPayload(at tempFile: URL) {
+    private func processDownloadedPayload(at payloadFile: URL, workingDir: URL, isZip: Bool) {
         DispatchQueue.main.async {
             self.installStatusText = LocalizationManager.shared["update_extracting"]
         }
 
         let fileManager = FileManager.default
-        let updateUUID = UUID().uuidString
-        let tempWorkingDir = URL(fileURLWithPath: NSTemporaryDirectory()).appendingPathComponent("monkey-tools-update-\(updateUUID)")
-
-        do {
-            try fileManager.createDirectory(at: tempWorkingDir, withIntermediateDirectories: true)
-        } catch {
-            failWithError(error)
-            return
-        }
-
-        // Determine if zip or dmg based on original URL or file header
-        let isZip = updateInfo?.preferredDownloadURL?.pathExtension.lowercased() == "zip"
         var extractedAppPath: String?
 
         if isZip {
-            let localZip = tempWorkingDir.appendingPathComponent("payload.zip")
-            do {
-                try fileManager.copyItem(at: tempFile, to: localZip)
-                let success = extractZip(at: localZip.path, destination: tempWorkingDir.path)
-                if success {
-                    extractedAppPath = tempWorkingDir.appendingPathComponent("monkey-tools.app").path
-                }
-            } catch {
-                failWithError(error)
-                return
+            let success = extractZip(at: payloadFile.path, destination: workingDir.path)
+            if success {
+                extractedAppPath = workingDir.appendingPathComponent("monkey-tools.app").path
             }
         } else {
             // DMG Fallback
-            let localDmg = tempWorkingDir.appendingPathComponent("payload.dmg")
-            do {
-                try fileManager.copyItem(at: tempFile, to: localDmg)
-                extractedAppPath = extractDmg(at: localDmg.path, destinationDir: tempWorkingDir)
-            } catch {
-                failWithError(error)
-                return
-            }
+            extractedAppPath = extractDmg(at: payloadFile.path, destinationDir: workingDir)
         }
 
         guard let finalAppPath = extractedAppPath, fileManager.fileExists(atPath: finalAppPath) else {
@@ -198,10 +182,10 @@ public final class UpdateInstallerService: NSObject, ObservableObject, URLSessio
             currentPID: currentPID,
             targetAppPath: targetAppPath,
             newAppPath: finalAppPath,
-            cleanupDir: tempWorkingDir.path
+            cleanupDir: workingDir.path
         )
 
-        let scriptURL = tempWorkingDir.appendingPathComponent("relaunch.sh")
+        let scriptURL = workingDir.appendingPathComponent("relaunch.sh")
         do {
             try script.write(to: scriptURL, atomically: true, encoding: .utf8)
             try fileManager.setAttributes([.posixPermissions: 0o755], ofItemAtPath: scriptURL.path)
