@@ -26,6 +26,41 @@ public final class ClipboardManager: ObservableObject {
     public init(storage: ClipboardStorage = .shared) {
         self.storage = storage
         self.items = storage.load()
+
+        // Background migration: generate missing thumbnails for legacy images
+        DispatchQueue.global(qos: .utility).async { [weak self] in
+            self?.generateMissingThumbnails()
+        }
+    }
+
+    /// Scans history for image items lacking a thumbnail and generates them in the background
+    private func generateMissingThumbnails() {
+        var updated = false
+        var currentItems = items
+
+        for index in currentItems.indices {
+            let item = currentItems[index]
+            if item.type == .image && item.thumbnailFileName == nil, let imgName = item.imageFileName {
+                let imageURL = storage.imagesDirectory.appendingPathComponent(imgName)
+                if let (_, thumbData) = ClipboardStorage.generateThumbnail(from: imageURL, maxPixelSize: 360),
+                   !thumbData.isEmpty {
+                    let thumbName = "thumb_\(UUID().uuidString).jpg"
+                    storage.saveImageData(thumbData, fileName: thumbName)
+                    currentItems[index].thumbnailFileName = thumbName
+                    updated = true
+                }
+            }
+        }
+
+        if updated {
+            DispatchQueue.main.async { [weak self] in
+                guard let self = self else { return }
+                if self.items.count == currentItems.count {
+                    self.items = currentItems
+                    self.storage.save(items: currentItems)
+                }
+            }
+        }
     }
 
     /// Computed property returning filtered items based on current search query.
@@ -113,8 +148,17 @@ public final class ClipboardManager: ObservableObject {
             return existing
         }
 
-        let fileName = "\(UUID().uuidString).png"
+        let imageUUID = UUID().uuidString
+        let fileName = "\(imageUUID).png"
         storage.saveImageData(data, fileName: fileName)
+
+        // Generate downscaled thumbnail (~15-30 KB) for instant 120fps UI rendering
+        var thumbFileName: String? = nil
+        if let thumbData = ClipboardStorage.generateThumbnail(from: data, nsImage: nsImage, maxPixelSize: 360) {
+            let name = "thumb_\(imageUUID).jpg"
+            storage.saveImageData(thumbData, fileName: name)
+            thumbFileName = name
+        }
 
         let width = Int(nsImage.size.width)
         let height = Int(nsImage.size.height)
@@ -122,6 +166,7 @@ public final class ClipboardManager: ObservableObject {
         let newItem = ClipboardItem(
             type: .image,
             imageFileName: fileName,
+            thumbnailFileName: thumbFileName,
             imageWidth: width,
             imageHeight: height,
             dataHash: hash,
@@ -162,8 +207,8 @@ public final class ClipboardManager: ObservableObject {
 
     /// Delete an item from history
     public func delete(item: ClipboardItem) {
-        if item.type == .image, let fileName = item.imageFileName {
-            storage.deleteImageFile(fileName: fileName)
+        if item.type == .image {
+            storage.deleteImageFiles(imageFileName: item.imageFileName, thumbnailFileName: item.thumbnailFileName)
         }
         items.removeAll { $0.id == item.id }
         storage.save(items: items)

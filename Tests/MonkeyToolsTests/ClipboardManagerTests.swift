@@ -131,6 +131,48 @@ final class ClipboardManagerTests: XCTestCase {
         XCTAssertEqual(manager.items.count, 1)
     }
 
+    func testThumbnailGenerationAndCleanup() {
+        let size = NSSize(width: 800, height: 600)
+        let rep = NSBitmapImageRep(
+            bitmapDataPlanes: nil,
+            pixelsWide: Int(size.width),
+            pixelsHigh: Int(size.height),
+            bitsPerSample: 8,
+            samplesPerPixel: 4,
+            hasAlpha: true,
+            isPlanar: false,
+            colorSpaceName: .calibratedRGB,
+            bytesPerRow: 0,
+            bitsPerPixel: 0
+        )!
+        let image = NSImage(size: size)
+        image.addRepresentation(rep)
+        let validPngData = rep.representation(using: .png, properties: [:])!
+
+        let item = manager.addImage(nsImage: image, data: validPngData)
+        XCTAssertNotNil(item)
+        XCTAssertNotNil(item?.thumbnailFileName)
+        XCTAssertTrue(item?.thumbnailFileName?.hasPrefix("thumb_") == true)
+
+        // Verify thumbnail loads and is cached
+        let thumb = item?.loadThumbnail()
+        XCTAssertNotNil(thumb)
+
+        // Verify full image data is preserved at 100% fidelity
+        let rawData = item?.loadImageData()
+        XCTAssertEqual(rawData, validPngData)
+
+        // Verify deleting item also deletes thumbnail and image files
+        let thumbPath = storage.imagesDirectory.appendingPathComponent(item!.thumbnailFileName!).path
+        let imgPath = storage.imagesDirectory.appendingPathComponent(item!.imageFileName!).path
+        XCTAssertTrue(FileManager.default.fileExists(atPath: thumbPath))
+        XCTAssertTrue(FileManager.default.fileExists(atPath: imgPath))
+
+        manager.delete(item: item!)
+        XCTAssertFalse(FileManager.default.fileExists(atPath: thumbPath))
+        XCTAssertFalse(FileManager.default.fileExists(atPath: imgPath))
+    }
+
     func testImageDeduplication() {
         let image = NSImage(size: NSSize(width: 100, height: 100))
         let data = "IdenticalImageData".data(using: .utf8)!

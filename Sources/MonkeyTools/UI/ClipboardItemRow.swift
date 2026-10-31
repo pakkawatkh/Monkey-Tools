@@ -112,7 +112,7 @@ public struct ClipboardItemRow: View {
     // Image content thumbnail
     @ViewBuilder
     private var imagePreview: some View {
-        if let nsImage = item.loadImage() {
+        if let nsImage = item.loadThumbnail() {
             ZStack {
                 Color.black.opacity(0.35)
                 Image(nsImage: nsImage)

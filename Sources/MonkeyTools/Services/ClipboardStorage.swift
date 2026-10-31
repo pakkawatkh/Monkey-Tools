@@ -1,4 +1,6 @@
+import AppKit
 import Foundation
+import ImageIO
 
 public final class ClipboardStorage {
     public static let shared = ClipboardStorage()
@@ -89,8 +91,25 @@ public final class ClipboardStorage {
         try? fileManager.removeItem(at: fileURL)
     }
 
+    public func deleteImageFiles(imageFileName: String?, thumbnailFileName: String?) {
+        if let img = imageFileName {
+            deleteImageFile(fileName: img)
+        }
+        if let thumb = thumbnailFileName {
+            deleteImageFile(fileName: thumb)
+        }
+    }
+
     public func cleanupUnusedImages(retainedItems: [ClipboardItem]) {
-        let activeImageFileNames = Set(retainedItems.compactMap { $0.imageFileName })
+        var activeImageFileNames = Set<String>()
+        for item in retainedItems {
+            if let img = item.imageFileName {
+                activeImageFileNames.insert(img)
+            }
+            if let thumb = item.thumbnailFileName {
+                activeImageFileNames.insert(thumb)
+            }
+        }
         guard let files = try? fileManager.contentsOfDirectory(atPath: imagesDirectory.path) else { return }
 
         for file in files {
@@ -99,5 +118,65 @@ public final class ClipboardStorage {
                 try? fileManager.removeItem(at: fileURL)
             }
         }
+    }
+
+    // MARK: - Thumbnail Generation
+
+    /// Generates high-efficiency downscaled thumbnail JPEG data (max dimension maxPixelSize, quality 0.75)
+    public static func generateThumbnail(from data: Data, nsImage: NSImage? = nil, maxPixelSize: CGFloat = 360) -> Data? {
+        // Fast path: CoreGraphics ImageIO thumbnail decoder
+        let options: [CFString: Any] = [
+            kCGImageSourceCreateThumbnailFromImageAlways: true,
+            kCGImageSourceCreateThumbnailWithTransform: true,
+            kCGImageSourceThumbnailMaxPixelSize: maxPixelSize
+        ]
+        if let source = CGImageSourceCreateWithData(data as CFData, nil),
+           let cgThumb = CGImageSourceCreateThumbnailAtIndex(source, 0, options as CFDictionary) {
+            let rep = NSBitmapImageRep(cgImage: cgThumb)
+            if let jpegData = rep.representation(using: .jpeg, properties: [.compressionFactor: 0.75]) {
+                return jpegData
+            }
+        }
+
+        // Fallback: NSImage drawing
+        if let img = nsImage ?? NSImage(data: data) {
+            let size = img.size
+            guard size.width > 0, size.height > 0 else { return nil }
+            let scale = min(maxPixelSize / max(size.width, size.height), 1.0)
+            let targetSize = NSSize(width: max(1, size.width * scale), height: max(1, size.height * scale))
+
+            let thumb = NSImage(size: targetSize)
+            thumb.lockFocus()
+            img.draw(in: NSRect(origin: .zero, size: targetSize),
+                     from: NSRect(origin: .zero, size: size),
+                     operation: .copy,
+                     fraction: 1.0)
+            thumb.unlockFocus()
+
+            if let tiff = thumb.tiffRepresentation,
+               let rep = NSBitmapImageRep(data: tiff),
+               let jpeg = rep.representation(using: .jpeg, properties: [.compressionFactor: 0.75]) {
+                return jpeg
+            }
+        }
+
+        return nil
+    }
+
+    /// Fast thumbnail extraction directly from file on disk via ImageIO without loading full bitmap into memory
+    public static func generateThumbnail(from fileURL: URL, maxPixelSize: CGFloat = 360) -> (image: NSImage, data: Data)? {
+        let options: [CFString: Any] = [
+            kCGImageSourceCreateThumbnailFromImageAlways: true,
+            kCGImageSourceCreateThumbnailWithTransform: true,
+            kCGImageSourceThumbnailMaxPixelSize: maxPixelSize
+        ]
+        guard let source = CGImageSourceCreateWithURL(fileURL as CFURL, nil),
+              let cgThumb = CGImageSourceCreateThumbnailAtIndex(source, 0, options as CFDictionary) else {
+            return nil
+        }
+        let thumbImage = NSImage(cgImage: cgThumb, size: NSSize(width: cgThumb.width, height: cgThumb.height))
+        let rep = NSBitmapImageRep(cgImage: cgThumb)
+        let jpegData = rep.representation(using: .jpeg, properties: [.compressionFactor: 0.75]) ?? Data()
+        return (thumbImage, jpegData)
     }
 }
