@@ -128,8 +128,14 @@ public final class LocalizationManager: ObservableObject {
         "update_available_title": ["th": "✨ มีเวอร์ชันใหม่พร้อมให้ดาวน์โหลด!", "en": "✨ A new version is available!", "zh": "✨ 发现新版本！"],
         "update_download_button": ["th": "ดาวน์โหลดตัวติดตั้ง DMG", "en": "Download DMG Installer", "zh": "下载 DMG 安装包"],
         "update_up_to_date": ["th": "✓ คุณกำลังใช้เวอร์ชันล่าสุดแล้ว", "en": "✓ You're using the latest version", "zh": "✓ 已是最新版本"],
+        "update_button_install": ["th": "อัปเดตและเริ่มใหม่ทันที", "en": "Update & Restart", "zh": "立即更新并重启"],
+        "update_downloading": ["th": "กำลังดาวน์โหลดตัวอัปเดต...", "en": "Downloading update...", "zh": "正在下载更新..."],
+        "update_extracting": ["th": "กำลังเตรียมติดตั้ง...", "en": "Extracting package...", "zh": "正在准备安装..."],
+        "update_relaunching": ["th": "กำลังเริ่มโปรแกรมใหม่...", "en": "Restarting monkey-tools...", "zh": "正在重启软件..."],
+        "update_failed": ["th": "การอัปเดตล้มเหลว กรุณาลองใหม่", "en": "Update failed, please try again", "zh": "更新失败，请重试"],
+        "update_restart_button": ["th": "เริ่มโปรแกรมใหม่", "en": "Restart Now", "zh": "立即重启"],
         "menu_check_updates": ["th": "ตรวจสอบการอัปเดต...", "en": "Check for Updates...", "zh": "检查更新..."],
-        "menu_update_available": ["th": "✨ มีเวอร์ชันใหม่ - คลิกเพื่อดาวน์โหลด", "en": "✨ Update Available - Click to Download", "zh": "✨ 发现新版本 - 点击下载"],
+        "menu_update_available": ["th": "✨ มีเวอร์ชันใหม่ - คลิกเพื่ออัปเดต", "en": "✨ Update Available - Click to Update", "zh": "✨ 发现新版本 - 点击更新"],
 
         // Status Menu Bar
         "menu_show_monkey": ["th": "เปิด monkey-tools", "en": "Show monkey-tools", "zh": "打开 monkey-tools"],

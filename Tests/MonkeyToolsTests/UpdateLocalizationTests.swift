@@ -14,7 +14,13 @@ final class UpdateLocalizationTests: XCTestCase {
             "update_download_button",
             "update_up_to_date",
             "menu_check_updates",
-            "menu_update_available"
+            "menu_update_available",
+            "update_button_install",
+            "update_downloading",
+            "update_extracting",
+            "update_relaunching",
+            "update_failed",
+            "update_restart_button"
         ]
 
         for key in keys {
