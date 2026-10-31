@@ -54,4 +54,17 @@ final class NetworkMonitorServiceTests: XCTestCase {
         XCTAssertEqual(service.downloadSpeed, 0)
         XCTAssertEqual(service.uploadSpeed, 0)
     }
+
+    func testFormattedSpeedStringUsesCompactArrowLayout() {
+        let service = NetworkMonitorService()
+        service.downloadSpeed = 0
+        service.uploadSpeed = 0
+        service.refreshFormatting()
+        XCTAssertEqual(service.formattedSpeedString, "↓ 0 B/s  ↑ 0 B/s")
+
+        service.downloadSpeed = 1024 * 12.5
+        service.uploadSpeed = 1024 * 1.2
+        service.refreshFormatting()
+        XCTAssertEqual(service.formattedSpeedString, "↓ 12.5 KB/s  ↑ 1.2 KB/s")
+    }
 }

@@ -5,8 +5,8 @@ import Darwin
 public final class NetworkMonitorService: ObservableObject {
     public static let shared = NetworkMonitorService()
 
-    @Published public private(set) var downloadSpeed: Double = 0
-    @Published public private(set) var uploadSpeed: Double = 0
+    @Published public var downloadSpeed: Double = 0
+    @Published public var uploadSpeed: Double = 0
     @Published public private(set) var sessionDownloadBytes: UInt64 = 0
     @Published public private(set) var sessionUploadBytes: UInt64 = 0
     @Published public private(set) var formattedSpeedString: String = ""
@@ -181,16 +181,16 @@ public final class NetworkMonitorService: ObservableObject {
             self.sessionDownloadBytes += downDelta
             self.sessionUploadBytes += upDelta
 
-            let downStr = unit.formatFixedSlotSpeed(bytesPerSec: downRate)
-            let upStr = unit.formatFixedSlotSpeed(bytesPerSec: upRate)
-            self.formattedSpeedString = "⬇\(downStr) ⬆\(upStr)"
+            let downStr = unit.formatSpeed(bytesPerSec: downRate)
+            let upStr = unit.formatSpeed(bytesPerSec: upRate)
+            self.formattedSpeedString = "↓ \(downStr)  ↑ \(upStr)"
         }
     }
 
     public func refreshFormatting() {
         let unit = currentUnit
-        let downStr = unit.formatFixedSlotSpeed(bytesPerSec: downloadSpeed)
-        let upStr = unit.formatFixedSlotSpeed(bytesPerSec: uploadSpeed)
-        self.formattedSpeedString = "⬇\(downStr) ⬆\(upStr)"
+        let downStr = unit.formatSpeed(bytesPerSec: downloadSpeed)
+        let upStr = unit.formatSpeed(bytesPerSec: uploadSpeed)
+        self.formattedSpeedString = "↓ \(downStr)  ↑ \(upStr)"
     }
 }

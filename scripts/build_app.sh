@@ -46,9 +46,9 @@ cat << 'EOF' > "${CONTENTS_DIR}/Info.plist"
     <key>CFBundlePackageType</key>
     <string>APPL</string>
     <key>CFBundleShortVersionString</key>
-    <string>2.1.0</string>
+    <string>2.1.1</string>
     <key>CFBundleVersion</key>
-    <string>2.1.0</string>
+    <string>2.1.1</string>
     <key>LSMinimumSystemVersion</key>
     <string>13.0</string>
     <key>LSUIElement</key>
@@ -87,15 +87,19 @@ codesign --force --deep --sign "${SIGN_CERT}" "${APP_DIR}" || codesign --force -
 
 echo "✅ Successfully built: ${APP_DIR}"
 
-# Update /Applications/monkey-tools.app
-echo "📲 Updating /Applications/monkey-tools.app..."
-pkill -9 -f monkey-tools || true
-pkill -9 -f monkey-copy || true
-pkill -9 -f bxxs-clipboard || true
-pkill -9 -f MacClipboard || true
-rm -rf "/Applications/monkey-tools.app"
-rm -rf "/Applications/monkey-copy.app"
-rm -rf "/Applications/bxxs-clipboard.app"
-rm -rf "/Applications/MacClipboard.app"
-cp -R "${APP_DIR}" "/Applications/monkey-tools.app"
-echo "🎉 Updated /Applications/monkey-tools.app"
+# Update /Applications/monkey-tools.app if not skipped
+if [ -z "${SKIP_INSTALL}" ]; then
+    echo "📲 Updating /Applications/monkey-tools.app..."
+    pkill -9 -f monkey-tools || true
+    pkill -9 -f monkey-copy || true
+    pkill -9 -f bxxs-clipboard || true
+    pkill -9 -f MacClipboard || true
+    rm -rf "/Applications/monkey-tools.app"
+    rm -rf "/Applications/monkey-copy.app"
+    rm -rf "/Applications/bxxs-clipboard.app"
+    rm -rf "/Applications/MacClipboard.app"
+    cp -R "${APP_DIR}" "/Applications/monkey-tools.app"
+    echo "🎉 Updated /Applications/monkey-tools.app"
+else
+    echo "⏭️ Skipping install to /Applications because SKIP_INSTALL is set."
+fi

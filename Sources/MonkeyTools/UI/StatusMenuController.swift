@@ -52,8 +52,8 @@ public final class StatusMenuController: NSObject {
         let speedText = NetworkMonitorService.shared.formattedSpeedString
 
         if isEnabled && !speedText.isEmpty {
-            statusItem?.length = fixedSpeedBarLength
-            let font = NSFont.monospacedSystemFont(ofSize: 10.0, weight: .medium)
+            statusItem?.length = NSStatusItem.variableLength
+            let font = NSFont.monospacedDigitSystemFont(ofSize: 10.5, weight: .medium)
             let attrTitle = NSAttributedString(string: " " + speedText, attributes: [
                 .font: font,
                 .foregroundColor: NSColor.labelColor
