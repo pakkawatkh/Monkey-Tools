@@ -105,6 +105,17 @@ public final class LocalizationManager: ObservableObject {
         "settings_target_desc": ["th": "แปลเป็นภาษานี้เสมอจนกว่าจะเลือกเปลี่ยนใหม่", "en": "Always translate to this language until changed", "zh": "始终翻译为此语言，直到手动更改"],
         "settings_tip_text": ["th": "💡 คุณยังสามารถคลิกสลับระหว่าง Google Translate และ Apple Native ได้โดยตรงจากหน้าต่างป็อปอัปคำแปล", "en": "💡 You can also toggle between Google Translate and Apple Native directly in the translation popover.", "zh": "💡 您也可以直接在翻译弹窗中切换 Google Translate 和 Apple 原生翻译。"],
 
+        // Network Monitor
+        "settings_network_heading": ["th": "🌐 ตรวจสอบความเร็วเน็ต (Network Monitor)", "en": "🌐 Network Monitor", "zh": "🌐 网络监控"],
+        "settings_network_enable": ["th": "เปิดใช้งานการตรวจสอบความเร็วเน็ตบน Menu Bar", "en": "Show real-time network speed in Menu Bar", "zh": "在菜单栏显示实时网速"],
+        "settings_network_unit": ["th": "หน่วยความเร็ว (Speed Unit)", "en": "Speed Unit", "zh": "网速单位"],
+        "unit_auto_bytes": ["th": "Auto (B/s, KB/s, MB/s)", "en": "Auto (B/s, KB/s, MB/s)", "zh": "自动 (B/s, KB/s, MB/s)"],
+        "unit_bits": ["th": "Bits (Kbps, Mbps)", "en": "Bits (Kbps, Mbps)", "zh": "比特 (Kbps, Mbps)"],
+        "unit_fixed_kb": ["th": "Fixed KB/s", "en": "Fixed KB/s", "zh": "固定 KB/s"],
+        "unit_fixed_mb": ["th": "Fixed MB/s", "en": "Fixed MB/s", "zh": "固定 MB/s"],
+        "menu_network_speed": ["th": "เน็ตสด", "en": "Network Speed", "zh": "实时网速"],
+        "menu_network_session_total": ["th": "ยอดเซสชัน", "en": "Session Data", "zh": "本次流量"],
+
         // Status Menu Bar
         "menu_show_monkey": ["th": "เปิด monkey-tools", "en": "Show monkey-tools", "zh": "打开 monkey-tools"],
         "menu_history_count": ["th": "ประวัติ:", "en": "History:", "zh": "历史记录："],

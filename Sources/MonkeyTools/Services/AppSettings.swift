@@ -17,6 +17,8 @@ public final class AppSettings: ObservableObject {
         static let translationEngineMode = "app_translation_engine_mode"
         static let translationTargetLang = "app_translation_target_lang"
         static let appLanguage = "app_ui_language"
+        static let networkMonitorEnabled = "app_network_monitor_enabled"
+        static let networkSpeedUnit = "app_network_speed_unit"
     }
 
     @Published public var hotkeyKeyCode: UInt32 {
@@ -82,6 +84,24 @@ public final class AppSettings: ObservableObject {
         }
     }
 
+    @Published public var networkMonitorEnabled: Bool {
+        didSet {
+            UserDefaults.standard.set(networkMonitorEnabled, forKey: Keys.networkMonitorEnabled)
+            if networkMonitorEnabled {
+                NetworkMonitorService.shared.startMonitoring()
+            } else {
+                NetworkMonitorService.shared.stopMonitoring()
+            }
+        }
+    }
+
+    @Published public var networkSpeedUnit: NetworkSpeedUnit {
+        didSet {
+            UserDefaults.standard.set(networkSpeedUnit.rawValue, forKey: Keys.networkSpeedUnit)
+            NetworkMonitorService.shared.currentUnit = networkSpeedUnit
+        }
+    }
+
     public init() {
         let defaults = UserDefaults.standard
 
@@ -96,6 +116,8 @@ public final class AppSettings: ObservableObject {
         let savedEngineRaw = defaults.string(forKey: Keys.translationEngineMode)
         let savedTargetLang = defaults.string(forKey: Keys.translationTargetLang)
         let savedAppLanguage = defaults.string(forKey: Keys.appLanguage)
+        let savedNetworkMonitor = defaults.object(forKey: Keys.networkMonitorEnabled) as? Bool
+        let savedNetworkSpeedUnitRaw = defaults.string(forKey: Keys.networkSpeedUnit)
 
         self.hotkeyKeyCode = savedKeyCode ?? 9
         self.hotkeyModifiers = savedModifiers ?? UInt32(cmdKey | shiftKey)
@@ -107,6 +129,15 @@ public final class AppSettings: ObservableObject {
         self.translationEngineMode = (savedEngineRaw.flatMap(TranslationEngineMode.init(rawValue:))) ?? .google
         self.translationTargetLang = savedTargetLang ?? "auto"
         self.appLanguage = savedAppLanguage ?? "system"
+
+        self.networkMonitorEnabled = savedNetworkMonitor ?? true
+        let unit = (savedNetworkSpeedUnitRaw.flatMap(NetworkSpeedUnit.init(rawValue:))) ?? .autoBytes
+        self.networkSpeedUnit = unit
+
+        NetworkMonitorService.shared.currentUnit = unit
+        if self.networkMonitorEnabled {
+            NetworkMonitorService.shared.startMonitoring()
+        }
     }
 
     public func setHotKey(keyCode: UInt32, modifiers: UInt32, display: String) {
