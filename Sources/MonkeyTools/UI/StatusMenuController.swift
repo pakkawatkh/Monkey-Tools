@@ -1,7 +1,9 @@
 import AppKit
+import Combine
 
 public final class StatusMenuController: NSObject {
     private var statusItem: NSStatusItem?
+    private var cancellables = Set<AnyCancellable>()
 
     public override init() {
         super.init()
@@ -22,6 +24,45 @@ public final class StatusMenuController: NSObject {
         button.target = self
         button.action = #selector(statusItemClicked(_:))
         button.sendAction(on: [.leftMouseUp, .rightMouseUp])
+
+        setupObservers()
+        updateStatusItemDisplay()
+    }
+
+    private func setupObservers() {
+        NetworkMonitorService.shared.$formattedSpeedString
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                self?.updateStatusItemDisplay()
+            }
+            .store(in: &cancellables)
+
+        AppSettings.shared.$networkMonitorEnabled
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                self?.updateStatusItemDisplay()
+            }
+            .store(in: &cancellables)
+    }
+
+    private func updateStatusItemDisplay() {
+        guard let button = statusItem?.button else { return }
+        let isEnabled = AppSettings.shared.networkMonitorEnabled
+        let speedText = NetworkMonitorService.shared.formattedSpeedString
+
+        if isEnabled && !speedText.isEmpty {
+            let font = NSFont.monospacedDigitSystemFont(ofSize: 10.5, weight: .medium)
+            let attrTitle = NSAttributedString(string: " " + speedText, attributes: [
+                .font: font,
+                .foregroundColor: NSColor.labelColor
+            ])
+            button.attributedTitle = attrTitle
+            button.imagePosition = .imageLeft
+        } else {
+            button.attributedTitle = NSAttributedString(string: "")
+            button.title = ""
+            button.imagePosition = .imageOnly
+        }
     }
 
     private func createMonkeyTemplateIcon() -> NSImage {
@@ -128,6 +169,21 @@ public final class StatusMenuController: NSObject {
         let clearAll = NSMenuItem(title: loc["menu_clear_all"], action: #selector(clearAllHistory), keyEquivalent: "")
         clearAll.target = self
         menu.addItem(clearAll)
+
+        if AppSettings.shared.networkMonitorEnabled {
+            menu.addItem(NSMenuItem.separator())
+            let netService = NetworkMonitorService.shared
+            let speedText = netService.formattedSpeedString.isEmpty ? "⬇ 0 B/s  ⬆ 0 B/s" : netService.formattedSpeedString
+            let netSpeedItem = NSMenuItem(title: "📶 \(loc["menu_network_speed"]): \(speedText)", action: nil, keyEquivalent: "")
+            netSpeedItem.isEnabled = false
+            menu.addItem(netSpeedItem)
+
+            let sessionDown = NetworkSpeedUnit.formatDataSize(bytes: netService.sessionDownloadBytes)
+            let sessionUp = NetworkSpeedUnit.formatDataSize(bytes: netService.sessionUploadBytes)
+            let sessionItem = NSMenuItem(title: "📊 \(loc["menu_network_session_total"]): ⬇ \(sessionDown) | ⬆ \(sessionUp)", action: nil, keyEquivalent: "")
+            sessionItem.isEnabled = false
+            menu.addItem(sessionItem)
+        }
 
         menu.addItem(NSMenuItem.separator())
 
