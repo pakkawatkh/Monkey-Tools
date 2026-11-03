@@ -31,17 +31,26 @@ cat << 'EOF' > "${DMG_TMP}/How to Install.txt"
 1. INSTALLATION:
    Drag "monkey-tools.app" into the "Applications" shortcut icon.
 
-2. USAGE:
+2. FIRST-TIME OPEN (macOS Gatekeeper Warning / ความปลอดภัย):
+   If macOS warns "cannot be opened because the developer cannot be verified"
+   or blocks the app on other Macs:
+   - Option A: Open System Settings > Privacy & Security, scroll down to
+     "Security", and click "Open Anyway".
+   - Option B: In Terminal, run:
+     xattr -cr /Applications/monkey-tools.app
+   (This only unblocks monkey-tools and does not compromise system security).
+
+3. USAGE:
    - Press your shortcut (default: Command + Shift + V) anywhere to open history.
    - Or click the 📋 icon on the top Menu Bar.
 
-3. CUSTOMIZE SHORTCUT:
+4. CUSTOMIZE SHORTCUT:
    - Click the gear icon (⚙️) or right-click the Menu Bar icon -> "Settings...".
    - You can choose presets (e.g. Option + V like Win+V) or record your own custom keys!
 
-4. AUTO-PASTE PERMISSION:
+5. AUTO-PASTE & ACCESSIBILITY PERMISSION:
    - In System Settings > Privacy & Security > Accessibility,
-     enable monkey-tools to allow instant auto-pasting when selecting an item.
+     enable monkey-tools to allow instant auto-pasting and global hotkeys.
 ===================================================
 EOF
 

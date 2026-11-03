@@ -103,6 +103,30 @@ You can download the latest official `.dmg` installer directly from the link bel
 4. **Launch the App:**  
    Open **monkey-tools** from your Applications folder, Spotlight (`Cmd + Space` then type `monkey-tools`), or Launchpad.
 
+### 🛡️ First-Time Launch & macOS Gatekeeper Notice (คำแนะนำเรื่องความปลอดภัย)
+
+When launching monkey-tools for the first time on a new Mac, macOS Gatekeeper may show a warning:  
+> *"“monkey-tools” cannot be opened because Apple cannot check it for malicious software"* or *"developer cannot be verified"*
+
+**ทำไมถึงขึ้นเตือน?**  
+monkey-tools เป็นซอฟต์แวร์พัฒนาอิสระที่ไม่ได้สมัคร Apple Developer Program แบบเสียค่าบริการรายปี ($99/ปี) ทำให้ macOS ที่มีระบบ Gatekeeper แจ้งเตือนเมื่อเปิดไฟล์ที่โหลดมาจากอินเทอร์เน็ต ทั้งนี้ตัวแอปเป็นแบบ Standalone ออฟไลน์ 100% ไม่มีการส่งข้อมูลใด ๆ ออกนอกเครื่อง และปลอดภัยต่อระบบ
+
+**วิธีเปิดใช้งาน (เลือกวิธีใดวิธีหนึ่ง):**
+
+- **วิธีที่ 1: ผ่าน System Settings (แนะนำ - สะดวกที่สุด ไม่ต้องพิมพ์คำสั่ง)**
+  1. ดับเบิลคลิกเปิด `monkey-tools.app` ครั้งแรก (จะมีหน้าต่างเตือน ให้กด **Done** หรือ **Cancel**)
+  2. ไปที่ **System Settings** (การตั้งค่าระบบ) > **Privacy & Security** (ความเป็นส่วนตัวและความปลอดภัย)
+  3. เลื่อนลงมาที่หัวข้อ **Security** ด้านล่าง จะพบข้อความ *"“monkey-tools” was blocked from use because it is not from an identified developer"*
+  4. คลิกปุ่ม **"Open Anyway"** (เปิดต่อไป) แล้วยืนยันรหัสผ่านเครื่องหรือ Touch ID
+  *(วิธีนี้จะอนุญาตเฉพาะแอป monkey-tools ตัวเดียวเท่านั้น ไม่ส่งผลกระทบต่อระบบความปลอดภัยของแอปอื่นในเครื่อง)*
+
+- **วิธีที่ 2: ผ่าน Terminal (รวดเร็วเพียง 1 บรรทัด)**
+  เปิด Terminal แล้วรันคำสั่ง:
+  ```bash
+  xattr -cr /Applications/monkey-tools.app
+  ```
+  *(เป็นการลบแท็ก Quarantine ที่ติดมาจากการดาวน์โหลดผ่านเว็บออกจากตัวแอป monkey-tools)*
+
 ---
 
 ## 🔒 Accessibility Permission Setup
