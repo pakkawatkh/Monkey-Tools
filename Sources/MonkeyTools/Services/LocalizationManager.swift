@@ -67,6 +67,8 @@ public final class LocalizationManager: ObservableObject {
 
         // Translation Popover
         "trans_original": ["th": "ข้อความต้นฉบับ", "en": "Original Text", "zh": "原文"],
+        "trans_edit_placeholder": ["th": "พิมพ์หรือแก้ไขข้อความที่ต้องการแปล...", "en": "Type or edit text to translate...", "zh": "在此输入或编辑文本..."],
+        "trans_clear": ["th": "ล้างข้อความ", "en": "Clear text", "zh": "清除文本"],
         "trans_result": ["th": "คำแปล", "en": "Translation", "zh": "译文"],
         "trans_copy": ["th": "คัดลอก", "en": "Copy", "zh": "复制"],
         "trans_copied": ["th": "คัดลอกแล้ว!", "en": "Copied!", "zh": "已复制!"],

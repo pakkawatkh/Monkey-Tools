@@ -17,6 +17,8 @@ public struct TranslationPopoverView: View {
     @State private var isLoading = false
     @State private var errorMessage: String?
     @State private var copiedConfirmation = false
+    @State private var editableText: String
+    @State private var debounceTask: Task<Void, Never>?
 
     public init(
         originalText: String,
@@ -28,6 +30,7 @@ public struct TranslationPopoverView: View {
         self.isEditable = isEditable
         self.onClose = onClose
         self.onReplace = onReplace
+        self._editableText = State(initialValue: originalText)
     }
 
     public var body: some View {
@@ -44,23 +47,42 @@ public struct TranslationPopoverView: View {
             // Body: Original Text & Translation with Audio Speaker buttons
             ScrollView {
                 VStack(alignment: .leading, spacing: 10) {
-                    // Original Text Card
+                    // Original Text Card (Editable)
                     VStack(alignment: .leading, spacing: 4) {
                         HStack {
-                            Text(loc["trans_original"])
-                                .font(.system(size: 9, weight: .semibold))
-                                .foregroundColor(Color.white.opacity(0.50))
-                                .textCase(.uppercase)
+                            HStack(spacing: 4) {
+                                Text(loc["trans_original"])
+                                    .font(.system(size: 9, weight: .semibold))
+                                    .foregroundColor(Color.white.opacity(0.50))
+                                    .textCase(.uppercase)
+                                Image(systemName: "pencil")
+                                    .font(.system(size: 8))
+                                    .foregroundColor(Color.white.opacity(0.35))
+                            }
 
                             Spacer()
+
+                            // Clear button for Original Text
+                            if !editableText.isEmpty {
+                                Button(action: {
+                                    editableText = ""
+                                    debounceTranslation(for: "")
+                                }) {
+                                    Image(systemName: "xmark.circle.fill")
+                                        .font(.system(size: 10))
+                                        .foregroundColor(Color.white.opacity(0.40))
+                                }
+                                .buttonStyle(.plain)
+                                .help(loc["trans_clear"])
+                            }
 
                             // Speaker button for Original Text
                             Button(action: speakOriginalText) {
                                 HStack(spacing: 3) {
-                                    Image(systemName: speech.currentlySpeakingText == originalText ? "speaker.wave.3.fill" : "speaker.wave.2")
+                                    Image(systemName: speech.currentlySpeakingText == editableText ? "speaker.wave.3.fill" : "speaker.wave.2")
                                         .font(.system(size: 10))
-                                        .foregroundColor(speech.currentlySpeakingText == originalText ? Color(red: 0.4, green: 0.7, blue: 1.0) : Color.white.opacity(0.65))
-                                    if speech.currentlySpeakingText == originalText {
+                                        .foregroundColor(speech.currentlySpeakingText == editableText ? Color(red: 0.4, green: 0.7, blue: 1.0) : Color.white.opacity(0.65))
+                                    if speech.currentlySpeakingText == editableText {
                                         Text(loc["trans_reading"])
                                             .font(.system(size: 9))
                                             .foregroundColor(Color(red: 0.4, green: 0.7, blue: 1.0))
@@ -68,22 +90,39 @@ public struct TranslationPopoverView: View {
                                 }
                                 .padding(.horizontal, 5)
                                 .padding(.vertical, 2)
-                                .background(speech.currentlySpeakingText == originalText ? Color.blue.opacity(0.2) : Color.white.opacity(0.06))
+                                .background(speech.currentlySpeakingText == editableText ? Color.blue.opacity(0.2) : Color.white.opacity(0.06))
                                 .clipShape(RoundedRectangle(cornerRadius: 4))
                             }
                             .buttonStyle(.plain)
+                            .disabled(editableText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                             .help(loc["trans_listen_orig"])
                         }
 
-                        Text(originalText)
-                            .font(.system(size: 11))
-                            .foregroundColor(Color.white.opacity(0.75))
-                            .lineLimit(4)
-                            .frame(maxWidth: .infinity, alignment: .leading)
+                        ZStack(alignment: .topLeading) {
+                            if editableText.isEmpty {
+                                Text(loc["trans_edit_placeholder"])
+                                    .font(.system(size: 11))
+                                    .foregroundColor(Color.white.opacity(0.30))
+                                    .padding(.top, 2)
+                                    .padding(.leading, 1)
+                                    .allowsHitTesting(false)
+                            }
+
+                            TextField("", text: $editableText, axis: .vertical)
+                                .textFieldStyle(.plain)
+                                .font(.system(size: 11))
+                                .foregroundColor(Color.white.opacity(0.85))
+                                .lineLimit(1...8)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                        }
                     }
                     .padding(8)
-                    .background(Color.white.opacity(0.04))
+                    .background(Color.white.opacity(0.05))
                     .clipShape(RoundedRectangle(cornerRadius: 7))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 7)
+                            .stroke(Color.white.opacity(0.10), lineWidth: 1)
+                    )
 
                     // Translated Result Card
                     VStack(alignment: .leading, spacing: 4) {
@@ -180,12 +219,16 @@ public struct TranslationPopoverView: View {
         .preferredColorScheme(.dark)
         .onAppear {
             let savedTarget = settings.translationTargetLang
-            targetLanguage = TranslationService.shared.resolveTargetLanguage(for: originalText, preferredTarget: savedTarget)
+            targetLanguage = TranslationService.shared.resolveTargetLanguage(for: editableText, preferredTarget: savedTarget)
             sourceLanguage = "auto"
             performTranslation()
         }
+        .onChange(of: editableText) { newText in
+            debounceTranslation(for: newText)
+        }
         .onDisappear {
             speech.stop()
+            debounceTask?.cancel()
         }
     }
 
@@ -378,7 +421,13 @@ public struct TranslationPopoverView: View {
         sourceLanguage = currentTarget
         targetLanguage = newTarget
         settings.translationTargetLang = newTarget
-        performTranslation()
+
+        if let translated = translationResult?.translatedText, !translated.isEmpty {
+            editableText = translated
+            debounceTranslation(for: translated)
+        } else {
+            performTranslation()
+        }
     }
 
     // MARK: - Footer Bar
@@ -434,14 +483,23 @@ public struct TranslationPopoverView: View {
 
     // MARK: - Actions
 
-    private func performTranslation() {
+    private func performTranslation(textToTranslate: String? = nil) {
+        debounceTask?.cancel()
+        let text = (textToTranslate ?? editableText).trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !text.isEmpty else {
+            translationResult = nil
+            isLoading = false
+            errorMessage = nil
+            return
+        }
+
         isLoading = true
         errorMessage = nil
 
         Task {
             do {
                 let result = try await TranslationService.shared.translate(
-                    text: originalText,
+                    text: text,
                     mode: settings.translationEngineMode,
                     sourceLang: sourceLanguage,
                     targetLang: targetLanguage
@@ -459,6 +517,26 @@ public struct TranslationPopoverView: View {
         }
     }
 
+    private func debounceTranslation(for text: String) {
+        debounceTask?.cancel()
+        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else {
+            translationResult = nil
+            isLoading = false
+            errorMessage = nil
+            return
+        }
+
+        debounceTask = Task {
+            try? await Task.sleep(nanoseconds: 400_000_000) // 400ms debounce
+            if !Task.isCancelled {
+                await MainActor.run {
+                    performTranslation(textToTranslate: trimmed)
+                }
+            }
+        }
+    }
+
     private func toggleEngineMode() {
         if settings.translationEngineMode == .google {
             settings.translationEngineMode = .appleNative
@@ -469,8 +547,10 @@ public struct TranslationPopoverView: View {
     }
 
     private func speakOriginalText() {
+        let text = editableText.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !text.isEmpty else { return }
         let langCode = (sourceLanguage == "auto" ? (translationResult?.sourceLanguage ?? "en") : sourceLanguage)
-        speech.speak(text: originalText, languageCode: langCode)
+        speech.speak(text: text, languageCode: langCode)
     }
 
     private func speakTranslatedText(_ text: String) {

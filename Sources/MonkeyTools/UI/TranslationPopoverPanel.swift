@@ -105,6 +105,7 @@ public final class TranslationPopoverPanel: NSPanel, NSWindowDelegate {
         self.setFrame(NSRect(x: targetX, y: targetY, width: popoverWidth, height: popoverHeight), display: true)
         self.alphaValue = 1.0
         self.orderFrontRegardless()
+        self.makeKey()
 
         startClickMonitoring()
     }
