@@ -601,32 +601,33 @@ public struct SettingsView: View {
 
         localMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
             var carbonMods: UInt32 = 0
-            var display = ""
+            var displayParts: [String] = []
 
             let flags = event.modifierFlags
             if flags.contains(.control) {
                 carbonMods |= UInt32(controlKey)
-                display += "⌃"
+                displayParts.append("⌃")
             }
             if flags.contains(.option) {
                 carbonMods |= UInt32(optionKey)
-                display += "⌥"
+                displayParts.append("⌥")
             }
             if flags.contains(.shift) {
                 carbonMods |= UInt32(shiftKey)
-                display += "⇧"
+                displayParts.append("⇧")
             }
             if flags.contains(.command) {
                 carbonMods |= UInt32(cmdKey)
-                display += "⌘"
+                displayParts.append("⌘")
             }
 
-            let char = event.charactersIgnoringModifiers?.uppercased() ?? ""
-            if !char.isEmpty {
-                display += char
+            let keyStr = AppSettings.displayStringForKeyCode(event.keyCode, characters: event.charactersIgnoringModifiers)
+            if !keyStr.isEmpty {
+                displayParts.append(keyStr)
             }
 
-            if carbonMods != 0 && !char.isEmpty {
+            if carbonMods != 0 && !keyStr.isEmpty {
+                let display = displayParts.joined(separator: " + ")
                 settings.setHotKey(
                     keyCode: UInt32(event.keyCode),
                     modifiers: carbonMods,

@@ -121,7 +121,7 @@ public final class AppSettings: ObservableObject {
 
         self.hotkeyKeyCode = savedKeyCode ?? 9
         self.hotkeyModifiers = savedModifiers ?? UInt32(cmdKey | shiftKey)
-        self.hotkeyDisplayString = savedDisplay ?? "⌘⇧V"
+        self.hotkeyDisplayString = AppSettings.formatDisplayString(savedDisplay ?? "⌘ + ⇧ + V")
         self.maxHistoryCount = savedMax ?? 100
         self.launchAtLogin = savedLaunch
         self.autoPasteEnabled = savedAutoPaste ?? true
@@ -143,8 +143,62 @@ public final class AppSettings: ObservableObject {
     public func setHotKey(keyCode: UInt32, modifiers: UInt32, display: String) {
         self.hotkeyKeyCode = keyCode
         self.hotkeyModifiers = modifiers
-        self.hotkeyDisplayString = display
+        self.hotkeyDisplayString = AppSettings.formatDisplayString(display)
         HotKeyManager.shared.registerHotKey(keyCode: keyCode, modifiers: modifiers)
+    }
+
+    /// Formats a shortcut string to ensure standard spacing and '+' separator (e.g. "⌘ + ⇧ + V").
+    public static func formatDisplayString(_ raw: String) -> String {
+        let trimmed = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+        if trimmed.isEmpty {
+            return "⌘ + ⇧ + V"
+        }
+        if trimmed.contains("+") {
+            let tokens = trimmed.split(separator: "+").map { $0.trimmingCharacters(in: .whitespaces) }.filter { !$0.isEmpty }
+            if !tokens.isEmpty {
+                return tokens.joined(separator: " + ")
+            }
+        }
+        var parts: [String] = []
+        for char in trimmed {
+            let s = String(char).trimmingCharacters(in: .whitespaces)
+            if !s.isEmpty {
+                parts.append(s)
+            }
+        }
+        return parts.joined(separator: " + ")
+    }
+
+    /// Translates key codes to user-friendly display symbols/names for shortcut recording.
+    public static func displayStringForKeyCode(_ keyCode: UInt16, characters: String?) -> String {
+        switch Int(keyCode) {
+        case 49: return "Space"
+        case 36, 76: return "Return"
+        case 48: return "Tab"
+        case 51: return "Delete"
+        case 53: return "Esc"
+        case 123: return "←"
+        case 124: return "→"
+        case 125: return "↓"
+        case 126: return "↑"
+        case 122: return "F1"
+        case 120: return "F2"
+        case 99:  return "F3"
+        case 118: return "F4"
+        case 96:  return "F5"
+        case 97:  return "F6"
+        case 98:  return "F7"
+        case 100: return "F8"
+        case 101: return "F9"
+        case 109: return "F10"
+        case 103: return "F11"
+        case 111: return "F12"
+        default:
+            if let chars = characters?.uppercased().trimmingCharacters(in: .whitespacesAndNewlines), !chars.isEmpty {
+                return chars
+            }
+            return ""
+        }
     }
 
     private func updateLoginItem(enabled: Bool) {
@@ -171,9 +225,9 @@ public final class AppSettings: ObservableObject {
     }
 
     public static let presets: [Preset] = [
-        Preset(name: "Command + Shift + V (Default)", display: "⌘⇧V", keyCode: 9, modifiers: UInt32(cmdKey | shiftKey)),
-        Preset(name: "Option + V (Windows Win+V Style)", display: "⌥V", keyCode: 9, modifiers: UInt32(optionKey)),
-        Preset(name: "Control + Option + V", display: "⌃⌥V", keyCode: 9, modifiers: UInt32(controlKey | optionKey)),
-        Preset(name: "Command + Option + V", display: "⌘⌥V", keyCode: 9, modifiers: UInt32(cmdKey | optionKey))
+        Preset(name: "Command + Shift + V (Default)", display: "⌘ + ⇧ + V", keyCode: 9, modifiers: UInt32(cmdKey | shiftKey)),
+        Preset(name: "Option + V (Windows Win+V Style)", display: "⌥ + V", keyCode: 9, modifiers: UInt32(optionKey)),
+        Preset(name: "Control + Option + V", display: "⌃ + ⌥ + V", keyCode: 9, modifiers: UInt32(controlKey | optionKey)),
+        Preset(name: "Command + Option + V", display: "⌘ + ⌥ + V", keyCode: 9, modifiers: UInt32(cmdKey | optionKey))
     ]
 }
