@@ -60,6 +60,32 @@ public final class TextSelectionMonitor: ObservableObject {
         return isValidTranslatableText(text)
     }
 
+    /// Returns true if the app is a file manager or system shell where selecting icons is not text selection.
+    /// Blindly sending Cmd+C to these apps causes file copying instead of text selection.
+    public func isExcludedAppFromNonAXProbe(bundleIdentifier: String?) -> Bool {
+        guard let bundleId = bundleIdentifier?.lowercased() else { return false }
+        let excluded = [
+            "com.apple.finder",
+            "com.apple.dock",
+            "com.apple.systemuiserver",
+            "com.apple.controlcenter",
+            "com.apple.notificationcenterui",
+            "com.apple.spotlight"
+        ]
+        return excluded.contains(bundleId)
+    }
+
+    /// Returns true if the pasteboard types represent a filesystem file, folder, or application item.
+    public func isFilePasteboardTypes(_ types: [NSPasteboard.PasteboardType]) -> Bool {
+        return types.contains {
+            $0 == .fileURL ||
+            $0.rawValue == "public.file-url" ||
+            $0.rawValue == "NSFilenamesPboardType" ||
+            $0.rawValue.contains("file-url") ||
+            $0.rawValue.contains("finder")
+        }
+    }
+
     public func startMonitoring() {
         guard !isMonitoring else { return }
         isMonitoring = true
@@ -150,6 +176,12 @@ public final class TextSelectionMonitor: ObservableObject {
             let editable = isElementEditable(pid: pid, mouseLoc: mouseLoc)
             let event = TextSelectionEvent(text: axText.text, screenRect: axText.bounds, sourceAppPID: pid, isEditable: editable)
             onSelectionDetected?(event)
+            return
+        }
+
+        // Exclude system shells / file managers (e.g. Finder/Desktop) from blind Cmd+C probe.
+        // On the Desktop or in Finder, selecting icons copies file objects rather than selecting text.
+        if isExcludedAppFromNonAXProbe(bundleIdentifier: frontApp.bundleIdentifier) {
             return
         }
 
@@ -253,9 +285,16 @@ public final class TextSelectionMonitor: ObservableObject {
                 let isImageType = types.contains {
                     $0 == .tiff || $0 == .png || $0.rawValue.contains("image")
                 }
+                let isFileType = self.isFilePasteboardTypes(types)
 
                 restoreBackup()
                 cleanup()
+
+                // If file/folder item (e.g. from Desktop or file manager) -> dismiss
+                if isFileType {
+                    self.onSelectionCleared?()
+                    return
+                }
 
                 // If image without translatable text -> dismiss
                 if isImageType && !self.isValidTranslatableText(capturedText) {

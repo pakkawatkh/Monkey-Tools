@@ -122,8 +122,8 @@ final class TextSelectionMonitorTests: XCTestCase {
 
         // Show at extreme right edge of screen (should clamp safely)
         panel.show(at: CGRect(x: 99999, y: 500, width: 1, height: 1), selectedText: "Edge", sourceAppPID: 0, isEditable: false)
-        let mainWidth = NSScreen.main?.visibleFrame.maxX ?? 1440
-        XCTAssertLessThanOrEqual(panel.frame.maxX, mainWidth + 50)
+        let maxScreenX = NSScreen.screens.map { $0.visibleFrame.maxX }.max() ?? 1440
+        XCTAssertLessThanOrEqual(panel.frame.maxX, maxScreenX + 50)
 
         panel.orderOut(nil)
 
@@ -156,5 +156,26 @@ final class TextSelectionMonitorTests: XCTestCase {
         // Ensure hide finishes and invalidates monitors safely
         RunLoop.main.run(until: Date().addingTimeInterval(0.15))
         XCTAssertEqual(panel.alphaValue, 0.0)
+    }
+
+    func testExcludedAppFromNonAXProbe() {
+        let monitor = TextSelectionMonitor.shared
+        XCTAssertTrue(monitor.isExcludedAppFromNonAXProbe(bundleIdentifier: "com.apple.finder"))
+        XCTAssertTrue(monitor.isExcludedAppFromNonAXProbe(bundleIdentifier: "com.apple.Finder"))
+        XCTAssertTrue(monitor.isExcludedAppFromNonAXProbe(bundleIdentifier: "com.apple.dock"))
+        XCTAssertTrue(monitor.isExcludedAppFromNonAXProbe(bundleIdentifier: "com.apple.Spotlight"))
+        XCTAssertFalse(monitor.isExcludedAppFromNonAXProbe(bundleIdentifier: "com.apple.Safari"))
+        XCTAssertFalse(monitor.isExcludedAppFromNonAXProbe(bundleIdentifier: "com.google.Chrome"))
+        XCTAssertFalse(monitor.isExcludedAppFromNonAXProbe(bundleIdentifier: nil))
+    }
+
+    func testIsFilePasteboardTypes() {
+        let monitor = TextSelectionMonitor.shared
+        XCTAssertTrue(monitor.isFilePasteboardTypes([.fileURL]))
+        XCTAssertTrue(monitor.isFilePasteboardTypes([NSPasteboard.PasteboardType("public.file-url")]))
+        XCTAssertTrue(monitor.isFilePasteboardTypes([NSPasteboard.PasteboardType("NSFilenamesPboardType")]))
+        XCTAssertTrue(monitor.isFilePasteboardTypes([NSPasteboard.PasteboardType("com.apple.finder.noderef")]))
+        XCTAssertFalse(monitor.isFilePasteboardTypes([.string, .rtf, .html]))
+        XCTAssertFalse(monitor.isFilePasteboardTypes([]))
     }
 }
