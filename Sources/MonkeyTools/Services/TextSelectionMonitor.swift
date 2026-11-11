@@ -190,7 +190,42 @@ public final class TextSelectionMonitor: ObservableObject {
         probeNonAXSelection(pid: pid, mouseLoc: mouseLoc, isDoubleClick: isDoubleClick)
     }
 
-    private func probeNonAXSelection(pid: pid_t, mouseLoc: CGPoint, isDoubleClick: Bool) {
+    public func triggerImmediateTranslation() {
+        if TranslationPopoverPanel.shared.isVisible {
+            TranslationPopoverPanel.shared.hide()
+            return
+        }
+
+        SelectionBubblePanel.shared.hide()
+
+        guard let frontApp = NSWorkspace.shared.frontmostApplication,
+              frontApp.bundleIdentifier != Bundle.main.bundleIdentifier else {
+            TranslationPopoverPanel.shared.show(text: "", near: NSEvent.mouseLocation)
+            return
+        }
+
+        let pid = frontApp.processIdentifier
+        let mouseLoc = NSEvent.mouseLocation
+
+        // Method 1: Fast AX check
+        if let axText = queryAXSelectedText(pid: pid), isValidTranslatableText(axText.text) {
+            let editable = isElementEditable(pid: pid, mouseLoc: mouseLoc)
+            let point = CGPoint(x: axText.bounds.midX, y: axText.bounds.minY)
+            TranslationPopoverPanel.shared.show(text: axText.text, near: point, sourceAppPID: pid, isEditable: editable)
+            return
+        }
+
+        // Method 2: System shells / Finder excluded from blind copy probe
+        if isExcludedAppFromNonAXProbe(bundleIdentifier: frontApp.bundleIdentifier) {
+            TranslationPopoverPanel.shared.show(text: "", near: mouseLoc, sourceAppPID: pid, isEditable: false)
+            return
+        }
+
+        // Method 3: Probe directly to popover
+        probeNonAXSelection(pid: pid, mouseLoc: mouseLoc, isDoubleClick: false, directToPopover: true)
+    }
+
+    private func probeNonAXSelection(pid: pid_t, mouseLoc: CGPoint, isDoubleClick: Bool, directToPopover: Bool = false) {
         guard !isProbeInProgress else { return }
         isProbeInProgress = true
 
@@ -228,6 +263,9 @@ public final class TextSelectionMonitor: ObservableObject {
               let keyUp = CGEvent(keyboardEventSource: source, virtualKey: cKeyCode, keyDown: false) else {
             ClipboardMonitor.shared.isCapturingSuppressed = false
             isProbeInProgress = false
+            if directToPopover {
+                TranslationPopoverPanel.shared.show(text: "", near: mouseLoc, sourceAppPID: pid, isEditable: false)
+            }
             return
         }
 
@@ -256,8 +294,6 @@ public final class TextSelectionMonitor: ObservableObject {
         }
 
         // 4. Condition-based polling:
-        // Poll every 15ms starting at 25ms, up to ~240ms (16 attempts).
-        // As soon as pasteboard.changeCount updates, we evaluate immediately.
         var attempts = 0
         let maxAttempts = 16
         var checkTimer: Timer?
@@ -290,29 +326,45 @@ public final class TextSelectionMonitor: ObservableObject {
                 restoreBackup()
                 cleanup()
 
-                // If file/folder item (e.g. from Desktop or file manager) -> dismiss
+                // If file/folder item (e.g. from Desktop or file manager) -> dismiss or show empty
                 if isFileType {
-                    self.onSelectionCleared?()
+                    if directToPopover {
+                        TranslationPopoverPanel.shared.show(text: "", near: mouseLoc, sourceAppPID: pid, isEditable: false)
+                    } else {
+                        self.onSelectionCleared?()
+                    }
                     return
                 }
 
-                // If image without translatable text -> dismiss
+                // If image without translatable text -> dismiss or show empty
                 if isImageType && !self.isValidTranslatableText(capturedText) {
-                    self.onSelectionCleared?()
+                    if directToPopover {
+                        TranslationPopoverPanel.shared.show(text: "", near: mouseLoc, sourceAppPID: pid, isEditable: false)
+                    } else {
+                        self.onSelectionCleared?()
+                    }
                     return
                 }
 
-                // If captured text is whitespace, pure numbers, punctuation -> dismiss
+                // If captured text is whitespace, pure numbers, punctuation -> dismiss or show empty
                 if !self.isValidTranslatableText(capturedText) {
-                    self.onSelectionCleared?()
+                    if directToPopover {
+                        TranslationPopoverPanel.shared.show(text: "", near: mouseLoc, sourceAppPID: pid, isEditable: false)
+                    } else {
+                        self.onSelectionCleared?()
+                    }
                     return
                 }
 
-                // Valid translatable text! Show the floating bubble
+                // Valid translatable text!
                 let editable = self.isElementEditable(pid: pid, mouseLoc: mouseLoc)
-                let rect = CGRect(x: mouseLoc.x, y: mouseLoc.y, width: 1, height: 1)
-                let event = TextSelectionEvent(text: capturedText, screenRect: rect, sourceAppPID: pid, isEditable: editable)
-                self.onSelectionDetected?(event)
+                if directToPopover {
+                    TranslationPopoverPanel.shared.show(text: capturedText, near: mouseLoc, sourceAppPID: pid, isEditable: editable)
+                } else {
+                    let rect = CGRect(x: mouseLoc.x, y: mouseLoc.y, width: 1, height: 1)
+                    let event = TextSelectionEvent(text: capturedText, screenRect: rect, sourceAppPID: pid, isEditable: editable)
+                    self.onSelectionDetected?(event)
+                }
                 return
             }
 
@@ -320,7 +372,11 @@ public final class TextSelectionMonitor: ObservableObject {
                 timer.invalidate()
                 restoreBackup()
                 cleanup()
-                self.onSelectionCleared?()
+                if directToPopover {
+                    TranslationPopoverPanel.shared.show(text: "", near: mouseLoc, sourceAppPID: pid, isEditable: false)
+                } else {
+                    self.onSelectionCleared?()
+                }
             }
         }
         RunLoop.main.add(checkTimer!, forMode: .common)

@@ -56,6 +56,13 @@ public final class ClipboardMonitor {
             return
         }
 
+        // Ignore if frontmost app is in user's excluded list
+        if let frontAppId = NSWorkspace.shared.frontmostApplication?.bundleIdentifier {
+            if AppSettings.shared.excludedAppBundleIDs.contains(frontAppId) {
+                return
+            }
+        }
+
         // 1. Ignore if programmatic image write from ourselves
         if isProgrammaticImageWrite {
             isProgrammaticImageWrite = false

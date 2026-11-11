@@ -16,6 +16,16 @@ public struct ClipboardItemRow: View {
             VStack(alignment: .leading, spacing: 6) {
                 // Header line: type icon, time, pin/delete actions
                 HStack(alignment: .center, spacing: 6) {
+                    if let idx = index, idx < 9 {
+                        Text("⌘\(idx + 1)")
+                            .font(.system(size: 9, weight: .bold, design: .monospaced))
+                            .foregroundColor(isSelected ? .white : Color.white.opacity(0.80))
+                            .padding(.horizontal, 4)
+                            .padding(.vertical, 1.5)
+                            .background(isSelected ? Color.white.opacity(0.20) : Color.white.opacity(0.10))
+                            .clipShape(RoundedRectangle(cornerRadius: 3.5))
+                    }
+
                     if item.isPinned {
                         Image(systemName: "pin.fill")
                             .font(.system(size: 10))
@@ -61,7 +71,7 @@ public struct ClipboardItemRow: View {
                                 .contentShape(Rectangle())
                         }
                         .buttonStyle(.plain)
-                        .help(item.isPinned ? "Unpin item" : "Pin item to top")
+                        .help(LocalizationManager.shared[item.isPinned ? "unpin_item" : "pin_item"])
 
                         Button(action: onDelete) {
                             Image(systemName: "trash")
@@ -71,7 +81,7 @@ public struct ClipboardItemRow: View {
                                 .contentShape(Rectangle())
                         }
                         .buttonStyle(.plain)
-                        .help("Delete from history")
+                        .help(LocalizationManager.shared["delete_item"])
                     }
                     .opacity(isHovered || item.isPinned ? 1.0 : 0.0)
                 }

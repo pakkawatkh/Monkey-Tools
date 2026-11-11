@@ -29,6 +29,12 @@ public final class AppDelegate: NSObject, NSApplicationDelegate {
         }
         HotKeyManager.shared.registerSavedHotKey()
 
+        // Setup global quick translate hotkey (default: Command + Shift + E)
+        HotKeyManager.shared.onTranslateHotKeyPressed = {
+            TextSelectionMonitor.shared.triggerImmediateTranslation()
+        }
+        HotKeyManager.shared.registerSavedTranslateHotKey()
+
         // Start text selection translator monitor
         TextSelectionMonitor.shared.onSelectionDetected = { event in
             SelectionBubblePanel.shared.show(at: event.screenRect, selectedText: event.text, sourceAppPID: event.sourceAppPID, isEditable: event.isEditable)
@@ -49,7 +55,7 @@ public final class AppDelegate: NSObject, NSApplicationDelegate {
     public func applicationWillTerminate(_ notification: Notification) {
         ClipboardMonitor.shared.stopMonitoring()
         TextSelectionMonitor.shared.stopMonitoring()
-        HotKeyManager.shared.unregisterHotKey()
+        HotKeyManager.shared.unregisterAll()
     }
 
     private func setupStandardEditMenu() {

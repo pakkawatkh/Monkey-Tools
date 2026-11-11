@@ -19,6 +19,7 @@ public struct TranslationPopoverView: View {
     @State private var copiedConfirmation = false
     @State private var editableText: String
     @State private var debounceTask: Task<Void, Never>?
+    @FocusState private var isInputFocused: Bool
 
     public init(
         originalText: String,
@@ -113,6 +114,7 @@ public struct TranslationPopoverView: View {
                                 .font(.system(size: 11))
                                 .foregroundColor(Color.white.opacity(0.85))
                                 .lineLimit(1...8)
+                                .focused($isInputFocused)
                                 .frame(maxWidth: .infinity, alignment: .leading)
                         }
                     }
@@ -163,7 +165,7 @@ public struct TranslationPopoverView: View {
                             HStack(spacing: 8) {
                                 ProgressView()
                                     .scaleEffect(0.7)
-                                Text("กำลังแปลภาษา...")
+                                Text(loc["trans_loading"])
                                     .font(.system(size: 12))
                                     .foregroundColor(Color.white.opacity(0.65))
                             }
@@ -174,7 +176,7 @@ public struct TranslationPopoverView: View {
                                 Text(error)
                                     .font(.system(size: 11))
                                     .foregroundColor(.orange)
-                                Button("ลองใหม่อีกครั้ง") {
+                                Button(loc["trans_retry"]) {
                                     performTranslation()
                                 }
                                 .font(.system(size: 10, weight: .medium))
@@ -221,7 +223,13 @@ public struct TranslationPopoverView: View {
             let savedTarget = settings.translationTargetLang
             targetLanguage = TranslationService.shared.resolveTargetLanguage(for: editableText, preferredTarget: savedTarget)
             sourceLanguage = "auto"
-            performTranslation()
+            if editableText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
+                    isInputFocused = true
+                }
+            } else {
+                performTranslation()
+            }
         }
         .onChange(of: editableText) { newText in
             debounceTranslation(for: newText)
@@ -559,8 +567,10 @@ public struct TranslationPopoverView: View {
 
     private func copyTranslation() {
         guard let translated = translationResult?.translatedText else { return }
+        ClipboardMonitor.shared.markProgrammaticWrite(text: translated)
         NSPasteboard.general.clearContents()
         NSPasteboard.general.setString(translated, forType: .string)
+        ClipboardManager.shared.add(text: translated)
 
         withAnimation {
             copiedConfirmation = true

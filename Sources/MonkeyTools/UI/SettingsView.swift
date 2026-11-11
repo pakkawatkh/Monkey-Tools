@@ -38,7 +38,9 @@ public struct SettingsView: View {
     @ObservedObject var installer = UpdateInstallerService.shared
     @State private var selectedTab: SettingsTab = .clipboard
     @State private var isRecordingCustom = false
+    @State private var isRecordingTranslateCustom = false
     @State private var localMonitor: Any?
+    @State private var localTranslateMonitor: Any?
 
     public init() {}
 
@@ -110,6 +112,7 @@ public struct SettingsView: View {
         }
         .onDisappear {
             stopRecording()
+            stopTranslateRecording()
         }
     }
 
@@ -154,7 +157,7 @@ public struct SettingsView: View {
                 }
 
                 if isRecordingCustom {
-                    Text("👉 กำลังรอรับปุ่ม... ลองกดปุ่มผสมที่ต้องการ เช่น Option + V, Cmd + Shift + V หรือ Ctrl + Option + Space")
+                    Text(loc["settings_recording_hint"])
                         .font(.system(size: 11))
                         .foregroundColor(.orange)
                         .padding(8)
@@ -166,7 +169,7 @@ public struct SettingsView: View {
                 Divider().padding(.vertical, 4)
 
                 // Quick Presets
-                Text("หรือเลือกคีย์ลัดยอดนิยม:")
+                Text(loc["settings_popular_presets"])
                     .font(.system(size: 12, weight: .medium))
                     .foregroundColor(.secondary)
 
@@ -239,13 +242,66 @@ public struct SettingsView: View {
             .background(Color.primary.opacity(0.02))
             .clipShape(RoundedRectangle(cornerRadius: 10))
             .overlay(RoundedRectangle(cornerRadius: 10).stroke(Color.primary.opacity(0.08), lineWidth: 1))
+
+            // Excluded Apps Section
+            VStack(alignment: .leading, spacing: 12) {
+                Text(loc["settings_excluded_apps_heading"])
+                    .font(.system(size: 13, weight: .bold))
+                Text(loc["settings_excluded_apps_desc"])
+                    .font(.system(size: 11))
+                    .foregroundColor(.secondary)
+
+                if settings.excludedAppBundleIDs.isEmpty {
+                    Text(loc["settings_no_excluded_apps"])
+                        .font(.system(size: 11))
+                        .foregroundColor(.secondary)
+                        .padding(.vertical, 4)
+                } else {
+                    VStack(spacing: 6) {
+                        ForEach(settings.excludedAppBundleIDs, id: \.self) { bundleID in
+                            HStack {
+                                Image(systemName: "app.dashed")
+                                    .font(.system(size: 12))
+                                    .foregroundColor(.secondary)
+                                Text(bundleID)
+                                    .font(.system(size: 12, design: .monospaced))
+                                Spacer()
+                                Button(loc["settings_remove_excluded_app"]) {
+                                    settings.removeExcludedApp(bundleID: bundleID)
+                                }
+                                .buttonStyle(.bordered)
+                                .controlSize(.mini)
+                            }
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 4)
+                            .background(Color.primary.opacity(0.03))
+                            .clipShape(RoundedRectangle(cornerRadius: 6))
+                        }
+                    }
+                }
+
+                Button(action: promptAddExcludedApp) {
+                    HStack(spacing: 4) {
+                        Image(systemName: "plus")
+                        Text(loc["settings_add_excluded_app"])
+                    }
+                    .font(.system(size: 12, weight: .medium))
+                }
+                .buttonStyle(.bordered)
+                .controlSize(.small)
+            }
+            .padding()
+            .background(Color.primary.opacity(0.02))
+            .clipShape(RoundedRectangle(cornerRadius: 10))
+            .overlay(RoundedRectangle(cornerRadius: 10).stroke(Color.primary.opacity(0.08), lineWidth: 1))
         }
     }
 
     // MARK: - Translator Tab
     private var translatorTabContent: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            Text(loc["settings_translator"])
+        VStack(alignment: .leading, spacing: 16) {
+            VStack(alignment: .leading, spacing: 14) {
+                Text(loc["settings_translator"])
                 .font(.system(size: 13, weight: .bold))
 
             Toggle(isOn: $settings.selectionTranslateEnabled) {
@@ -331,6 +387,111 @@ public struct SettingsView: View {
         .background(Color.primary.opacity(0.02))
         .clipShape(RoundedRectangle(cornerRadius: 10))
         .overlay(RoundedRectangle(cornerRadius: 10).stroke(Color.primary.opacity(0.08), lineWidth: 1))
+
+        // Quick Translate Hotkey Section
+        VStack(alignment: .leading, spacing: 12) {
+            Text(loc["settings_translate_hotkey_heading"])
+                .font(.system(size: 13, weight: .bold))
+
+            Toggle(isOn: $settings.translateHotkeyEnabled) {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(loc["settings_translate_hotkey_enable"])
+                        .font(.system(size: 13))
+                    Text(loc["settings_translate_hotkey_desc"])
+                        .font(.system(size: 11))
+                        .foregroundColor(.secondary)
+                }
+            }
+
+            if settings.translateHotkeyEnabled {
+                Divider().padding(.vertical, 2)
+
+                HStack(spacing: 12) {
+                    Text(loc["settings_custom_hotkey"] + ":")
+                        .font(.system(size: 13))
+                        .foregroundColor(.secondary)
+
+                    Text(settings.translateHotkeyDisplayString)
+                        .font(.system(size: 16, weight: .bold, design: .monospaced))
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 6)
+                        .background(Color.accentColor.opacity(0.15))
+                        .foregroundColor(.accentColor)
+                        .clipShape(RoundedRectangle(cornerRadius: 6))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 6)
+                                .stroke(Color.accentColor.opacity(0.3), lineWidth: 1)
+                        )
+
+                    Spacer()
+
+                    Button(action: {
+                        toggleTranslateRecording()
+                    }) {
+                        HStack(spacing: 6) {
+                            Image(systemName: isRecordingTranslateCustom ? "record.circle.fill" : "keyboard")
+                            Text(isRecordingTranslateCustom ? loc["settings_press_shortcut"] : loc["settings_click_to_record"])
+                        }
+                        .font(.system(size: 12, weight: .medium))
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .tint(isRecordingTranslateCustom ? .orange : .accentColor)
+                }
+
+                if isRecordingTranslateCustom {
+                    Text(loc["settings_recording_hint"])
+                        .font(.system(size: 11))
+                        .foregroundColor(.orange)
+                        .padding(8)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .background(Color.orange.opacity(0.1))
+                        .clipShape(RoundedRectangle(cornerRadius: 6))
+                }
+
+                Divider().padding(.vertical, 4)
+
+                // Quick Presets
+                Text(loc["settings_popular_presets"])
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundColor(.secondary)
+
+                VStack(spacing: 6) {
+                    ForEach(AppSettings.translatePresets) { preset in
+                        Button(action: {
+                            settings.setTranslateHotKey(
+                                keyCode: preset.keyCode,
+                                modifiers: preset.modifiers,
+                                display: preset.display
+                            )
+                        }) {
+                            HStack {
+                                Text(preset.name)
+                                    .font(.system(size: 12))
+                                Spacer()
+                                Text(preset.display)
+                                    .font(.system(size: 12, weight: .semibold, design: .monospaced))
+                                    .foregroundColor(.secondary)
+
+                                if settings.translateHotkeyDisplayString == preset.display {
+                                    Image(systemName: "checkmark.circle.fill")
+                                        .foregroundColor(.green)
+                                }
+                            }
+                            .padding(.horizontal, 10)
+                            .padding(.vertical, 6)
+                            .background(settings.translateHotkeyDisplayString == preset.display ? Color.accentColor.opacity(0.08) : Color.primary.opacity(0.03))
+                            .clipShape(RoundedRectangle(cornerRadius: 6))
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+            }
+        }
+            .padding()
+            .background(Color.primary.opacity(0.02))
+            .clipShape(RoundedRectangle(cornerRadius: 10))
+            .overlay(RoundedRectangle(cornerRadius: 10).stroke(Color.primary.opacity(0.08), lineWidth: 1))
+        }
     }
 
     // MARK: - Network Monitor Tab
@@ -377,7 +538,7 @@ public struct SettingsView: View {
                 .background(Color.primary.opacity(0.04))
                 .clipShape(RoundedRectangle(cornerRadius: 6))
 
-                Text("💡 ล็อกขนาดช่องแสดงผล (Fixed Slot) อัตโนมัติบน Menu Bar ป้องกันไม่ให้ไอคอนและตัวเลขสั่นขยับไปมา")
+                Text(loc["settings_network_fixed_slot_tip"])
                     .font(.system(size: 11))
                     .foregroundColor(.secondary)
                     .padding(.top, 4)
@@ -556,7 +717,7 @@ public struct SettingsView: View {
 
             // System Permissions
             VStack(alignment: .leading, spacing: 10) {
-                Text("สิทธิ์การควบคุมระบบ (System Permissions)")
+                Text(loc["settings_permissions_heading"])
                     .font(.system(size: 13, weight: .bold))
 
                 HStack {
@@ -565,16 +726,16 @@ public struct SettingsView: View {
                         .font(.system(size: 16))
 
                     VStack(alignment: .leading, spacing: 2) {
-                        Text("Accessibility Permission (สำหรับการวางอัตโนมัติ)")
+                        Text(loc["settings_accessibility_title"])
                             .font(.system(size: 12, weight: .medium))
-                        Text(autoPaster.isAccessibilityGranted ? "อนุญาตสิทธิ์เรียบร้อยแล้ว" : "ยังไม่ได้รับสิทธิ์ - จำเป็นต้องเปิดเพื่อให้ Auto-Paste ทำงาน")
+                        Text(autoPaster.isAccessibilityGranted ? loc["settings_accessibility_granted_desc"] : loc["settings_accessibility_missing_desc"])
                             .font(.system(size: 11))
                             .foregroundColor(.secondary)
                     }
 
                     Spacer()
 
-                    Button("เปิด System Settings") {
+                    Button(loc["settings_open_system_settings"]) {
                         AutoPaster.shared.openAccessibilitySettings()
                     }
                     .buttonStyle(.bordered)
@@ -646,6 +807,82 @@ public struct SettingsView: View {
         if let monitor = localMonitor {
             NSEvent.removeMonitor(monitor)
             localMonitor = nil
+        }
+    }
+
+    private func toggleTranslateRecording() {
+        if isRecordingTranslateCustom {
+            stopTranslateRecording()
+        } else {
+            startTranslateRecording()
+        }
+    }
+
+    private func startTranslateRecording() {
+        isRecordingTranslateCustom = true
+
+        localTranslateMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
+            var carbonMods: UInt32 = 0
+            var displayParts: [String] = []
+
+            let flags = event.modifierFlags
+            if flags.contains(.control) {
+                carbonMods |= UInt32(controlKey)
+                displayParts.append("⌃")
+            }
+            if flags.contains(.option) {
+                carbonMods |= UInt32(optionKey)
+                displayParts.append("⌥")
+            }
+            if flags.contains(.shift) {
+                carbonMods |= UInt32(shiftKey)
+                displayParts.append("⇧")
+            }
+            if flags.contains(.command) {
+                carbonMods |= UInt32(cmdKey)
+                displayParts.append("⌘")
+            }
+
+            let keyStr = AppSettings.displayStringForKeyCode(event.keyCode, characters: event.charactersIgnoringModifiers)
+            if !keyStr.isEmpty {
+                displayParts.append(keyStr)
+            }
+
+            if carbonMods != 0 && !keyStr.isEmpty {
+                let display = displayParts.joined(separator: " + ")
+                settings.setTranslateHotKey(
+                    keyCode: UInt32(event.keyCode),
+                    modifiers: carbonMods,
+                    display: display
+                )
+                stopTranslateRecording()
+                return nil
+            }
+
+            return event
+        }
+    }
+
+    private func stopTranslateRecording() {
+        isRecordingTranslateCustom = false
+        if let monitor = localTranslateMonitor {
+            NSEvent.removeMonitor(monitor)
+            localTranslateMonitor = nil
+        }
+    }
+
+    private func promptAddExcludedApp() {
+        let openPanel = NSOpenPanel()
+        openPanel.canChooseFiles = true
+        openPanel.canChooseDirectories = false
+        openPanel.allowsMultipleSelection = false
+        openPanel.allowedContentTypes = [.application]
+        openPanel.directoryURL = URL(fileURLWithPath: "/Applications")
+
+        if openPanel.runModal() == .OK, let url = openPanel.url {
+            if let bundle = Bundle(url: url), let bundleID = bundle.bundleIdentifier {
+                settings.addExcludedApp(bundleID: bundleID)
+            }
         }
     }
 

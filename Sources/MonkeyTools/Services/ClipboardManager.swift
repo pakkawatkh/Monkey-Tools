@@ -8,6 +8,24 @@ public enum ClipboardActiveTab: String, CaseIterable {
     case emoji
 }
 
+public enum ClipboardCategoryFilter: String, CaseIterable, Identifiable {
+    case all
+    case text
+    case image
+    case pinned
+
+    public var id: String { rawValue }
+
+    public func title(loc: LocalizationManager) -> String {
+        switch self {
+        case .all: return loc["tab_all"]
+        case .text: return loc["tab_text"]
+        case .image: return loc["tab_image"]
+        case .pinned: return loc["tab_pinned"]
+        }
+    }
+}
+
 public final class ClipboardManager: ObservableObject {
     public static let shared = ClipboardManager()
 
@@ -19,6 +37,11 @@ public final class ClipboardManager: ObservableObject {
     }
     @Published public var selectedIndex: Int = 0
     @Published public var activeTab: ClipboardActiveTab = .clipboard
+    @Published public var selectedFilter: ClipboardCategoryFilter = .all {
+        didSet {
+            selectedIndex = 0
+        }
+    }
     @Published public var maxHistoryCount: Int = 100
 
     private let storage: ClipboardStorage
@@ -26,6 +49,8 @@ public final class ClipboardManager: ObservableObject {
     public init(storage: ClipboardStorage = .shared) {
         self.storage = storage
         self.items = storage.load()
+        let savedMax = UserDefaults.standard.object(forKey: "app_max_history") as? Int
+        self.maxHistoryCount = savedMax ?? 100
 
         // Background migration: generate missing thumbnails for legacy images
         DispatchQueue.global(qos: .utility).async { [weak self] in
@@ -69,11 +94,23 @@ public final class ClipboardManager: ObservableObject {
         let baseItems: [ClipboardItem]
         let query = searchQuery.trimmingCharacters(in: .whitespacesAndNewlines)
 
+        var itemsToFilter = items
+        switch selectedFilter {
+        case .all:
+            break
+        case .text:
+            itemsToFilter = itemsToFilter.filter { $0.type == .text }
+        case .image:
+            itemsToFilter = itemsToFilter.filter { $0.type == .image }
+        case .pinned:
+            itemsToFilter = itemsToFilter.filter { $0.isPinned }
+        }
+
         if query.isEmpty {
-            baseItems = items
+            baseItems = itemsToFilter
         } else {
             let lowerQuery = query.lowercased()
-            baseItems = items.filter { item in
+            baseItems = itemsToFilter.filter { item in
                 switch item.type {
                 case .text:
                     return item.text?.localizedCaseInsensitiveContains(query) == true

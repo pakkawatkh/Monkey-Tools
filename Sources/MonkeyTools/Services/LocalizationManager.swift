@@ -81,6 +81,8 @@ public final class LocalizationManager: ObservableObject {
         "trans_swap": ["th": "สลับภาษาต้นทางและปลายทาง (Swap Languages)", "en": "Swap source and target languages", "zh": "交换源语言和目标语言"],
         "trans_resize": ["th": "ลากเพื่อยืดหดขยายขนาดหน้าต่าง (Drag to resize)", "en": "Drag to resize window", "zh": "拖动调整窗口大小"],
         "trans_engine_help": ["th": "เครื่องมือแปลภาษาปัจจุบัน (คลิกเพื่อสลับ Google / Apple)", "en": "Current translation engine (Click to toggle Google / Apple)", "zh": "当前翻译引擎 (点击切换 Google / Apple)"],
+        "trans_loading": ["th": "กำลังแปลภาษา...", "en": "Translating...", "zh": "正在翻译..."],
+        "trans_retry": ["th": "ลองใหม่อีกครั้ง", "en": "Try Again", "zh": "重试"],
         "cat_popular": ["th": "ภาษาที่ใช้บ่อย", "en": "Popular Languages", "zh": "常用语言"],
         "cat_asia": ["th": "🌏 เอเชีย & อาเซียน", "en": "🌏 Asia & ASEAN", "zh": "🌏 亚洲与东盟"],
         "cat_europe": ["th": "🌍 ยุโรป", "en": "🌍 Europe", "zh": "🌍 欧洲"],
@@ -103,6 +105,86 @@ public final class LocalizationManager: ObservableObject {
         "settings_custom_hotkey": ["th": "กำหนดคีย์ลัดเอง", "en": "Custom Shortcut", "zh": "自定义快捷键"],
         "settings_press_shortcut": ["th": "กดปุ่มคีย์บอร์ดที่ต้องการ...", "en": "Press desired shortcut keys...", "zh": "按下所需的快捷键组合..."],
         "settings_click_to_record": ["th": "คลิกเพื่อบันทึกคีย์ลัดใหม่", "en": "Click to record shortcut", "zh": "点击录制新快捷键"],
+        "settings_recording_hint": [
+            "th": "👉 กำลังรอรับปุ่ม... ลองกดปุ่มผสมที่ต้องการ เช่น Option + V, Cmd + Shift + V หรือ Ctrl + Option + Space",
+            "en": "👉 Recording shortcut... Press your combination, e.g. Option + V, Cmd + Shift + V, or Ctrl + Option + Space",
+            "zh": "👉 正在录制快捷键... 请按下组合键，例如 Option + V、Cmd + Shift + V 或 Ctrl + Option + Space"
+        ],
+        "settings_popular_presets": [
+            "th": "หรือเลือกคีย์ลัดยอดนิยม:",
+            "en": "Or choose a popular preset:",
+            "zh": "或选择预设快捷键："
+        ],
+        "settings_translate_hotkey_heading": [
+            "th": "คีย์ลัดแปลภาษาด่วน (Quick Translate Shortcut)",
+            "en": "Quick Translate Shortcut",
+            "zh": "快速翻译快捷键"
+        ],
+        "settings_translate_hotkey_desc": [
+            "th": "กดคีย์ลัดเพื่อแปลข้อความที่คลุมดำอยู่ทันที หรือเปิดหน้าต่างแปลภาษาพร้อมพิมพ์",
+            "en": "Press to translate selected text immediately or open popover to type",
+            "zh": "按下快捷键立即翻译选中文字，或打开窗口直接输入"
+        ],
+        "settings_translate_hotkey_enable": [
+            "th": "เปิดใช้งานคีย์ลัดแปลภาษาด่วน",
+            "en": "Enable Quick Translate Shortcut",
+            "zh": "启用快速翻译快捷键"
+        ],
+        "settings_excluded_apps_heading": [
+            "th": "ยกเว้นบางแอปพลิเคชัน (Excluded Apps)",
+            "en": "Excluded Applications",
+            "zh": "排除的应用程序"
+        ],
+        "settings_excluded_apps_desc": [
+            "th": "monkey-tools จะไม่บันทึกประวัติการคัดลอกจากแอปที่อยู่ในรายการนี้",
+            "en": "monkey-tools will not capture clipboard history from apps in this list.",
+            "zh": "monkey-tools 不会记录列表中应用的剪贴板历史。"
+        ],
+        "settings_add_excluded_app": [
+            "th": "เพิ่มแอปพลิเคชัน...",
+            "en": "Add Application...",
+            "zh": "添加应用程序..."
+        ],
+        "settings_remove_excluded_app": [
+            "th": "ลบ",
+            "en": "Remove",
+            "zh": "移除"
+        ],
+        "settings_no_excluded_apps": [
+            "th": "ไม่มีแอปพลิเคชันที่ถูกยกเว้น (บันทึกจากทุกแอป)",
+            "en": "No excluded apps (capturing from all apps)",
+            "zh": "暂无排除的应用 (记录所有应用)"
+        ],
+        "settings_permissions_heading": [
+            "th": "สิทธิ์การควบคุมระบบ (System Permissions)",
+            "en": "System Permissions",
+            "zh": "系统控制权限"
+        ],
+        "settings_accessibility_title": [
+            "th": "Accessibility Permission (สำหรับการวางอัตโนมัติ)",
+            "en": "Accessibility Permission (For Auto-Paste)",
+            "zh": "辅助功能权限 (用于自动粘贴)"
+        ],
+        "settings_accessibility_granted_desc": [
+            "th": "อนุญาตสิทธิ์เรียบร้อยแล้ว",
+            "en": "Permission granted",
+            "zh": "已授予权限"
+        ],
+        "settings_accessibility_missing_desc": [
+            "th": "ยังไม่ได้รับสิทธิ์ - จำเป็นต้องเปิดเพื่อให้ Auto-Paste ทำงาน",
+            "en": "Permission missing - required for Auto-Paste to work",
+            "zh": "未获得权限 - 需要此权限以启用自动粘贴"
+        ],
+        "settings_open_system_settings": [
+            "th": "เปิด System Settings",
+            "en": "Open System Settings",
+            "zh": "打开系统设置"
+        ],
+        "settings_network_fixed_slot_tip": [
+            "th": "💡 ล็อกขนาดช่องแสดงผล (Fixed Slot) อัตโนมัติบน Menu Bar ป้องกันไม่ให้ไอคอนและตัวเลขสั่นขยับไปมา",
+            "en": "💡 Fixed slot width in Menu Bar prevents icons and numbers from jittering.",
+            "zh": "💡 菜单栏自动固定宽度槽位，防止图标和数字晃动。"
+        ],
         "settings_bubble_toggle": ["th": "แสดงไอคอนแปลภาษาเมื่อคุมดำข้อความ (Selection Bubble)", "en": "Show floating bubble on text selection", "zh": "划词时显示浮动翻译图标"],
         "settings_bubble_desc": ["th": "เมื่อใช้เมาส์คลุมดำข้อความในโปรแกรมใดๆ จะมีไอคอนเล็กๆ ลอยขึ้นมาให้กดแปลภาษา", "en": "A compact floating icon appears when text is selected in any app", "zh": "在任何应用中选中文本时显示微型浮动翻译图标"],
         "settings_engine_label": ["th": "เครื่องมือแปลภาษา (Translation Engine):", "en": "Translation Engine:", "zh": "翻译引擎："],

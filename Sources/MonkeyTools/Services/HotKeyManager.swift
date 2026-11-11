@@ -5,20 +5,16 @@ public final class HotKeyManager {
     public static let shared = HotKeyManager()
 
     private var hotKeyRef: EventHotKeyRef?
+    private var translateHotKeyRef: EventHotKeyRef?
     private var eventHandlerRef: EventHandlerRef?
+
     public var onHotKeyPressed: (() -> Void)?
+    public var onTranslateHotKeyPressed: (() -> Void)?
 
     public init() {}
 
-    /// Registers the hotkey stored in AppSettings
-    public func registerSavedHotKey() {
-        let keyCode = AppSettings.shared.hotkeyKeyCode
-        let modifiers = AppSettings.shared.hotkeyModifiers
-        registerHotKey(keyCode: keyCode, modifiers: modifiers)
-    }
-
-    public func registerHotKey(keyCode: UInt32, modifiers: UInt32) {
-        unregisterHotKey()
+    private func ensureEventHandlerInstalled() {
+        guard eventHandlerRef == nil else { return }
 
         var eventType = EventTypeSpec(
             eventClass: OSType(kEventClassKeyboard),
@@ -27,11 +23,35 @@ public final class HotKeyManager {
 
         let selfPtr = UnsafeMutableRawPointer(Unmanaged.passUnretained(self).toOpaque())
 
-        let handler: EventHandlerUPP = { (_, _, userData) -> OSStatus in
-            guard let userData = userData else { return noErr }
+        let handler: EventHandlerUPP = { (_, event, userData) -> OSStatus in
+            guard let userData = userData, let event = event else { return noErr }
             let manager = Unmanaged<HotKeyManager>.fromOpaque(userData).takeUnretainedValue()
-            DispatchQueue.main.async {
-                manager.onHotKeyPressed?()
+
+            var hotKeyID = EventHotKeyID()
+            let status = GetEventParameter(
+                event,
+                EventParamName(kEventParamDirectObject),
+                EventParamType(typeEventHotKeyID),
+                nil,
+                MemoryLayout<EventHotKeyID>.size,
+                nil,
+                &hotKeyID
+            )
+
+            if status == noErr {
+                if hotKeyID.id == 1 {
+                    DispatchQueue.main.async {
+                        manager.onHotKeyPressed?()
+                    }
+                } else if hotKeyID.id == 2 {
+                    DispatchQueue.main.async {
+                        manager.onTranslateHotKeyPressed?()
+                    }
+                }
+            } else {
+                DispatchQueue.main.async {
+                    manager.onHotKeyPressed?()
+                }
             }
             return noErr
         }
@@ -45,10 +65,21 @@ public final class HotKeyManager {
             &eventHandlerRef
         )
 
-        guard installStatus == noErr else {
+        if installStatus != noErr {
             print("[HotKeyManager] Failed to install event handler: \(installStatus)")
-            return
         }
+    }
+
+    /// Registers the clipboard hotkey stored in AppSettings
+    public func registerSavedHotKey() {
+        let keyCode = AppSettings.shared.hotkeyKeyCode
+        let modifiers = AppSettings.shared.hotkeyModifiers
+        registerHotKey(keyCode: keyCode, modifiers: modifiers)
+    }
+
+    public func registerHotKey(keyCode: UInt32, modifiers: UInt32) {
+        unregisterHotKey()
+        ensureEventHandlerInstalled()
 
         let hotKeyID = EventHotKeyID(signature: OSType(0x4D434250), id: 1)
         let registerStatus = RegisterEventHotKey(
@@ -61,9 +92,9 @@ public final class HotKeyManager {
         )
 
         if registerStatus != noErr {
-            print("[HotKeyManager] Failed to register hot key: \(registerStatus)")
+            print("[HotKeyManager] Failed to register clipboard hot key: \(registerStatus)")
         } else {
-            print("[HotKeyManager] Successfully registered hot key (code: \(keyCode), mods: \(modifiers))")
+            print("[HotKeyManager] Successfully registered clipboard hot key (code: \(keyCode), mods: \(modifiers))")
         }
     }
 
@@ -72,6 +103,50 @@ public final class HotKeyManager {
             UnregisterEventHotKey(hotKeyRef)
             self.hotKeyRef = nil
         }
+    }
+
+    /// Registers the quick translate hotkey stored in AppSettings
+    public func registerSavedTranslateHotKey() {
+        guard AppSettings.shared.translateHotkeyEnabled else {
+            unregisterTranslateHotKey()
+            return
+        }
+        let keyCode = AppSettings.shared.translateHotkeyKeyCode
+        let modifiers = AppSettings.shared.translateHotkeyModifiers
+        registerTranslateHotKey(keyCode: keyCode, modifiers: modifiers)
+    }
+
+    public func registerTranslateHotKey(keyCode: UInt32, modifiers: UInt32) {
+        unregisterTranslateHotKey()
+        ensureEventHandlerInstalled()
+
+        let hotKeyID = EventHotKeyID(signature: OSType(0x4D434250), id: 2)
+        let registerStatus = RegisterEventHotKey(
+            keyCode,
+            modifiers,
+            hotKeyID,
+            GetApplicationEventTarget(),
+            0,
+            &translateHotKeyRef
+        )
+
+        if registerStatus != noErr {
+            print("[HotKeyManager] Failed to register translate hot key: \(registerStatus)")
+        } else {
+            print("[HotKeyManager] Successfully registered translate hot key (code: \(keyCode), mods: \(modifiers))")
+        }
+    }
+
+    public func unregisterTranslateHotKey() {
+        if let translateRef = translateHotKeyRef {
+            UnregisterEventHotKey(translateRef)
+            self.translateHotKeyRef = nil
+        }
+    }
+
+    public func unregisterAll() {
+        unregisterHotKey()
+        unregisterTranslateHotKey()
         if let eventHandlerRef = eventHandlerRef {
             RemoveEventHandler(eventHandlerRef)
             self.eventHandlerRef = nil
@@ -79,6 +154,6 @@ public final class HotKeyManager {
     }
 
     deinit {
-        unregisterHotKey()
+        unregisterAll()
     }
 }

@@ -141,6 +141,35 @@ public struct ClipboardView: View {
 
             // Search Bar
             searchField
+
+            // Category Filter Pills
+            if manager.activeTab == .clipboard {
+                filterPillsView
+            }
+        }
+    }
+
+    private var filterPillsView: some View {
+        HStack(spacing: 4) {
+            ForEach(ClipboardCategoryFilter.allCases) { filter in
+                Button(action: {
+                    withAnimation(.easeInOut(duration: 0.12)) {
+                        manager.selectedFilter = filter
+                    }
+                }) {
+                    Text(filter.title(loc: loc))
+                        .font(.system(size: 10, weight: manager.selectedFilter == filter ? .semibold : .medium))
+                        .foregroundColor(manager.selectedFilter == filter ? .white : Color.white.opacity(0.65))
+                        .padding(.horizontal, 7)
+                        .padding(.vertical, 3)
+                        .background(
+                            RoundedRectangle(cornerRadius: 5)
+                                .fill(manager.selectedFilter == filter ? Color.accentColor.opacity(0.5) : Color.white.opacity(0.06))
+                        )
+                }
+                .buttonStyle(.plain)
+            }
+            Spacer()
         }
     }
 
@@ -342,6 +371,8 @@ public struct ClipboardView: View {
 
                 HStack(spacing: 4) {
                     Text("↑↓")
+                    Text("•")
+                    Text("⌘1-9")
                     Text("•")
                     Text(loc["shortcut_enter_paste"])
                 }

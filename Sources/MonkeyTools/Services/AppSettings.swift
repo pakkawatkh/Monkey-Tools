@@ -14,6 +14,11 @@ public final class AppSettings: ObservableObject {
         static let launchAtLogin = "app_launch_at_login"
         static let autoPasteEnabled = "app_auto_paste_enabled"
         static let selectionTranslateEnabled = "app_selection_translate_enabled"
+        static let translateHotkeyEnabled = "app_translate_hotkey_enabled"
+        static let translateHotkeyKeyCode = "app_translate_hotkey_keycode"
+        static let translateHotkeyModifiers = "app_translate_hotkey_modifiers"
+        static let translateHotkeyDisplay = "app_translate_hotkey_display"
+        static let excludedApps = "app_excluded_bundle_ids"
         static let translationEngineMode = "app_translation_engine_mode"
         static let translationTargetLang = "app_translation_target_lang"
         static let appLanguage = "app_ui_language"
@@ -62,6 +67,47 @@ public final class AppSettings: ObservableObject {
     @Published public var selectionTranslateEnabled: Bool {
         didSet {
             UserDefaults.standard.set(selectionTranslateEnabled, forKey: Keys.selectionTranslateEnabled)
+            if selectionTranslateEnabled {
+                TextSelectionMonitor.shared.startMonitoring()
+            } else {
+                TextSelectionMonitor.shared.stopMonitoring()
+                SelectionBubblePanel.shared.hide()
+            }
+        }
+    }
+
+    @Published public var translateHotkeyEnabled: Bool {
+        didSet {
+            UserDefaults.standard.set(translateHotkeyEnabled, forKey: Keys.translateHotkeyEnabled)
+            if translateHotkeyEnabled {
+                HotKeyManager.shared.registerSavedTranslateHotKey()
+            } else {
+                HotKeyManager.shared.unregisterTranslateHotKey()
+            }
+        }
+    }
+
+    @Published public var translateHotkeyKeyCode: UInt32 {
+        didSet {
+            UserDefaults.standard.set(translateHotkeyKeyCode, forKey: Keys.translateHotkeyKeyCode)
+        }
+    }
+
+    @Published public var translateHotkeyModifiers: UInt32 {
+        didSet {
+            UserDefaults.standard.set(translateHotkeyModifiers, forKey: Keys.translateHotkeyModifiers)
+        }
+    }
+
+    @Published public var translateHotkeyDisplayString: String {
+        didSet {
+            UserDefaults.standard.set(translateHotkeyDisplayString, forKey: Keys.translateHotkeyDisplay)
+        }
+    }
+
+    @Published public var excludedAppBundleIDs: [String] {
+        didSet {
+            UserDefaults.standard.set(excludedAppBundleIDs, forKey: Keys.excludedApps)
         }
     }
 
@@ -119,6 +165,12 @@ public final class AppSettings: ObservableObject {
         let savedNetworkMonitor = defaults.object(forKey: Keys.networkMonitorEnabled) as? Bool
         let savedNetworkSpeedUnitRaw = defaults.string(forKey: Keys.networkSpeedUnit)
 
+        let savedTranslateEnabled = defaults.object(forKey: Keys.translateHotkeyEnabled) as? Bool
+        let savedTranslateKeyCode = defaults.object(forKey: Keys.translateHotkeyKeyCode) as? UInt32
+        let savedTranslateModifiers = defaults.object(forKey: Keys.translateHotkeyModifiers) as? UInt32
+        let savedTranslateDisplay = defaults.string(forKey: Keys.translateHotkeyDisplay)
+        let savedExcludedApps = defaults.stringArray(forKey: Keys.excludedApps)
+
         self.hotkeyKeyCode = savedKeyCode ?? 9
         self.hotkeyModifiers = savedModifiers ?? UInt32(cmdKey | shiftKey)
         self.hotkeyDisplayString = AppSettings.formatDisplayString(savedDisplay ?? "⌘ + ⇧ + V")
@@ -126,6 +178,11 @@ public final class AppSettings: ObservableObject {
         self.launchAtLogin = savedLaunch
         self.autoPasteEnabled = savedAutoPaste ?? true
         self.selectionTranslateEnabled = savedSelectionTranslate ?? true
+        self.translateHotkeyEnabled = savedTranslateEnabled ?? true
+        self.translateHotkeyKeyCode = savedTranslateKeyCode ?? 14
+        self.translateHotkeyModifiers = savedTranslateModifiers ?? UInt32(cmdKey | shiftKey)
+        self.translateHotkeyDisplayString = AppSettings.formatDisplayString(savedTranslateDisplay ?? "⌘ + ⇧ + E")
+        self.excludedAppBundleIDs = savedExcludedApps ?? []
         self.translationEngineMode = (savedEngineRaw.flatMap(TranslationEngineMode.init(rawValue:))) ?? .google
         self.translationTargetLang = savedTargetLang ?? "auto"
         self.appLanguage = savedAppLanguage ?? "system"
@@ -145,6 +202,25 @@ public final class AppSettings: ObservableObject {
         self.hotkeyModifiers = modifiers
         self.hotkeyDisplayString = AppSettings.formatDisplayString(display)
         HotKeyManager.shared.registerHotKey(keyCode: keyCode, modifiers: modifiers)
+    }
+
+    public func setTranslateHotKey(keyCode: UInt32, modifiers: UInt32, display: String) {
+        self.translateHotkeyKeyCode = keyCode
+        self.translateHotkeyModifiers = modifiers
+        self.translateHotkeyDisplayString = AppSettings.formatDisplayString(display)
+        if self.translateHotkeyEnabled {
+            HotKeyManager.shared.registerTranslateHotKey(keyCode: keyCode, modifiers: modifiers)
+        }
+    }
+
+    public func addExcludedApp(bundleID: String) {
+        let trimmed = bundleID.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty, !excludedAppBundleIDs.contains(trimmed) else { return }
+        excludedAppBundleIDs.append(trimmed)
+    }
+
+    public func removeExcludedApp(bundleID: String) {
+        excludedAppBundleIDs.removeAll { $0 == bundleID }
     }
 
     /// Formats a shortcut string to ensure standard spacing and '+' separator (e.g. "⌘ + ⇧ + V").
@@ -229,5 +305,12 @@ public final class AppSettings: ObservableObject {
         Preset(name: "Option + V (Windows Win+V Style)", display: "⌥ + V", keyCode: 9, modifiers: UInt32(optionKey)),
         Preset(name: "Control + Option + V", display: "⌃ + ⌥ + V", keyCode: 9, modifiers: UInt32(controlKey | optionKey)),
         Preset(name: "Command + Option + V", display: "⌘ + ⌥ + V", keyCode: 9, modifiers: UInt32(cmdKey | optionKey))
+    ]
+
+    public static let translatePresets: [Preset] = [
+        Preset(name: "Command + Shift + E (Default)", display: "⌘ + ⇧ + E", keyCode: 14, modifiers: UInt32(cmdKey | shiftKey)),
+        Preset(name: "Option + E", display: "⌥ + E", keyCode: 14, modifiers: UInt32(optionKey)),
+        Preset(name: "Control + Option + T", display: "⌃ + ⌥ + T", keyCode: 17, modifiers: UInt32(controlKey | optionKey)),
+        Preset(name: "Command + Option + T", display: "⌘ + ⌥ + T", keyCode: 17, modifiers: UInt32(cmdKey | optionKey))
     ]
 }
