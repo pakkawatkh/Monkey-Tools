@@ -178,4 +178,67 @@ final class TextSelectionMonitorTests: XCTestCase {
         XCTAssertFalse(monitor.isFilePasteboardTypes([.string, .rtf, .html]))
         XCTAssertFalse(monitor.isFilePasteboardTypes([]))
     }
+
+    func testNonTextUIRoleFiltering() {
+        let monitor = TextSelectionMonitor.shared
+
+        // Non-text UI chrome must be rejected
+        XCTAssertTrue(monitor.isNonTextUIRole("AXButton"))
+        XCTAssertTrue(monitor.isNonTextUIRole("AXToolbar"))
+        XCTAssertTrue(monitor.isNonTextUIRole("AXTitleBar"))
+        XCTAssertTrue(monitor.isNonTextUIRole("AXTab"))
+        XCTAssertTrue(monitor.isNonTextUIRole("AXTabGroup"))
+        XCTAssertTrue(monitor.isNonTextUIRole("AXImage"))
+        XCTAssertTrue(monitor.isNonTextUIRole("AXScrollBar"))
+        XCTAssertTrue(monitor.isNonTextUIRole("AXWindow"))
+        XCTAssertTrue(monitor.isNonTextUIRole("AXUnknown", subrole: "AXCloseButton"))
+
+        // Text / content containers must remain allowed
+        XCTAssertFalse(monitor.isNonTextUIRole("AXStaticText"))
+        XCTAssertFalse(monitor.isNonTextUIRole("AXTextField"))
+        XCTAssertFalse(monitor.isNonTextUIRole("AXTextArea"))
+        XCTAssertFalse(monitor.isNonTextUIRole("AXWebArea"))
+        XCTAssertFalse(monitor.isNonTextUIRole("AXGroup"))
+    }
+
+    func testSelectionBoundsProximityCheck() {
+        let monitor = TextSelectionMonitor.shared
+        let selectionRect = CGRect(x: 200, y: 300, width: 80, height: 20)
+
+        // Click on or near the selected text passes
+        XCTAssertTrue(monitor.isPoint(CGPoint(x: 240, y: 310), nearSelectionRect: selectionRect))
+        XCTAssertTrue(monitor.isPoint(CGPoint(x: 320, y: 310), nearSelectionRect: selectionRect))
+
+        // Click far away (stale selection in another part of window) is rejected
+        XCTAssertFalse(monitor.isPoint(CGPoint(x: 800, y: 310), nearSelectionRect: selectionRect))
+        XCTAssertFalse(monitor.isPoint(CGPoint(x: 240, y: 600), nearSelectionRect: selectionRect))
+    }
+
+    func testDoubleClickTriggerValidation() {
+        let monitor = TextSelectionMonitor.shared
+
+        // Double-click on a single word/phrase passes
+        XCTAssertTrue(monitor.isValidSelectionForTrigger("hello", isDrag: false, clickCount: 2))
+        XCTAssertTrue(monitor.isValidSelectionForTrigger("สวัสดีครับ", isDrag: false, clickCount: 2))
+
+        // Double-click yielding multi-line text (e.g. stale highlight or list row) is rejected
+        XCTAssertFalse(monitor.isValidSelectionForTrigger("Line 1\nLine 2", isDrag: false, clickCount: 2))
+
+        // Drag or triple-click selecting multi-line text still passes
+        XCTAssertTrue(monitor.isValidSelectionForTrigger("Line 1\nLine 2", isDrag: true, clickCount: 1))
+        XCTAssertTrue(monitor.isValidSelectionForTrigger("Line 1\nLine 2", isDrag: false, clickCount: 3))
+    }
+
+    func testRapidHideThenShowKeepsBubbleVisible() {
+        let panel = SelectionBubblePanel.shared
+        panel.show(at: CGRect(x: 100, y: 100, width: 20, height: 20), selectedText: "First")
+        panel.hide()
+        // Re-show immediately before the 120ms fade-out animation finishes
+        panel.show(at: CGRect(x: 120, y: 120, width: 20, height: 20), selectedText: "Second")
+
+        RunLoop.main.run(until: Date().addingTimeInterval(0.20))
+        XCTAssertTrue(panel.isVisible)
+        XCTAssertEqual(panel.alphaValue, 1.0)
+        panel.orderOut(nil)
+    }
 }

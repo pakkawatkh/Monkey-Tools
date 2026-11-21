@@ -8,6 +8,7 @@ public final class SelectionBubblePanel: NSPanel {
     private var currentRect: CGRect = .zero
     private var isCurrentSelectionEditable: Bool = false
     private var currentSourceAppPID: pid_t = 0
+    private var visibilityToken: Int = 0
     private var autoDismissTimer: Timer?
     private var globalEventMonitor: Any?
     private var localKeyMonitor: Any?
@@ -92,6 +93,7 @@ public final class SelectionBubblePanel: NSPanel {
             }
         }
 
+        visibilityToken += 1
         self.setFrameOrigin(NSPoint(x: bubbleX, y: bubbleY))
         self.alphaValue = 1.0
         self.orderFrontRegardless()
@@ -106,6 +108,8 @@ public final class SelectionBubblePanel: NSPanel {
     }
 
     public func hide() {
+        visibilityToken += 1
+        let hideToken = visibilityToken
         autoDismissTimer?.invalidate()
         autoDismissTimer = nil
         stopEventMonitoring()
@@ -113,7 +117,8 @@ public final class SelectionBubblePanel: NSPanel {
         NSAnimationContext.runAnimationGroup({ context in
             context.duration = 0.12
             self.animator().alphaValue = 0.0
-        }, completionHandler: {
+        }, completionHandler: { [weak self] in
+            guard let self = self, self.visibilityToken == hideToken else { return }
             self.orderOut(nil)
         })
     }

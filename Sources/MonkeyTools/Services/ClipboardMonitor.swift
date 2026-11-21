@@ -100,19 +100,20 @@ public final class ClipboardMonitor {
             }
         }
 
-        // 4. Check for Copied Image Files (from Finder or Desktop)
+        // 4. Check for Copied Image Files (from Finder or Desktop) — encode off main thread to prevent UI stutter
         if let fileURLs = pasteboard.readObjects(forClasses: [NSURL.self], options: nil) as? [URL],
            let firstURL = fileURLs.first {
             let ext = firstURL.pathExtension.lowercased()
             let imageExtensions = ["png", "jpg", "jpeg", "webp", "gif", "tiff", "heic", "bmp"]
-            if imageExtensions.contains(ext),
-               let img = NSImage(contentsOf: firstURL),
-               let data = try? Data(contentsOf: firstURL) {
-                // If it's a valid image file, capture as image
-                let rep = NSBitmapImageRep(data: data)
-                let pngData = rep?.representation(using: .png, properties: [:]) ?? data
-                DispatchQueue.main.async {
-                    ClipboardManager.shared.addImage(nsImage: img, data: pngData)
+            if imageExtensions.contains(ext) {
+                DispatchQueue.global(qos: .utility).async {
+                    guard let data = try? Data(contentsOf: firstURL),
+                          let img = NSImage(data: data) else { return }
+                    let rep = NSBitmapImageRep(data: data)
+                    let pngData = rep?.representation(using: .png, properties: [:]) ?? data
+                    DispatchQueue.main.async {
+                        ClipboardManager.shared.addImage(nsImage: img, data: pngData)
+                    }
                 }
                 return
             }

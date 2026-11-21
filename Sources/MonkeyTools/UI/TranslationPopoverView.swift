@@ -19,6 +19,7 @@ public struct TranslationPopoverView: View {
     @State private var copiedConfirmation = false
     @State private var editableText: String
     @State private var debounceTask: Task<Void, Never>?
+    @State private var translationTask: Task<Void, Never>?
     @FocusState private var isInputFocused: Bool
 
     public init(
@@ -237,6 +238,7 @@ public struct TranslationPopoverView: View {
         .onDisappear {
             speech.stop()
             debounceTask?.cancel()
+            translationTask?.cancel()
         }
     }
 
@@ -310,7 +312,7 @@ public struct TranslationPopoverView: View {
             Menu {
                 Button(loc["trans_auto"]) {
                     settings.translationTargetLang = "auto"
-                    targetLanguage = TranslationService.shared.resolveTargetLanguage(for: originalText, preferredTarget: "auto")
+                    targetLanguage = TranslationService.shared.resolveTargetLanguage(for: editableText, preferredTarget: "auto")
                     performTranslation()
                 }
                 Divider()
@@ -432,7 +434,6 @@ public struct TranslationPopoverView: View {
 
         if let translated = translationResult?.translatedText, !translated.isEmpty {
             editableText = translated
-            debounceTranslation(for: translated)
         } else {
             performTranslation()
         }
@@ -493,6 +494,7 @@ public struct TranslationPopoverView: View {
 
     private func performTranslation(textToTranslate: String? = nil) {
         debounceTask?.cancel()
+        translationTask?.cancel()
         let text = (textToTranslate ?? editableText).trimmingCharacters(in: .whitespacesAndNewlines)
         guard !text.isEmpty else {
             translationResult = nil
@@ -504,19 +506,25 @@ public struct TranslationPopoverView: View {
         isLoading = true
         errorMessage = nil
 
-        Task {
+        let mode = settings.translationEngineMode
+        let src = sourceLanguage
+        let tgt = targetLanguage
+
+        translationTask = Task {
             do {
                 let result = try await TranslationService.shared.translate(
                     text: text,
-                    mode: settings.translationEngineMode,
-                    sourceLang: sourceLanguage,
-                    targetLang: targetLanguage
+                    mode: mode,
+                    sourceLang: src,
+                    targetLang: tgt
                 )
+                guard !Task.isCancelled else { return }
                 await MainActor.run {
                     self.translationResult = result
                     self.isLoading = false
                 }
             } catch {
+                guard !Task.isCancelled else { return }
                 await MainActor.run {
                     self.errorMessage = error.localizedDescription
                     self.isLoading = false
