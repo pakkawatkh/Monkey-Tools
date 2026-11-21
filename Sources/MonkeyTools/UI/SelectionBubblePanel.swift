@@ -52,6 +52,43 @@ public final class SelectionBubblePanel: NSPanel {
         return false
     }
 
+    /// Computes a non-overlapping screen origin for the floating translate bubble so it floats cleanly
+    /// above the highlighted text (or flips below if near the top edge of the screen) instead of covering the text.
+    public static func computeBubbleOrigin(for rect: CGRect, in screenFrame: CGRect, bubbleSize: CGFloat = 26) -> CGPoint {
+        let isPointFallback = rect.width <= 2 && rect.height <= 2
+        let verticalClearance: CGFloat = isPointFallback ? 18 : 8
+        let horizontalOffset: CGFloat = isPointFallback ? 10 : 6
+
+        var bubbleX = (isPointFallback ? rect.origin.x : rect.maxX) + horizontalOffset
+        var bubbleY = (isPointFallback ? rect.origin.y : rect.maxY) + verticalClearance
+
+        // If placing above would overflow the top of the visible screen, flip cleanly BELOW the text
+        if bubbleY + bubbleSize + 4 > screenFrame.maxY {
+            bubbleY = (isPointFallback ? rect.origin.y : rect.minY) - bubbleSize - verticalClearance
+        }
+
+        // Clamp horizontally within visible screen bounds
+        if bubbleX + bubbleSize + 4 > screenFrame.maxX {
+            bubbleX = (isPointFallback ? rect.origin.x : rect.maxX) - bubbleSize - horizontalOffset
+        }
+        if bubbleX + bubbleSize + 4 > screenFrame.maxX {
+            bubbleX = screenFrame.maxX - bubbleSize - 4
+        }
+        if bubbleX < screenFrame.minX + 4 {
+            bubbleX = screenFrame.minX + 4
+        }
+
+        // Final vertical bounds safety clamp
+        if bubbleY < screenFrame.minY + 4 {
+            bubbleY = screenFrame.minY + 4
+        }
+        if bubbleY + bubbleSize + 4 > screenFrame.maxY {
+            bubbleY = screenFrame.maxY - bubbleSize - 4
+        }
+
+        return CGPoint(x: bubbleX, y: bubbleY)
+    }
+
     public func show(at rect: CGRect, selectedText: String, sourceAppPID: pid_t = 0, isEditable: Bool = false) {
         guard TextSelectionMonitor.shared.isValidSelectionText(selectedText) else { return }
 
@@ -60,41 +97,25 @@ public final class SelectionBubblePanel: NSPanel {
         self.currentSourceAppPID = sourceAppPID
         self.isCurrentSelectionEditable = isEditable
 
-        // Position bubble snugly right next to the end of selection, centered vertically on text
-        let endX = rect.width <= 2 ? rect.origin.x : rect.maxX
-        let centerY = rect.width <= 2 ? rect.origin.y : rect.midY
-
-        var bubbleX = endX + 4
-        var bubbleY = centerY - 13 // Centered vertically (26pt height / 2)
-
-        // Prevent overflow beyond screen bounds on the specific screen containing this selection
-        let targetPoint = CGPoint(x: endX, y: centerY)
-        let screen = NSScreen.screens.first { $0.frame.contains(targetPoint) }
+        // Position bubble above the selection (or below near screen top) so it never covers focused text
+        let anchorPoint = CGPoint(
+            x: rect.width <= 2 ? rect.origin.x : rect.maxX,
+            y: rect.width <= 2 ? rect.origin.y : rect.midY
+        )
+        let screen = NSScreen.screens.first { $0.frame.contains(anchorPoint) }
                   ?? NSScreen.screens.first { $0.frame.contains(NSEvent.mouseLocation) }
                   ?? NSScreen.main
                   ?? NSScreen.screens.first
 
+        let origin: CGPoint
         if let screen = screen {
-            let screenFrame = screen.visibleFrame
-            if bubbleX + 30 > screenFrame.maxX {
-                bubbleX = (rect.width <= 2 ? rect.origin.x : rect.minX) - 30
-            }
-            if bubbleX + 30 > screenFrame.maxX {
-                bubbleX = screenFrame.maxX - 30
-            }
-            if bubbleY + 30 > screenFrame.maxY {
-                bubbleY = screenFrame.maxY - 30
-            }
-            if bubbleX < screenFrame.minX {
-                bubbleX = screenFrame.minX + 4
-            }
-            if bubbleY < screenFrame.minY {
-                bubbleY = screenFrame.minY + 4
-            }
+            origin = Self.computeBubbleOrigin(for: rect, in: screen.visibleFrame, bubbleSize: 26)
+        } else {
+            origin = CGPoint(x: anchorPoint.x + 10, y: anchorPoint.y + 18)
         }
 
         visibilityToken += 1
-        self.setFrameOrigin(NSPoint(x: bubbleX, y: bubbleY))
+        self.setFrameOrigin(NSPoint(x: origin.x, y: origin.y))
         self.alphaValue = 1.0
         self.orderFrontRegardless()
 

@@ -18,7 +18,7 @@ public final class UpdateCheckService: ObservableObject {
     @Published public private(set) var checkErrorMessage: String? = nil
 
     public var currentAppVersion: String {
-        return Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "2.1.9"
+        return Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "2.1.10"
     }
 
     public init() {

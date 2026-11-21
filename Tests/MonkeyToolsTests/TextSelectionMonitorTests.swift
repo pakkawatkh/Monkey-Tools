@@ -241,4 +241,27 @@ final class TextSelectionMonitorTests: XCTestCase {
         XCTAssertEqual(panel.alphaValue, 1.0)
         panel.orderOut(nil)
     }
+
+    func testBubbleOriginNeverCoversSelectedText() {
+        let screenFrame = CGRect(x: 0, y: 0, width: 1440, height: 900)
+
+        // 1. Exact AX text rect in middle of screen -> bubble floats clearly ABOVE text with zero overlap
+        let textRect = CGRect(x: 300, y: 500, width: 140, height: 22)
+        let originAbove = SelectionBubblePanel.computeBubbleOrigin(for: textRect, in: screenFrame)
+        let bubbleAbove = CGRect(origin: originAbove, size: CGSize(width: 26, height: 26))
+        XCTAssertFalse(bubbleAbove.intersects(textRect))
+        XCTAssertGreaterThanOrEqual(bubbleAbove.minY, textRect.maxY + 8)
+
+        // 2. Cursor-point fallback (width=1, height=1) -> bubble sits cleanly ABOVE cursor/text line
+        let pointRect = CGRect(x: 400, y: 500, width: 1, height: 1)
+        let originPoint = SelectionBubblePanel.computeBubbleOrigin(for: pointRect, in: screenFrame)
+        XCTAssertGreaterThanOrEqual(originPoint.y, pointRect.origin.y + 18)
+
+        // 3. Selection near top of screen -> bubble flips cleanly BELOW text instead of covering it
+        let topTextRect = CGRect(x: 300, y: 870, width: 140, height: 22)
+        let originBelow = SelectionBubblePanel.computeBubbleOrigin(for: topTextRect, in: screenFrame)
+        let bubbleBelow = CGRect(origin: originBelow, size: CGSize(width: 26, height: 26))
+        XCTAssertFalse(bubbleBelow.intersects(topTextRect))
+        XCTAssertLessThanOrEqual(bubbleBelow.maxY, topTextRect.minY - 8)
+    }
 }
