@@ -35,6 +35,8 @@ public final class TextSelectionMonitor: ObservableObject {
 
     /// Returns true if an AX role/subrole represents non-text UI chrome (buttons, tabs, toolbars, titlebars, images, scrollbars, etc.)
     /// where double-clicking should NEVER trigger text translation.
+    /// Note: `AXWindow` and `AXApplication` are intentionally NOT blocked here because Chromium/Electron apps
+    /// frequently report `AXWindow` for web page content before enhanced accessibility is populated.
     public func isNonTextUIRole(_ role: String, subrole: String = "") -> Bool {
         let nonTextRoles: Set<String> = [
             "AXButton", "AXCheckBox", "AXRadioButton", "AXPopUpButton", "AXMenuButton",
@@ -44,7 +46,7 @@ public final class TextSelectionMonitor: ObservableObject {
             "AXDockItem", "AXSplitter", "AXGrowArea", "AXDisclosureTriangle",
             "AXIncrementor", "AXColorWell", "AXProgressIndicator", "AXBusyIndicator",
             "AXRelevanceIndicator", "AXRuler", "AXRulerMarker", "AXMatte",
-            "AXHandle", "AXApplication", "AXWindow"
+            "AXHandle"
         ]
         if nonTextRoles.contains(role) {
             return true
@@ -236,8 +238,9 @@ public final class TextSelectionMonitor: ObservableObject {
         // Method 1: Try Accessibility API first (fast for native text fields like TextEdit, Mail, Xcode, Notes)
         if let axText = queryAXSelectedText(pid: pid),
            isValidSelectionForTrigger(axText.text, isDrag: isDrag, clickCount: clickCount) {
-            // Reject stale selections far away from the click location
-            if axText.hasExactBounds && !isPoint(mouseLoc, nearSelectionRect: axText.bounds) {
+            // Only apply proximity guard on non-drag clicks (double/triple-click) so dragging across long text
+            // or secondary monitors is never falsely rejected
+            if !isDrag && axText.hasExactBounds && !isPoint(mouseLoc, nearSelectionRect: axText.bounds) {
                 onSelectionCleared?()
                 return
             }
@@ -456,36 +459,12 @@ public final class TextSelectionMonitor: ObservableObject {
         RunLoop.main.add(checkTimer!, forMode: .common)
     }
 
-    /// Inspects the AX element directly beneath `mouseLoc` to prevent double-clicking on empty window areas,
-    /// titlebars, buttons, tabs, toolbars, scrollbars, images, or outside the focused window from triggering translation.
+    /// Inspects the AX element directly beneath `mouseLoc` to prevent double-clicking on window titlebars,
+    /// buttons, tabs, toolbars, scrollbars, or images from triggering translation.
     private func isClickOnNonTextElement(pid: pid_t, mouseLoc: CGPoint) -> Bool {
         guard pid > 0 else { return false }
         let appElement = AXUIElementCreateApplication(pid)
-
-        // Check if mouseLoc is outside the app's focused window frame
-        var focusedWindowObj: AnyObject?
-        if AXUIElementCopyAttributeValue(appElement, kAXFocusedWindowAttribute as CFString, &focusedWindowObj) == .success,
-           let winObj = focusedWindowObj {
-            let winEl = winObj as! AXUIElement
-            var posObj: AnyObject?
-            var sizeObj: AnyObject?
-            if AXUIElementCopyAttributeValue(winEl, kAXPositionAttribute as CFString, &posObj) == .success,
-               AXUIElementCopyAttributeValue(winEl, kAXSizeAttribute as CFString, &sizeObj) == .success,
-               let posVal = posObj, let sizeVal = sizeObj {
-                var axOrigin = CGPoint.zero
-                var axSize = CGSize.zero
-                if AXValueGetValue(posVal as! AXValue, .cgPoint, &axOrigin),
-                   AXValueGetValue(sizeVal as! AXValue, .cgSize, &axSize),
-                   axSize.width > 0 && axSize.height > 0,
-                   let primaryScreen = NSScreen.screens.first {
-                    let cocoaY = primaryScreen.frame.height - (axOrigin.y + axSize.height)
-                    let winRect = CGRect(x: axOrigin.x, y: cocoaY, width: axSize.width, height: axSize.height)
-                    if !winRect.contains(mouseLoc) {
-                        return true
-                    }
-                }
-            }
-        }
+        AXUIElementSetAttributeValue(appElement, "AXEnhancedUserInterface" as CFString, kCFBooleanTrue)
 
         // Check the specific AX element under the cursor
         let screenHeight = NSScreen.screens.first?.frame.height ?? 1080
@@ -508,7 +487,27 @@ public final class TextSelectionMonitor: ObservableObject {
             return true
         }
 
-        // If the element is an empty scroll area or group with no text value and no selected text on a double-click, check parent toolbar/tabbar
+        // If the click landed directly on an AXWindow's top titlebar strip (~28pt), block it (e.g. double-click to zoom window)
+        if role == "AXWindow" {
+            var posObj: AnyObject?
+            var sizeObj: AnyObject?
+            if AXUIElementCopyAttributeValue(el, kAXPositionAttribute as CFString, &posObj) == .success,
+               AXUIElementCopyAttributeValue(el, kAXSizeAttribute as CFString, &sizeObj) == .success,
+               let posVal = posObj, let sizeVal = sizeObj {
+                var axOrigin = CGPoint.zero
+                var axSize = CGSize.zero
+                if AXValueGetValue(posVal as! AXValue, .cgPoint, &axOrigin),
+                   AXValueGetValue(sizeVal as! AXValue, .cgSize, &axSize),
+                   axSize.height > 28 {
+                    let cocoaTop = screenHeight - axOrigin.y
+                    if mouseLoc.y >= cocoaTop - 28 && mouseLoc.y <= cocoaTop {
+                        return true
+                    }
+                }
+            }
+        }
+
+        // Check immediate parents for toolbar/tabbar/titlebar chrome
         var current = el
         for _ in 0..<2 {
             var parentObj: AnyObject?

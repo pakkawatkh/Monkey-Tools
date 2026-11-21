@@ -190,10 +190,10 @@ final class TextSelectionMonitorTests: XCTestCase {
         XCTAssertTrue(monitor.isNonTextUIRole("AXTabGroup"))
         XCTAssertTrue(monitor.isNonTextUIRole("AXImage"))
         XCTAssertTrue(monitor.isNonTextUIRole("AXScrollBar"))
-        XCTAssertTrue(monitor.isNonTextUIRole("AXWindow"))
         XCTAssertTrue(monitor.isNonTextUIRole("AXUnknown", subrole: "AXCloseButton"))
 
-        // Text / content containers must remain allowed
+        // Text / content containers (including AXWindow for Electron/Chromium fallback) must remain allowed
+        XCTAssertFalse(monitor.isNonTextUIRole("AXWindow"))
         XCTAssertFalse(monitor.isNonTextUIRole("AXStaticText"))
         XCTAssertFalse(monitor.isNonTextUIRole("AXTextField"))
         XCTAssertFalse(monitor.isNonTextUIRole("AXTextArea"))
