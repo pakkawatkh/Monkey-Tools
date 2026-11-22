@@ -187,18 +187,27 @@ final class TextSelectionMonitorTests: XCTestCase {
         XCTAssertTrue(monitor.isNonTextUIRole("AXToolbar"))
         XCTAssertTrue(monitor.isNonTextUIRole("AXTitleBar"))
         XCTAssertTrue(monitor.isNonTextUIRole("AXTab"))
-        XCTAssertTrue(monitor.isNonTextUIRole("AXTabGroup"))
         XCTAssertTrue(monitor.isNonTextUIRole("AXImage"))
         XCTAssertTrue(monitor.isNonTextUIRole("AXScrollBar"))
         XCTAssertTrue(monitor.isNonTextUIRole("AXUnknown", subrole: "AXCloseButton"))
 
-        // Text / content containers (including AXWindow for Electron/Chromium fallback) must remain allowed
+        // Text / content containers (including AXWindow & AXTabGroup for Electron/Chromium/tabbed macOS apps) must remain allowed
         XCTAssertFalse(monitor.isNonTextUIRole("AXWindow"))
+        XCTAssertFalse(monitor.isNonTextUIRole("AXTabGroup"))
         XCTAssertFalse(monitor.isNonTextUIRole("AXStaticText"))
         XCTAssertFalse(monitor.isNonTextUIRole("AXTextField"))
         XCTAssertFalse(monitor.isNonTextUIRole("AXTextArea"))
         XCTAssertFalse(monitor.isNonTextUIRole("AXWebArea"))
         XCTAssertFalse(monitor.isNonTextUIRole("AXGroup"))
+
+        // Explicit text elements (like browser URL bar inside AXToolbar) must always be recognized as text
+        XCTAssertTrue(monitor.isExplicitTextRole("AXTextField"))
+        XCTAssertTrue(monitor.isExplicitTextRole("AXSearchField"))
+        XCTAssertTrue(monitor.isExplicitTextRole("AXComboBox"))
+        XCTAssertTrue(monitor.isExplicitTextRole("AXTextArea"))
+        XCTAssertTrue(monitor.isExplicitTextRole("AXStaticText"))
+        XCTAssertFalse(monitor.isExplicitTextRole("AXToolbar"))
+        XCTAssertFalse(monitor.isExplicitTextRole("AXButton"))
     }
 
     func testSelectionBoundsProximityCheck() {

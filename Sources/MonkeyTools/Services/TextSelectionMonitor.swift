@@ -33,15 +33,24 @@ public final class TextSelectionMonitor: ObservableObject {
 
     private init() {}
 
+    /// Returns true if an AX role/subrole is explicitly a text input or text content element
+    /// (e.g. browser URL bar `AXTextField` inside an `AXToolbar`, search box, static text, text area).
+    public func isExplicitTextRole(_ role: String, subrole: String = "") -> Bool {
+        let textRoles: Set<String> = [
+            "AXTextField", "AXTextArea", "AXSearchField", "AXComboBox", "AXStaticText"
+        ]
+        return textRoles.contains(role) || subrole == "AXEditableText" || subrole == "AXSearchField"
+    }
+
     /// Returns true if an AX role/subrole represents non-text UI chrome (buttons, tabs, toolbars, titlebars, images, scrollbars, etc.)
     /// where double-clicking should NEVER trigger text translation.
-    /// Note: `AXWindow` and `AXApplication` are intentionally NOT blocked here because Chromium/Electron apps
-    /// frequently report `AXWindow` for web page content before enhanced accessibility is populated.
+    /// Note: `AXWindow`, `AXApplication`, and `AXTabGroup` are intentionally NOT blocked here because Chromium/Electron
+    /// and tabbed macOS apps host real text content inside those containers.
     public func isNonTextUIRole(_ role: String, subrole: String = "") -> Bool {
         let nonTextRoles: Set<String> = [
             "AXButton", "AXCheckBox", "AXRadioButton", "AXPopUpButton", "AXMenuButton",
             "AXMenuBar", "AXMenuBarItem", "AXMenu", "AXMenuItem",
-            "AXTabGroup", "AXTab", "AXToolbar", "AXTitleBar",
+            "AXTab", "AXToolbar", "AXTitleBar",
             "AXScrollBar", "AXValueIndicator", "AXSlider", "AXImage",
             "AXDockItem", "AXSplitter", "AXGrowArea", "AXDisclosureTriangle",
             "AXIncrementor", "AXColorWell", "AXProgressIndicator", "AXBusyIndicator",
@@ -235,17 +244,28 @@ public final class TextSelectionMonitor: ObservableObject {
             return
         }
 
-        // Method 1: Try Accessibility API first (fast for native text fields like TextEdit, Mail, Xcode, Notes)
+        // Method 1: Try Accessibility API first (fast for native text fields like TextEdit, Mail, Xcode, Notes, URL bars)
         if let axText = queryAXSelectedText(pid: pid),
            isValidSelectionForTrigger(axText.text, isDrag: isDrag, clickCount: clickCount) {
             // Only apply proximity guard on non-drag clicks (double/triple-click) so dragging across long text
-            // or secondary monitors is never falsely rejected
-            if !isDrag && axText.hasExactBounds && !isPoint(mouseLoc, nearSelectionRect: axText.bounds) {
-                onSelectionCleared?()
-                return
+            // or secondary monitors is never falsely rejected. Accept if mouse is near either the selection bounds
+            // OR inside the focused element's own frame (handles Chromium URL bar where range bounds can be offset).
+            if !isDrag {
+                let nearRange = axText.hasExactBounds && isPoint(mouseLoc, nearSelectionRect: axText.bounds)
+                let insideElement = axText.elementFrame.map { isPoint(mouseLoc, nearSelectionRect: $0, horizontalMargin: 24, verticalMargin: 24) } ?? false
+                if (axText.hasExactBounds || axText.elementFrame != nil) && !nearRange && !insideElement {
+                    onSelectionCleared?()
+                    return
+                }
+            }
+            let bubbleRect: CGRect
+            if axText.hasExactBounds && isPoint(mouseLoc, nearSelectionRect: axText.bounds) {
+                bubbleRect = axText.bounds
+            } else {
+                bubbleRect = CGRect(x: mouseLoc.x, y: mouseLoc.y, width: 1, height: 1)
             }
             let editable = isElementEditable(pid: pid, mouseLoc: mouseLoc)
-            let event = TextSelectionEvent(text: axText.text, screenRect: axText.bounds, sourceAppPID: pid, isEditable: editable)
+            let event = TextSelectionEvent(text: axText.text, screenRect: bubbleRect, sourceAppPID: pid, isEditable: editable)
             onSelectionDetected?(event)
             return
         }
@@ -483,6 +503,11 @@ public final class TextSelectionMonitor: ObservableObject {
         AXUIElementCopyAttributeValue(el, kAXSubroleAttribute as CFString, &subroleObj)
         let subrole = (subroleObj as? String) ?? ""
 
+        // Explicitly allow text inputs/content even when hosted inside a toolbar (e.g. browser URL bar, search bar)
+        if isExplicitTextRole(role, subrole: subrole) {
+            return false
+        }
+
         if isNonTextUIRole(role, subrole: subrole) {
             return true
         }
@@ -507,7 +532,8 @@ public final class TextSelectionMonitor: ObservableObject {
             }
         }
 
-        // Check immediate parents for toolbar/tabbar/titlebar chrome
+        // Check immediate parents for menu bar / title bar chrome only
+        // (Do NOT block AXToolbar or AXTabGroup parents, as they host URL/search bars and tab content views)
         var current = el
         for _ in 0..<2 {
             var parentObj: AnyObject?
@@ -517,7 +543,7 @@ public final class TextSelectionMonitor: ObservableObject {
                 var pRoleObj: AnyObject?
                 AXUIElementCopyAttributeValue(parentEl, kAXRoleAttribute as CFString, &pRoleObj)
                 let pRole = (pRoleObj as? String) ?? ""
-                if pRole == "AXToolbar" || pRole == "AXTabGroup" || pRole == "AXMenuBar" || pRole == "AXTitleBar" {
+                if pRole == "AXMenuBar" || pRole == "AXTitleBar" {
                     return true
                 }
                 current = parentEl
@@ -529,7 +555,27 @@ public final class TextSelectionMonitor: ObservableObject {
         return false
     }
 
-    private func queryAXSelectedText(pid: pid_t) -> (text: String, bounds: CGRect, hasExactBounds: Bool)? {
+    private func getElementFrame(_ element: AXUIElement) -> CGRect? {
+        var posObj: AnyObject?
+        var sizeObj: AnyObject?
+        guard AXUIElementCopyAttributeValue(element, kAXPositionAttribute as CFString, &posObj) == .success,
+              AXUIElementCopyAttributeValue(element, kAXSizeAttribute as CFString, &sizeObj) == .success,
+              let posVal = posObj, let sizeVal = sizeObj else {
+            return nil
+        }
+        var axOrigin = CGPoint.zero
+        var axSize = CGSize.zero
+        guard AXValueGetValue(posVal as! AXValue, .cgPoint, &axOrigin),
+              AXValueGetValue(sizeVal as! AXValue, .cgSize, &axSize),
+              axSize.width > 0 && axSize.height > 0,
+              let primaryScreen = NSScreen.screens.first else {
+            return nil
+        }
+        let cocoaY = primaryScreen.frame.height - (axOrigin.y + axSize.height)
+        return CGRect(x: axOrigin.x, y: cocoaY, width: axSize.width, height: axSize.height)
+    }
+
+    private func queryAXSelectedText(pid: pid_t) -> (text: String, bounds: CGRect, hasExactBounds: Bool, elementFrame: CGRect?)? {
         let appElement = AXUIElementCreateApplication(pid)
 
         var focusedElementObj: AnyObject?
@@ -548,7 +594,8 @@ public final class TextSelectionMonitor: ObservableObject {
         }
 
         let (bounds, hasExactBounds) = getSelectionBounds(element: element)
-        return (text, bounds, hasExactBounds)
+        let elementFrame = getElementFrame(element)
+        return (text, bounds, hasExactBounds, elementFrame)
     }
 
     private func getSelectionBounds(element: AXUIElement) -> (rect: CGRect, hasExactBounds: Bool) {
