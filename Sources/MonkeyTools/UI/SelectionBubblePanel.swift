@@ -56,8 +56,8 @@ public final class SelectionBubblePanel: NSPanel {
     /// above the highlighted text (or flips below if near the top edge of the screen) instead of covering the text.
     public static func computeBubbleOrigin(for rect: CGRect, in screenFrame: CGRect, bubbleSize: CGFloat = 26) -> CGPoint {
         let isPointFallback = rect.width <= 2 && rect.height <= 2
-        let verticalClearance: CGFloat = isPointFallback ? 18 : 8
-        let horizontalOffset: CGFloat = isPointFallback ? 10 : 6
+        let verticalClearance: CGFloat = isPointFallback ? 11 : 4
+        let horizontalOffset: CGFloat = isPointFallback ? 6 : 4
 
         var bubbleX = (isPointFallback ? rect.origin.x : rect.maxX) + horizontalOffset
         var bubbleY = (isPointFallback ? rect.origin.y : rect.maxY) + verticalClearance
@@ -111,7 +111,7 @@ public final class SelectionBubblePanel: NSPanel {
         if let screen = screen {
             origin = Self.computeBubbleOrigin(for: rect, in: screen.visibleFrame, bubbleSize: 26)
         } else {
-            origin = CGPoint(x: anchorPoint.x + 10, y: anchorPoint.y + 18)
+            origin = CGPoint(x: anchorPoint.x + 6, y: anchorPoint.y + 11)
         }
 
         visibilityToken += 1
