@@ -503,21 +503,44 @@ public struct TranslationPopoverView: View {
             return
         }
 
-        isLoading = true
-        errorMessage = nil
-
         let mode = settings.translationEngineMode
         let src = sourceLanguage
         let tgt = targetLanguage
 
+        // Fast path: consume instant pre-translated result or join already-running background prefetch task
+        let prefetched = TranslationService.shared.consumePreTranslation(
+            for: text,
+            mode: mode,
+            sourceLang: src,
+            targetLang: tgt
+        )
+        if let instantResult = prefetched.result {
+            self.translationResult = instantResult
+            self.errorMessage = nil
+            self.isLoading = false
+            return
+        }
+
+        isLoading = true
+        errorMessage = nil
+
         translationTask = Task {
             do {
-                let result = try await TranslationService.shared.translate(
-                    text: text,
-                    mode: mode,
-                    sourceLang: src,
-                    targetLang: tgt
-                )
+                let result: TranslationResult
+                if let inFlight = prefetched.inFlightTask {
+                    result = try await withTaskCancellationHandler {
+                        try await inFlight.value
+                    } onCancel: {
+                        inFlight.cancel()
+                    }
+                } else {
+                    result = try await TranslationService.shared.translate(
+                        text: text,
+                        mode: mode,
+                        sourceLang: src,
+                        targetLang: tgt
+                    )
+                }
                 guard !Task.isCancelled else { return }
                 await MainActor.run {
                     self.translationResult = result

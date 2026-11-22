@@ -79,4 +79,76 @@ final class TranslationServiceTests: XCTestCase {
         XCTAssertFalse(result.translatedText.isEmpty)
         XCTAssertTrue(result.translatedText.contains("ไบนารี") || result.translatedText.contains("ฐานสอง"))
     }
+
+    func testPreTranslationCancelAndClearLeavesNoResidualState() {
+        let service = TranslationService.shared
+        service.clearCache()
+
+        // Start pre-translation with a long settle delay so it stays pending, then cancel immediately
+        service.startPreTranslation(
+            for: "Transient selection text",
+            mode: .google,
+            sourceLang: "auto",
+            preferredTarget: "th",
+            settleDelayNanoseconds: 2_000_000_000
+        )
+        XCTAssertTrue(service.hasActivePreTranslation)
+
+        // Simulating bubble dismiss without tapping Translate must wipe all state immediately
+        service.cancelPreTranslation(clearCachedEntry: true)
+        XCTAssertFalse(service.hasActivePreTranslation)
+
+        let consumed = service.consumePreTranslation(
+            for: "Transient selection text",
+            mode: .google,
+            sourceLang: "auto",
+            targetLang: "th"
+        )
+        XCTAssertNil(consumed.result)
+        XCTAssertNil(consumed.inFlightTask)
+    }
+
+    func testPreTranslationSkipsExcessivelyLongText() {
+        let service = TranslationService.shared
+        service.clearCache()
+
+        let hugeText = String(repeating: "a", count: TranslationService.maxPreTranslationLength + 100)
+        service.startPreTranslation(for: hugeText, mode: .google, sourceLang: "auto", preferredTarget: "th")
+        XCTAssertFalse(service.hasActivePreTranslation)
+    }
+
+    func testPreTranslationReturnsInstantResultAfterCompletion() async throws {
+        let service = TranslationService.shared
+        service.clearCache()
+
+        // Start pre-translation with 0ms delay and wait briefly for completion
+        service.startPreTranslation(
+            for: "hello",
+            mode: .google,
+            sourceLang: "auto",
+            preferredTarget: "th",
+            settleDelayNanoseconds: 0
+        )
+
+        // Consume either ready result or join in-flight task cleanly
+        let consumed = service.consumePreTranslation(
+            for: "hello",
+            mode: .google,
+            sourceLang: "auto",
+            targetLang: "th"
+        )
+        let finalResult: TranslationResult
+        if let ready = consumed.result {
+            finalResult = ready
+        } else if let task = consumed.inFlightTask {
+            finalResult = try await task.value
+        } else {
+            XCTFail("Expected either ready pre-translated result or active in-flight task")
+            return
+        }
+
+        XCTAssertFalse(finalResult.translatedText.isEmpty)
+        XCTAssertEqual(finalResult.targetLanguage, "th")
+        XCTAssertFalse(service.hasActivePreTranslation)
+    }
 }

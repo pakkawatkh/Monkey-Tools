@@ -4,10 +4,15 @@ import os
 public final class TranslationService: ObservableObject {
     public static let shared = TranslationService()
 
+    public static let maxPreTranslationLength = 4000
+
     private let googleEngine = GoogleTranslationEngine()
     private let appleEngine = AppleNativeTranslationEngine()
 
     private var cache = [String: TranslationResult]()
+    private var prefetchTask: Task<TranslationResult, Error>?
+    private var prefetchKey: String?
+    private var prefetchResult: TranslationResult?
     private let lock = OSAllocatedUnfairLock()
 
     private init() {}
@@ -48,6 +53,152 @@ public final class TranslationService: ObservableObject {
         return thaiCount > latinCount ? "en" : "th"
     }
 
+    private func makeCacheKey(text: String, mode: TranslationEngineMode, sourceLang: String, targetLang: String) -> String {
+        let resolvedSource = sourceLang.isEmpty ? "auto" : sourceLang
+        return "\(mode.rawValue):\(resolvedSource):\(targetLang):\(text)"
+    }
+
+    /// Lightweight background pre-translation triggered while the floating bubble is visible.
+    /// Waits a short settle delay (180ms) before hitting the network so quick copy-paste or accidental highlights
+    /// cancel before sending any request, and caps text length to protect bandwidth/CPU.
+    public func startPreTranslation(
+        for text: String,
+        mode: TranslationEngineMode,
+        sourceLang: String = "auto",
+        preferredTarget: String = "auto",
+        settleDelayNanoseconds: UInt64 = 180_000_000
+    ) {
+        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty, trimmed.count <= Self.maxPreTranslationLength else {
+            cancelPreTranslation(clearCachedEntry: false)
+            return
+        }
+
+        let resolvedTarget = resolveTargetLanguage(for: trimmed, preferredTarget: preferredTarget)
+        let resolvedSource = sourceLang.isEmpty ? "auto" : sourceLang
+        let key = makeCacheKey(text: trimmed, mode: mode, sourceLang: resolvedSource, targetLang: resolvedTarget)
+
+        let existingTaskToCancel: Task<TranslationResult, Error>? = lock.withLock {
+            // Already prefetching or holding result for this exact key
+            if prefetchKey == key && (prefetchResult != nil || prefetchTask != nil) {
+                return nil
+            }
+            let oldTask = prefetchTask
+            prefetchTask = nil
+            prefetchKey = key
+            prefetchResult = cache[key]
+            return oldTask
+        }
+        existingTaskToCancel?.cancel()
+
+        // If already cached, no background task needed
+        let alreadyReady = lock.withLock { prefetchKey == key && prefetchResult != nil }
+        if alreadyReady {
+            return
+        }
+
+        let selectedEngine = engine(for: mode)
+        let task = Task<TranslationResult, Error>(priority: .utility) { [weak self] in
+            if settleDelayNanoseconds > 0 {
+                try await Task.sleep(nanoseconds: settleDelayNanoseconds)
+            }
+            try Task.checkCancellation()
+
+            let result = try await selectedEngine.translate(text: trimmed, from: resolvedSource, to: resolvedTarget)
+            try Task.checkCancellation()
+
+            guard let strongSelf = self else { return result }
+            strongSelf.lock.withLock {
+                if strongSelf.prefetchKey == key {
+                    strongSelf.prefetchResult = result
+                    strongSelf.prefetchTask = nil
+                }
+            }
+            return result
+        }
+
+        lock.withLock {
+            if prefetchKey == key && prefetchResult == nil {
+                prefetchTask = task
+            } else {
+                task.cancel()
+            }
+        }
+    }
+
+    /// Consumes an already-finished pre-translation (instant 0ms result) or hands over the matching
+    /// in-flight prefetch task so the popover never sends a duplicate network request.
+    public func consumePreTranslation(
+        for text: String,
+        mode: TranslationEngineMode,
+        sourceLang: String = "auto",
+        targetLang: String
+    ) -> (result: TranslationResult?, inFlightTask: Task<TranslationResult, Error>?) {
+        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return (nil, nil) }
+
+        let resolvedTarget = resolveTargetLanguage(for: trimmed, preferredTarget: targetLang)
+        let resolvedSource = sourceLang.isEmpty ? "auto" : sourceLang
+        let key = makeCacheKey(text: trimmed, mode: mode, sourceLang: resolvedSource, targetLang: resolvedTarget)
+
+        return lock.withLock {
+            if let cached = cache[key] {
+                if prefetchKey == key {
+                    prefetchResult = nil
+                    prefetchTask = nil
+                    prefetchKey = nil
+                }
+                return (cached, nil)
+            }
+
+            guard prefetchKey == key else {
+                return (nil, nil)
+            }
+
+            if let ready = prefetchResult {
+                // Promote to regular cache now that the user explicitly opened translation
+                if cache.count > 100 {
+                    cache.removeAll()
+                }
+                cache[key] = ready
+                prefetchResult = nil
+                prefetchTask = nil
+                prefetchKey = nil
+                return (ready, nil)
+            }
+
+            if let task = prefetchTask {
+                prefetchTask = nil
+                prefetchKey = nil
+                return (nil, task)
+            }
+
+            return (nil, nil)
+        }
+    }
+
+    /// Immediately cancels any active background pre-translation and clears its temporary state.
+    /// Called whenever the floating bubble disappears without the user clicking Translate.
+    public func cancelPreTranslation(clearCachedEntry: Bool = false) {
+        let taskToCancel: Task<TranslationResult, Error>? = lock.withLock {
+            let task = prefetchTask
+            if clearCachedEntry, let key = prefetchKey {
+                cache.removeValue(forKey: key)
+            }
+            prefetchTask = nil
+            prefetchKey = nil
+            prefetchResult = nil
+            return task
+        }
+        taskToCancel?.cancel()
+    }
+
+    public var hasActivePreTranslation: Bool {
+        lock.withLock {
+            prefetchTask != nil || prefetchResult != nil || prefetchKey != nil
+        }
+    }
+
     public func translate(
         text: String,
         mode: TranslationEngineMode = .google,
@@ -61,7 +212,7 @@ public final class TranslationService: ObservableObject {
 
         let resolvedTarget = resolveTargetLanguage(for: trimmed, preferredTarget: targetLang)
         let resolvedSource = sourceLang.isEmpty ? "auto" : sourceLang
-        let cacheKey = "\(mode.rawValue):\(resolvedSource):\(resolvedTarget):\(trimmed)"
+        let cacheKey = makeCacheKey(text: trimmed, mode: mode, sourceLang: resolvedSource, targetLang: resolvedTarget)
 
         let cachedResult = lock.withLock {
             cache[cacheKey]
@@ -84,8 +235,14 @@ public final class TranslationService: ObservableObject {
     }
 
     public func clearCache() {
-        lock.withLock {
+        let taskToCancel: Task<TranslationResult, Error>? = lock.withLock {
             cache.removeAll()
+            let task = prefetchTask
+            prefetchTask = nil
+            prefetchKey = nil
+            prefetchResult = nil
+            return task
         }
+        taskToCancel?.cancel()
     }
 }

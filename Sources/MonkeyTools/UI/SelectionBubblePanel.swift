@@ -9,6 +9,7 @@ public final class SelectionBubblePanel: NSPanel {
     private var isCurrentSelectionEditable: Bool = false
     private var currentSourceAppPID: pid_t = 0
     private var visibilityToken: Int = 0
+    private var didTapToTranslate: Bool = false
     private var autoDismissTimer: Timer?
     private var globalEventMonitor: Any?
     private var localKeyMonitor: Any?
@@ -96,6 +97,15 @@ public final class SelectionBubblePanel: NSPanel {
         self.currentRect = rect
         self.currentSourceAppPID = sourceAppPID
         self.isCurrentSelectionEditable = isEditable
+        self.didTapToTranslate = false
+
+        // Warm translation in background while bubble is visible (auto-cancelled & cleared if bubble closes untouched)
+        TranslationService.shared.startPreTranslation(
+            for: selectedText,
+            mode: AppSettings.shared.translationEngineMode,
+            sourceLang: "auto",
+            preferredTarget: AppSettings.shared.translationTargetLang
+        )
 
         // Position bubble above the selection (or below near screen top) so it never covers focused text
         let anchorPoint = CGPoint(
@@ -135,6 +145,12 @@ public final class SelectionBubblePanel: NSPanel {
         autoDismissTimer = nil
         stopEventMonitoring()
 
+        // If user dismissed bubble without clicking Translate, cancel & wipe background pre-translation immediately
+        if !didTapToTranslate {
+            TranslationService.shared.cancelPreTranslation(clearCachedEntry: true)
+        }
+        didTapToTranslate = false
+
         NSAnimationContext.runAnimationGroup({ context in
             context.duration = 0.12
             self.animator().alphaValue = 0.0
@@ -149,6 +165,7 @@ public final class SelectionBubblePanel: NSPanel {
         let targetPoint = CGPoint(x: self.frame.origin.x, y: self.frame.origin.y)
         let isEditable = self.isCurrentSelectionEditable
         let pid = self.currentSourceAppPID
+        self.didTapToTranslate = true
         self.hide()
 
         guard TextSelectionMonitor.shared.isValidSelectionText(text) else { return }
