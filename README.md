@@ -4,7 +4,7 @@
 
 [![Release](https://img.shields.io/badge/Release-v2.3.1-orange?style=for-the-badge&logo=github)](https://pakkawatkh.github.io/tiffy-app/monkey-tools/)
 [![Platform](https://img.shields.io/badge/Platform-macOS%2013%2B-lightgrey?style=for-the-badge&logo=apple)](https://github.com/pakkawatkh/monkey-tools)
-[![License](https://img.shields.io/badge/License-Proprietary-red?style=for-the-badge)](LICENSE)
+[![License](https://img.shields.io/badge/License-MIT-green?style=for-the-badge)](LICENSE)
 
 ---
 
@@ -43,7 +43,7 @@ You can download the latest official `.dmg` installer directly from the Tiffy Ap
   - Scrolling trackpad or mouse wheel (`scrollWheel`)
   - Switching applications or window deactivation
 - 🌐 **3-Tier Resilient Translation Engine:** Eliminates HTTP 429 rate limit errors with Chrome extension endpoint, single-translate fallback, and automated fallback tiers.
-- 📜 **Proprietary License:** Added official All Rights Reserved proprietary license to ensure codebase integrity and ownership.
+- 🔓 **Open Source (MIT License):** Full source code is open-source under the MIT License.
 
 ---
 
@@ -245,5 +245,4 @@ swift test
 ---
 
 ## 📄 License
-Copyright © 2026 Pakkawat.k. All Rights Reserved.  
-This software and its documentation are proprietary. Unauthorized copying, distribution, or commercial exploitation is strictly prohibited. See the [LICENSE](LICENSE) file for complete terms.
+Open Source — Licensed under the **[MIT License](LICENSE)**. Copyright © 2026 Pakkawat.k.
