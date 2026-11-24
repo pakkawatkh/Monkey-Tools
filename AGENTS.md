@@ -10,7 +10,7 @@
 - **Bundle Identifier:** `com.local.monkey-tools` *(never change — preserves macOS Accessibility TCC permissions and user data)*
 - **Platform:** Native macOS 13.0+ (Apple Silicon & Intel), Swift 5.9+, SwiftUI, AppKit, Vision (Offline OCR), Carbon (`RegisterEventHotKey`), CoreGraphics (`CGEvent`)
 - **License:** Open Source — MIT License
-- **Release Portal:** `../Pliw-App/monkey-tools/` → Live at `https://pakkawatkh.github.io/Pliw-App/monkey-tools/`
+- **Release Portal:** `../../monkey-tools/` → Live at `https://pakkawatkh.github.io/Pliw-App/monkey-tools/`
 - **Auto-Update Manifest:** `https://pakkawatkh.github.io/Pliw-App/monkey-tools/version.json`
 
 ### Core Features
@@ -46,13 +46,13 @@ Never stop after editing code. Complete every step below in one pass:
    ```bash
    ./scripts/create_dmg.sh
    ```
-   This builds Release `monkey-tools.app`, signs it, updates `/Applications/monkey-tools.app`, creates `monkey-tools-Installer.dmg` + `monkey-tools.zip`, and syncs them to `../Pliw-App/monkey-tools/`.
-4. **Update Release Portal (`../Pliw-App`):**
-   - Update `../Pliw-App/monkey-tools/version.json` (`latestVersion`, `releaseDate`, `releaseNotes`).
-   - Update version and exact DMG size in `../Pliw-App/index.html`, `../Pliw-App/monkey-tools/index.html`, `../Pliw-App/README.md`, and `./README.md`.
-   - Follow `../Pliw-App/AGENTS.md` (100% English, minimal copy, no keyboard shortcuts in descriptions).
+   This builds Release `monkey-tools.app`, signs it, updates `/Applications/monkey-tools.app`, creates `monkey-tools-Installer.dmg` + `monkey-tools.zip`, and syncs them to `../../monkey-tools/`.
+4. **Update Release Portal (`../..`):**
+   - Update `../../monkey-tools/version.json` (`latestVersion`, `releaseDate`, `releaseNotes`).
+   - Update version and exact DMG size in `../../index.html`, `../../monkey-tools/index.html`, `../../README.md`, and `./README.md`.
+   - Follow `../../AGENTS.md` (100% English, minimal copy, no keyboard shortcuts in descriptions).
 5. **Commit & push both repositories:**
    ```bash
    git add -A && git commit -m "chore: release vX.Y.Z - <summary>" && git push origin main
-   cd ../Pliw-App && git add -A && git commit -m "chore(release): Monkey Tools vX.Y.Z" && git push origin main
+   cd ../.. && git add -A && git commit -m "chore(release): Monkey Tools vX.Y.Z" && git push origin main
    ```
