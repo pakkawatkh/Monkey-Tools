@@ -7,6 +7,7 @@ public struct ClipboardView: View {
     @ObservedObject var settings: AppSettings = .shared
     @ObservedObject var emojiManager: EmojiManager = .shared
     @ObservedObject var loc: LocalizationManager = .shared
+    @Environment(\.colorScheme) private var colorScheme
 
     public var onSelect: (ClipboardItem) -> Void
     public var onClose: () -> Void
@@ -100,19 +101,18 @@ public struct ClipboardView: View {
                 .padding(.horizontal, 10)
                 .padding(.vertical, 8)
         }
-        .frame(width: 320, height: 520)
+        .frame(width: 340, height: 540)
         .background(
             ZStack {
-                VisualEffectBackground()
-                Color(red: 0.10, green: 0.10, blue: 0.12).opacity(0.85)
+                AdaptiveVisualEffectView(material: .popover, cornerRadius: 18)
+                ModernTheme.panelTint(for: colorScheme)
             }
         )
-        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
         .overlay(
-            RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .stroke(Color.white.opacity(0.14), lineWidth: 1)
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .stroke(ModernTheme.glassRimGradient(for: colorScheme), lineWidth: 1)
         )
-        .preferredColorScheme(.dark)
         .onAppear {
             isSearchFocused = true
             autoPaster.refreshAccessibilityStatus()
@@ -134,12 +134,12 @@ public struct ClipboardView: View {
 
     private var customDivider: some View {
         Rectangle()
-            .fill(Color.white.opacity(0.10))
+            .fill(ModernTheme.divider(for: colorScheme))
             .frame(height: 1)
     }
 
     private var headerView: some View {
-        VStack(spacing: 8) {
+        VStack(spacing: 9) {
             // Top Row: Tabs + Window Controls
             HStack(spacing: 6) {
                 // Tab Switcher (Clipboard vs Emoji)
@@ -147,9 +147,10 @@ public struct ClipboardView: View {
                     tabButton(title: loc["tab_clipboard"], icon: "doc.on.clipboard", tab: .clipboard)
                     tabButton(title: loc["tab_emoji"], icon: "face.smiling", tab: .emoji)
                 }
-                .padding(2)
-                .background(Color.white.opacity(0.08))
-                .clipShape(RoundedRectangle(cornerRadius: 7))
+                .padding(3)
+                .background(ModernTheme.controlFill(for: colorScheme))
+                .clipShape(Capsule())
+                .overlay(Capsule().stroke(ModernTheme.controlBorder(for: colorScheme), lineWidth: 0.75))
 
                 Spacer()
 
@@ -158,12 +159,12 @@ public struct ClipboardView: View {
                     SettingsWindowController.shared.showSettings()
                 }) {
                     Image(systemName: "gearshape")
-                        .foregroundColor(Color.white.opacity(0.80))
-                        .font(.system(size: 11))
+                        .foregroundStyle(.secondary)
+                        .font(.system(size: 11.5, weight: .medium))
                         .frame(width: 26, height: 26)
-                        .background(Color.white.opacity(0.08))
+                        .background(ModernTheme.controlFill(for: colorScheme))
                         .clipShape(Circle())
-                        .overlay(Circle().stroke(Color.white.opacity(0.12), lineWidth: 1))
+                        .overlay(Circle().stroke(ModernTheme.controlBorder(for: colorScheme), lineWidth: 0.75))
                 }
                 .buttonStyle(.plain)
                 .help(loc["menu_settings_item"])
@@ -171,12 +172,12 @@ public struct ClipboardView: View {
                 // Close button
                 Button(action: onClose) {
                     Image(systemName: "xmark")
-                        .foregroundColor(Color.white.opacity(0.80))
+                        .foregroundStyle(.secondary)
                         .font(.system(size: 10, weight: .bold))
                         .frame(width: 26, height: 26)
-                        .background(Color.white.opacity(0.08))
+                        .background(ModernTheme.controlFill(for: colorScheme))
                         .clipShape(Circle())
-                        .overlay(Circle().stroke(Color.white.opacity(0.12), lineWidth: 1))
+                        .overlay(Circle().stroke(ModernTheme.controlBorder(for: colorScheme), lineWidth: 0.75))
                 }
                 .buttonStyle(.plain)
                 .help(loc["shortcut_esc"])
@@ -193,21 +194,22 @@ public struct ClipboardView: View {
     }
 
     private var filterPillsView: some View {
-        HStack(spacing: 4) {
+        HStack(spacing: 5) {
             ForEach(ClipboardCategoryFilter.allCases) { filter in
+                let isSelected = manager.selectedFilter == filter
                 Button(action: {
-                    withAnimation(.easeInOut(duration: 0.12)) {
+                    withAnimation(.spring(response: 0.22, dampingFraction: 0.8)) {
                         manager.selectedFilter = filter
                     }
                 }) {
                     Text(filter.title(loc: loc))
-                        .font(.system(size: 10, weight: manager.selectedFilter == filter ? .semibold : .medium))
-                        .foregroundColor(manager.selectedFilter == filter ? .white : Color.white.opacity(0.65))
-                        .padding(.horizontal, 7)
-                        .padding(.vertical, 3)
+                        .font(.system(size: 10.5, weight: isSelected ? .semibold : .medium))
+                        .foregroundStyle(isSelected ? AnyShapeStyle(Color.white) : AnyShapeStyle(.secondary))
+                        .padding(.horizontal, 9)
+                        .padding(.vertical, 3.5)
                         .background(
-                            RoundedRectangle(cornerRadius: 5)
-                                .fill(manager.selectedFilter == filter ? Color.accentColor.opacity(0.5) : Color.white.opacity(0.06))
+                            Capsule()
+                                .fill(isSelected ? Color.accentColor : ModernTheme.controlFill(for: colorScheme))
                         )
                 }
                 .buttonStyle(.plain)
@@ -217,23 +219,25 @@ public struct ClipboardView: View {
     }
 
     private func tabButton(title: String, icon: String, tab: ClipboardActiveTab) -> some View {
-        Button(action: {
-            withAnimation(.easeInOut(duration: 0.15)) {
+        let isActive = manager.activeTab == tab
+        return Button(action: {
+            withAnimation(.spring(response: 0.24, dampingFraction: 0.82)) {
                 manager.activeTab = tab
             }
         }) {
             HStack(spacing: 4) {
                 Image(systemName: icon)
-                    .font(.system(size: 10, weight: manager.activeTab == tab ? .semibold : .medium))
+                    .font(.system(size: 10, weight: isActive ? .semibold : .medium))
                 Text(title)
-                    .font(.system(size: 11, weight: manager.activeTab == tab ? .semibold : .medium))
+                    .font(.system(size: 11, weight: isActive ? .semibold : .medium))
             }
-            .foregroundColor(manager.activeTab == tab ? .white : Color.white.opacity(0.70))
+            .foregroundStyle(isActive ? AnyShapeStyle(Color.primary) : AnyShapeStyle(.secondary))
             .padding(.horizontal, 10)
-            .padding(.vertical, 5)
+            .padding(.vertical, 4.5)
             .background(
-                RoundedRectangle(cornerRadius: 6)
-                    .fill(manager.activeTab == tab ? Color.white.opacity(0.18) : Color.clear)
+                Capsule()
+                    .fill(isActive ? (colorScheme == .dark ? Color.white.opacity(0.18) : Color.white.opacity(0.92)) : Color.clear)
+                    .shadow(color: isActive ? Color.black.opacity(0.08) : .clear, radius: 2, y: 1)
             )
         }
         .buttonStyle(.plain)
@@ -242,7 +246,7 @@ public struct ClipboardView: View {
     private var searchField: some View {
         HStack(spacing: 7) {
             Image(systemName: "magnifyingglass")
-                .foregroundColor(Color.white.opacity(0.65))
+                .foregroundStyle(.secondary)
                 .font(.system(size: 12, weight: .medium))
 
             if manager.activeTab == .clipboard {
@@ -250,19 +254,19 @@ public struct ClipboardView: View {
                     if manager.searchQuery.isEmpty {
                         Text(loc["search_placeholder"])
                             .font(.system(size: 12))
-                            .foregroundColor(Color.white.opacity(0.55))
+                            .foregroundStyle(.tertiary)
                     }
                     TextField("", text: $manager.searchQuery)
                         .textFieldStyle(.plain)
-                        .font(.system(size: 12))
-                        .foregroundColor(.white)
+                        .font(.system(size: 12.5))
+                        .foregroundStyle(.primary)
                         .focused($isSearchFocused)
                 }
 
                 if !manager.searchQuery.isEmpty {
                     Button(action: { manager.searchQuery = "" }) {
                         Image(systemName: "xmark.circle.fill")
-                            .foregroundColor(Color.white.opacity(0.65))
+                            .foregroundStyle(.secondary)
                             .font(.system(size: 12))
                     }
                     .buttonStyle(.plain)
@@ -272,32 +276,32 @@ public struct ClipboardView: View {
                     if emojiManager.searchQuery.isEmpty {
                         Text(loc["search_emoji_placeholder"])
                             .font(.system(size: 12))
-                            .foregroundColor(Color.white.opacity(0.55))
+                            .foregroundStyle(.tertiary)
                     }
                     TextField("", text: $emojiManager.searchQuery)
                         .textFieldStyle(.plain)
-                        .font(.system(size: 12))
-                        .foregroundColor(.white)
+                        .font(.system(size: 12.5))
+                        .foregroundStyle(.primary)
                         .focused($isSearchFocused)
                 }
 
                 if !emojiManager.searchQuery.isEmpty {
                     Button(action: { emojiManager.searchQuery = "" }) {
                         Image(systemName: "xmark.circle.fill")
-                            .foregroundColor(Color.white.opacity(0.65))
+                            .foregroundStyle(.secondary)
                             .font(.system(size: 12))
                     }
                     .buttonStyle(.plain)
                 }
             }
         }
-        .padding(.horizontal, 9)
-        .padding(.vertical, 6)
-        .background(Color.white.opacity(0.08))
-        .clipShape(RoundedRectangle(cornerRadius: 7))
+        .padding(.horizontal, 11)
+        .padding(.vertical, 6.5)
+        .background(ModernTheme.controlFill(for: colorScheme))
+        .clipShape(Capsule())
         .overlay(
-            RoundedRectangle(cornerRadius: 7)
-                .stroke(Color.white.opacity(0.12), lineWidth: 1)
+            Capsule()
+                .stroke(ModernTheme.controlBorder(for: colorScheme), lineWidth: 0.75)
         )
     }
 
@@ -308,8 +312,8 @@ public struct ClipboardView: View {
                 .font(.system(size: 11))
 
             Text(loc["clipboard_paused_banner"])
-                .font(.system(size: 10, weight: .medium))
-                .foregroundColor(Color.white.opacity(0.9))
+                .font(.system(size: 10.5, weight: .medium))
+                .foregroundStyle(.primary)
 
             Spacer()
 
@@ -320,13 +324,13 @@ public struct ClipboardView: View {
             .tint(.orange)
             .controlSize(.mini)
         }
-        .padding(.horizontal, 8)
-        .padding(.vertical, 5)
-        .background(Color.orange.opacity(0.18))
-        .clipShape(RoundedRectangle(cornerRadius: 6))
+        .padding(.horizontal, 10)
+        .padding(.vertical, 6)
+        .background(Color.orange.opacity(colorScheme == .dark ? 0.18 : 0.14))
+        .clipShape(RoundedRectangle(cornerRadius: 9, style: .continuous))
         .overlay(
-            RoundedRectangle(cornerRadius: 6)
-                .stroke(Color.orange.opacity(0.35), lineWidth: 1)
+            RoundedRectangle(cornerRadius: 9, style: .continuous)
+                .stroke(Color.orange.opacity(0.35), lineWidth: 0.75)
         )
     }
 
@@ -340,13 +344,13 @@ public struct ClipboardView: View {
                         .frame(width: 14, height: 14)
                 }
                 Text(item.sourceAppName ?? (item.type == .image ? "Image" : loc["tab_text"]))
-                    .font(.system(size: 11, weight: .semibold))
-                    .foregroundColor(.white)
+                    .font(.system(size: 11.5, weight: .semibold))
+                    .foregroundStyle(.primary)
                     .lineLimit(1)
 
                 Text("• \(item.localizedRelativeTime(loc: loc))")
                     .font(.system(size: 10))
-                    .foregroundColor(Color.white.opacity(0.6))
+                    .foregroundStyle(.secondary)
 
                 Spacer()
 
@@ -357,9 +361,9 @@ public struct ClipboardView: View {
                 }) {
                     Image(systemName: "xmark")
                         .font(.system(size: 10, weight: .bold))
-                        .foregroundColor(Color.white.opacity(0.8))
+                        .foregroundStyle(.secondary)
                         .frame(width: 22, height: 22)
-                        .background(Color.white.opacity(0.1))
+                        .background(ModernTheme.controlFill(for: colorScheme))
                         .clipShape(Circle())
                 }
                 .buttonStyle(.plain)
@@ -367,7 +371,6 @@ public struct ClipboardView: View {
             }
             .padding(.horizontal, 12)
             .padding(.vertical, 9)
-            .background(Color.white.opacity(0.05))
 
             customDivider
 
@@ -378,25 +381,25 @@ public struct ClipboardView: View {
                             .resizable()
                             .scaledToFit()
                             .frame(maxWidth: .infinity)
-                            .clipShape(RoundedRectangle(cornerRadius: 6))
+                            .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
                             .padding(10)
                     }
                 } else if let text = item.text {
                     VStack(alignment: .leading, spacing: 8) {
                         if let nsColor = item.detectedHexColor {
                             HStack(spacing: 8) {
-                                RoundedRectangle(cornerRadius: 6)
+                                RoundedRectangle(cornerRadius: 6, style: .continuous)
                                     .fill(Color(nsColor: nsColor))
                                     .frame(width: 32, height: 32)
-                                    .overlay(RoundedRectangle(cornerRadius: 6).stroke(Color.white.opacity(0.3), lineWidth: 1))
+                                    .overlay(RoundedRectangle(cornerRadius: 6, style: .continuous).stroke(ModernTheme.controlBorder(for: colorScheme), lineWidth: 1))
                                 Text(text.trimmingCharacters(in: .whitespacesAndNewlines))
                                     .font(.system(size: 13, weight: .bold, design: .monospaced))
-                                    .foregroundColor(.white)
+                                    .foregroundStyle(.primary)
                             }
                         }
                         Text(text)
-                            .font(.system(size: 12))
-                            .foregroundColor(.white)
+                            .font(.system(size: 12.5))
+                            .foregroundStyle(.primary)
                             .textSelection(.enabled)
                             .frame(maxWidth: .infinity, alignment: .leading)
                     }
@@ -418,10 +421,10 @@ public struct ClipboardView: View {
                             .font(.system(size: 11, weight: .semibold))
                     }
                     .foregroundColor(.white)
-                    .padding(.horizontal, 10)
+                    .padding(.horizontal, 11)
                     .padding(.vertical, 5)
                     .background(Color.accentColor)
-                    .clipShape(RoundedRectangle(cornerRadius: 6))
+                    .clipShape(Capsule())
                 }
                 .buttonStyle(.plain)
 
@@ -436,11 +439,11 @@ public struct ClipboardView: View {
                             Text(loc["tab_translator"])
                                 .font(.system(size: 11, weight: .medium))
                         }
-                        .foregroundColor(.white)
-                        .padding(.horizontal, 8)
+                        .foregroundStyle(.primary)
+                        .padding(.horizontal, 9)
                         .padding(.vertical, 5)
-                        .background(Color.white.opacity(0.10))
-                        .clipShape(RoundedRectangle(cornerRadius: 6))
+                        .background(ModernTheme.controlFill(for: colorScheme))
+                        .clipShape(Capsule())
                     }
                     .buttonStyle(.plain)
                 } else if item.type == .image {
@@ -454,11 +457,11 @@ public struct ClipboardView: View {
                             Text("OCR")
                                 .font(.system(size: 11, weight: .medium))
                         }
-                        .foregroundColor(.white)
-                        .padding(.horizontal, 8)
+                        .foregroundStyle(.primary)
+                        .padding(.horizontal, 9)
                         .padding(.vertical, 5)
-                        .background(Color.white.opacity(0.10))
-                        .clipShape(RoundedRectangle(cornerRadius: 6))
+                        .background(ModernTheme.controlFill(for: colorScheme))
+                        .clipShape(Capsule())
                     }
                     .buttonStyle(.plain)
                 }
@@ -471,14 +474,13 @@ public struct ClipboardView: View {
                     }
                 }
                 .font(.system(size: 11))
-                .foregroundColor(Color.white.opacity(0.75))
+                .foregroundStyle(.secondary)
                 .buttonStyle(.plain)
             }
             .padding(.horizontal, 10)
             .padding(.vertical, 8)
-            .background(Color.white.opacity(0.04))
         }
-        .background(Color(red: 0.09, green: 0.09, blue: 0.12).opacity(0.98))
+        .background(.regularMaterial)
     }
 
     private func translateClipboardItem(_ item: ClipboardItem) {
@@ -529,12 +531,12 @@ public struct ClipboardView: View {
     private var accessibilityBanner: some View {
         HStack(spacing: 6) {
             Image(systemName: "info.circle.fill")
-                .foregroundColor(Color(red: 0.4, green: 0.7, blue: 1.0))
+                .foregroundStyle(Color.accentColor)
                 .font(.system(size: 11))
 
             Text(loc["enable_accessibility"])
-                .font(.system(size: 10))
-                .foregroundColor(Color.white.opacity(0.9))
+                .font(.system(size: 10.5))
+                .foregroundStyle(.primary)
 
             Spacer()
 
@@ -547,13 +549,13 @@ public struct ClipboardView: View {
             .buttonStyle(.borderedProminent)
             .controlSize(.mini)
         }
-        .padding(.horizontal, 8)
-        .padding(.vertical, 5)
-        .background(Color(red: 0.15, green: 0.28, blue: 0.48).opacity(0.5))
-        .clipShape(RoundedRectangle(cornerRadius: 6))
+        .padding(.horizontal, 10)
+        .padding(.vertical, 6)
+        .background(Color.accentColor.opacity(colorScheme == .dark ? 0.18 : 0.12))
+        .clipShape(RoundedRectangle(cornerRadius: 9, style: .continuous))
         .overlay(
-            RoundedRectangle(cornerRadius: 6)
-                .stroke(Color(red: 0.35, green: 0.55, blue: 0.90).opacity(0.3), lineWidth: 1)
+            RoundedRectangle(cornerRadius: 9, style: .continuous)
+                .stroke(Color.accentColor.opacity(0.30), lineWidth: 0.75)
         )
     }
 
@@ -616,24 +618,24 @@ public struct ClipboardView: View {
             Spacer()
             Image(systemName: "doc.on.clipboard")
                 .font(.system(size: 34))
-                .foregroundColor(Color.white.opacity(0.35))
+                .foregroundStyle(.tertiary)
 
             if manager.searchQuery.isEmpty {
                 Text(loc["clipboard_empty"])
                     .font(.system(size: 13, weight: .semibold))
-                    .foregroundColor(.white)
+                    .foregroundStyle(.primary)
                 Text(loc["clipboard_empty_hint"])
                     .font(.system(size: 11))
-                    .foregroundColor(Color.white.opacity(0.70))
+                    .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
                     .padding(.horizontal, 24)
             } else {
                 Text(loc["no_results"])
                     .font(.system(size: 13, weight: .semibold))
-                    .foregroundColor(.white)
+                    .foregroundStyle(.primary)
                 Text(loc["no_results_hint"])
                     .font(.system(size: 11))
-                    .foregroundColor(Color.white.opacity(0.70))
+                    .foregroundStyle(.secondary)
             }
             Spacer()
         }
@@ -644,7 +646,7 @@ public struct ClipboardView: View {
             if manager.activeTab == .clipboard {
                 Text("\(manager.filteredItems.count) \(loc["items_count"])")
                     .font(.system(size: 10, weight: .medium, design: .monospaced))
-                    .foregroundColor(Color.white.opacity(0.75))
+                    .foregroundStyle(.secondary)
 
                 Spacer()
 
@@ -656,7 +658,7 @@ public struct ClipboardView: View {
                     Text(loc["shortcut_enter_paste"])
                 }
                 .font(.system(size: 10, weight: .medium))
-                .foregroundColor(Color.white.opacity(0.65))
+                .foregroundStyle(.tertiary)
 
                 Spacer()
 
@@ -665,13 +667,13 @@ public struct ClipboardView: View {
                 }) {
                     Image(systemName: "trash")
                         .font(.system(size: 11, weight: .medium))
-                        .foregroundColor(Color.white.opacity(manager.items.isEmpty ? 0.30 : 0.75))
+                        .foregroundStyle(manager.items.isEmpty ? AnyShapeStyle(.quaternary) : AnyShapeStyle(.secondary))
                         .frame(width: 24, height: 24)
-                        .background(Color.white.opacity(0.08))
-                        .clipShape(RoundedRectangle(cornerRadius: 5))
+                        .background(ModernTheme.controlFill(for: colorScheme))
+                        .clipShape(Circle())
                         .overlay(
-                            RoundedRectangle(cornerRadius: 5)
-                                .stroke(Color.white.opacity(0.10), lineWidth: 1)
+                            Circle()
+                                .stroke(ModernTheme.controlBorder(for: colorScheme), lineWidth: 0.75)
                         )
                 }
                 .buttonStyle(.plain)
@@ -682,32 +684,15 @@ public struct ClipboardView: View {
                     Text("💡")
                     Text(loc["click_emoji_hint"])
                         .font(.system(size: 10, weight: .medium))
-                        .foregroundColor(Color.white.opacity(0.75))
+                        .foregroundStyle(.secondary)
                 }
 
                 Spacer()
 
                 Text(loc["shortcut_esc"])
                     .font(.system(size: 10, weight: .medium))
-                    .foregroundColor(Color.white.opacity(0.65))
+                    .foregroundStyle(.tertiary)
             }
         }
     }
-}
-
-// Visual Effect View for clean frosted glass background in dark mode
-public struct VisualEffectBackground: NSViewRepresentable {
-    public func makeNSView(context: Context) -> NSVisualEffectView {
-        let view = NSVisualEffectView()
-        view.blendingMode = .behindWindow
-        view.state = .active
-        view.material = .hudWindow
-        view.appearance = NSAppearance(named: .darkAqua)
-        view.wantsLayer = true
-        view.layer?.cornerRadius = 14
-        view.layer?.masksToBounds = true
-        return view
-    }
-
-    public func updateNSView(_ nsView: NSVisualEffectView, context: Context) {}
 }

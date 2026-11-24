@@ -2,6 +2,7 @@ import SwiftUI
 
 public struct EmojiPickerView: View {
     @ObservedObject var emojiManager = EmojiManager.shared
+    @Environment(\.colorScheme) private var colorScheme
     public var onSelectEmoji: (String) -> Void
 
     private let columns = [
@@ -20,7 +21,7 @@ public struct EmojiPickerView: View {
                     .padding(.horizontal, 10)
                     .padding(.vertical, 6)
                 Rectangle()
-                    .fill(Color.white.opacity(0.10))
+                    .fill(ModernTheme.divider(for: colorScheme))
                     .frame(height: 1)
             }
 
@@ -33,7 +34,7 @@ public struct EmojiPickerView: View {
                         .font(.system(size: 28))
                     Text("No emojis found")
                         .font(.system(size: 12, weight: .medium))
-                        .foregroundColor(Color.white.opacity(0.75))
+                        .foregroundStyle(.secondary)
                     Spacer()
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -57,7 +58,7 @@ public struct EmojiPickerView: View {
         HStack(spacing: 4) {
             ForEach(EmojiCategory.allCases) { cat in
                 Button(action: {
-                    withAnimation(.easeInOut(duration: 0.15)) {
+                    withAnimation(.spring(response: 0.22, dampingFraction: 0.78)) {
                         emojiManager.selectedCategory = cat
                     }
                 }) {
@@ -66,12 +67,12 @@ public struct EmojiPickerView: View {
                         .frame(maxWidth: .infinity)
                         .frame(height: 28)
                         .background(
-                            RoundedRectangle(cornerRadius: 6)
-                                .fill(emojiManager.selectedCategory == cat ? Color.white.opacity(0.20) : Color.white.opacity(0.04))
+                            Capsule()
+                                .fill(emojiManager.selectedCategory == cat ? Color.accentColor.opacity(0.22) : ModernTheme.controlFill(for: colorScheme))
                         )
                         .overlay(
-                            RoundedRectangle(cornerRadius: 6)
-                                .stroke(emojiManager.selectedCategory == cat ? Color.white.opacity(0.25) : Color.white.opacity(0.06), lineWidth: 1)
+                            Capsule()
+                                .stroke(emojiManager.selectedCategory == cat ? Color.accentColor.opacity(0.45) : Color.clear, lineWidth: 1)
                         )
                 }
                 .buttonStyle(.plain)
@@ -85,6 +86,7 @@ private struct EmojiButton: View {
     let emoji: String
     let action: () -> Void
 
+    @Environment(\.colorScheme) private var colorScheme
     @State private var isHovered = false
     @State private var isPressed = false
 
@@ -102,18 +104,20 @@ private struct EmojiButton: View {
                 .font(.system(size: 22))
                 .frame(width: 38, height: 38)
                 .background(
-                    RoundedRectangle(cornerRadius: 7)
-                        .fill(isPressed ? Color(red: 0.25, green: 0.5, blue: 0.9).opacity(0.35) : (isHovered ? Color.white.opacity(0.12) : Color.white.opacity(0.03)))
+                    RoundedRectangle(cornerRadius: 9, style: .continuous)
+                        .fill(isPressed ? Color.accentColor.opacity(0.28) : (isHovered ? ModernTheme.controlFill(for: colorScheme) : Color.clear))
                 )
                 .overlay(
-                    RoundedRectangle(cornerRadius: 7)
-                        .stroke(isPressed ? Color(red: 0.35, green: 0.65, blue: 1.0) : (isHovered ? Color.white.opacity(0.22) : Color.white.opacity(0.05)), lineWidth: 1)
+                    RoundedRectangle(cornerRadius: 9, style: .continuous)
+                        .stroke(isPressed ? Color.accentColor.opacity(0.75) : (isHovered ? ModernTheme.controlBorder(for: colorScheme) : Color.clear), lineWidth: 1)
                 )
-                .scaleEffect(isPressed ? 0.90 : (isHovered ? 1.08 : 1.0))
+                .scaleEffect(isPressed ? 0.90 : (isHovered ? 1.10 : 1.0))
         }
         .buttonStyle(.plain)
         .onHover { hovering in
-            isHovered = hovering
+            withAnimation(.easeOut(duration: 0.12)) {
+                isHovered = hovering
+            }
         }
     }
 }

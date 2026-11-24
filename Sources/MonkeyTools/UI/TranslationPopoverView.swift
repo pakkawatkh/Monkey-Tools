@@ -11,6 +11,7 @@ public struct TranslationPopoverView: View {
     @ObservedObject var speech = SpeechService.shared
     @ObservedObject var loc = LocalizationManager.shared
     @ObservedObject var translationService = TranslationService.shared
+    @Environment(\.colorScheme) private var colorScheme
 
     @State private var sourceLanguage: String = "auto"
     @State private var targetLanguage: String = "th"
@@ -46,7 +47,7 @@ public struct TranslationPopoverView: View {
                 .padding(.bottom, 8)
 
             Divider()
-                .background(Color.white.opacity(0.10))
+                .overlay(ModernTheme.divider(for: colorScheme))
 
             // Body: Translation History OR Original Text & Translation
             if showingHistory {
@@ -55,16 +56,16 @@ public struct TranslationPopoverView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 10) {
                     // Original Text Card (Editable)
-                    VStack(alignment: .leading, spacing: 4) {
+                    VStack(alignment: .leading, spacing: 5) {
                         HStack {
                             HStack(spacing: 4) {
                                 Text(loc["trans_original"])
-                                    .font(.system(size: 9, weight: .semibold))
-                                    .foregroundColor(Color.white.opacity(0.50))
+                                    .font(.system(size: 9.5, weight: .semibold))
+                                    .foregroundStyle(.secondary)
                                     .textCase(.uppercase)
                                 Image(systemName: "pencil")
-                                    .font(.system(size: 8))
-                                    .foregroundColor(Color.white.opacity(0.35))
+                                    .font(.system(size: 8.5))
+                                    .foregroundStyle(.tertiary)
                             }
 
                             Spacer()
@@ -76,8 +77,8 @@ public struct TranslationPopoverView: View {
                                     debounceTranslation(for: "")
                                 }) {
                                     Image(systemName: "xmark.circle.fill")
-                                        .font(.system(size: 10))
-                                        .foregroundColor(Color.white.opacity(0.40))
+                                        .font(.system(size: 10.5))
+                                        .foregroundStyle(.tertiary)
                                 }
                                 .buttonStyle(.plain)
                                 .help(loc["trans_clear"])
@@ -88,17 +89,17 @@ public struct TranslationPopoverView: View {
                                 HStack(spacing: 3) {
                                     Image(systemName: speech.currentlySpeakingText == editableText ? "speaker.wave.3.fill" : "speaker.wave.2")
                                         .font(.system(size: 10))
-                                        .foregroundColor(speech.currentlySpeakingText == editableText ? Color(red: 0.4, green: 0.7, blue: 1.0) : Color.white.opacity(0.65))
+                                        .foregroundStyle(speech.currentlySpeakingText == editableText ? AnyShapeStyle(Color.accentColor) : AnyShapeStyle(.secondary))
                                     if speech.currentlySpeakingText == editableText {
                                         Text(loc["trans_reading"])
                                             .font(.system(size: 9))
-                                            .foregroundColor(Color(red: 0.4, green: 0.7, blue: 1.0))
+                                            .foregroundStyle(Color.accentColor)
                                     }
                                 }
-                                .padding(.horizontal, 5)
-                                .padding(.vertical, 2)
-                                .background(speech.currentlySpeakingText == editableText ? Color.blue.opacity(0.2) : Color.white.opacity(0.06))
-                                .clipShape(RoundedRectangle(cornerRadius: 4))
+                                .padding(.horizontal, 6)
+                                .padding(.vertical, 2.5)
+                                .background(speech.currentlySpeakingText == editableText ? Color.accentColor.opacity(0.16) : ModernTheme.controlFill(for: colorScheme))
+                                .clipShape(Capsule())
                             }
                             .buttonStyle(.plain)
                             .disabled(editableText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
@@ -108,8 +109,8 @@ public struct TranslationPopoverView: View {
                         ZStack(alignment: .topLeading) {
                             if editableText.isEmpty {
                                 Text(loc["trans_edit_placeholder"])
-                                    .font(.system(size: 11))
-                                    .foregroundColor(Color.white.opacity(0.30))
+                                    .font(.system(size: 11.5))
+                                    .foregroundStyle(.tertiary)
                                     .padding(.top, 2)
                                     .padding(.leading, 1)
                                     .allowsHitTesting(false)
@@ -117,27 +118,27 @@ public struct TranslationPopoverView: View {
 
                             TextField("", text: $editableText, axis: .vertical)
                                 .textFieldStyle(.plain)
-                                .font(.system(size: 11))
-                                .foregroundColor(Color.white.opacity(0.85))
+                                .font(.system(size: 11.5))
+                                .foregroundStyle(.primary)
                                 .lineLimit(1...8)
                                 .focused($isInputFocused)
                                 .frame(maxWidth: .infinity, alignment: .leading)
                         }
                     }
-                    .padding(8)
-                    .background(Color.white.opacity(0.05))
-                    .clipShape(RoundedRectangle(cornerRadius: 7))
+                    .padding(10)
+                    .background(ModernTheme.subtleCardFill(for: colorScheme))
+                    .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
                     .overlay(
-                        RoundedRectangle(cornerRadius: 7)
-                            .stroke(Color.white.opacity(0.10), lineWidth: 1)
+                        RoundedRectangle(cornerRadius: 10, style: .continuous)
+                            .stroke(ModernTheme.controlBorder(for: colorScheme), lineWidth: 0.75)
                     )
 
                     // Translated Result Card
-                    VStack(alignment: .leading, spacing: 4) {
+                    VStack(alignment: .leading, spacing: 5) {
                         HStack {
                             Text("\(loc["trans_result"]) (\(settings.translationEngineMode.title))")
-                                .font(.system(size: 9, weight: .semibold))
-                                .foregroundColor(Color.white.opacity(0.50))
+                                .font(.system(size: 9.5, weight: .semibold))
+                                .foregroundStyle(.secondary)
                                 .textCase(.uppercase)
 
                             Spacer()
@@ -150,17 +151,17 @@ public struct TranslationPopoverView: View {
                                     HStack(spacing: 3) {
                                         Image(systemName: speech.currentlySpeakingText == result.translatedText ? "speaker.wave.3.fill" : "speaker.wave.2")
                                             .font(.system(size: 10))
-                                            .foregroundColor(speech.currentlySpeakingText == result.translatedText ? Color(red: 0.4, green: 0.7, blue: 1.0) : Color.white.opacity(0.65))
+                                            .foregroundStyle(speech.currentlySpeakingText == result.translatedText ? AnyShapeStyle(Color.accentColor) : AnyShapeStyle(.secondary))
                                         if speech.currentlySpeakingText == result.translatedText {
                                             Text(loc["trans_reading"])
                                                 .font(.system(size: 9))
-                                                .foregroundColor(Color(red: 0.4, green: 0.7, blue: 1.0))
+                                                .foregroundStyle(Color.accentColor)
                                         }
                                     }
-                                    .padding(.horizontal, 5)
-                                    .padding(.vertical, 2)
-                                    .background(speech.currentlySpeakingText == result.translatedText ? Color.blue.opacity(0.2) : Color.white.opacity(0.06))
-                                    .clipShape(RoundedRectangle(cornerRadius: 4))
+                                    .padding(.horizontal, 6)
+                                    .padding(.vertical, 2.5)
+                                    .background(speech.currentlySpeakingText == result.translatedText ? Color.accentColor.opacity(0.16) : ModernTheme.controlFill(for: colorScheme))
+                                    .clipShape(Capsule())
                                 }
                                 .buttonStyle(.plain)
                                 .help(loc["trans_listen_trans"])
@@ -173,7 +174,7 @@ public struct TranslationPopoverView: View {
                                     .scaleEffect(0.7)
                                 Text(loc["trans_loading"])
                                     .font(.system(size: 12))
-                                    .foregroundColor(Color.white.opacity(0.65))
+                                    .foregroundStyle(.secondary)
                             }
                             .frame(maxWidth: .infinity, alignment: .leading)
                             .padding(.vertical, 6)
@@ -191,22 +192,26 @@ public struct TranslationPopoverView: View {
                             .padding(.vertical, 4)
                         } else if let result = translationResult {
                             Text(result.translatedText)
-                                .font(.system(size: 13, weight: .medium))
-                                .foregroundColor(.white)
+                                .font(.system(size: 13.5, weight: .medium))
+                                .foregroundStyle(.primary)
                                 .textSelection(.enabled)
                                 .frame(maxWidth: .infinity, alignment: .leading)
                         }
                     }
-                    .padding(8)
-                    .background(Color.white.opacity(0.06))
-                    .clipShape(RoundedRectangle(cornerRadius: 7))
+                    .padding(10)
+                    .background(ModernTheme.subtleCardFill(for: colorScheme))
+                    .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 10, style: .continuous)
+                            .stroke(ModernTheme.controlBorder(for: colorScheme), lineWidth: 0.75)
+                    )
                 }
                 .padding(10)
             }
             }
 
             Divider()
-                .background(Color.white.opacity(0.10))
+                .overlay(ModernTheme.divider(for: colorScheme))
 
             // Footer: Copy, Replace, Done
             footerBar
@@ -216,16 +221,15 @@ public struct TranslationPopoverView: View {
         .frame(minWidth: 300, maxWidth: .infinity, minHeight: 200, maxHeight: .infinity)
         .background(
             ZStack {
-                VisualEffectBackground()
-                Color(red: 0.10, green: 0.10, blue: 0.13).opacity(0.92)
+                AdaptiveVisualEffectView(material: .popover, cornerRadius: 16)
+                ModernTheme.panelTint(for: colorScheme)
             }
         )
-        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
         .overlay(
-            RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .stroke(Color.white.opacity(0.14), lineWidth: 1)
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .stroke(ModernTheme.glassRimGradient(for: colorScheme), lineWidth: 1)
         )
-        .preferredColorScheme(.dark)
         .onAppear {
             let savedTarget = settings.translationTargetLang
             targetLanguage = TranslationService.shared.resolveTargetLanguage(for: editableText, preferredTarget: savedTarget)
@@ -256,17 +260,17 @@ public struct TranslationPopoverView: View {
             Button(action: toggleEngineMode) {
                 ZStack {
                     Circle()
-                        .fill(Color.white.opacity(0.08))
+                        .fill(ModernTheme.controlFill(for: colorScheme))
                         .overlay(
                             Circle()
-                                .stroke(Color.white.opacity(0.12), lineWidth: 1)
+                                .stroke(ModernTheme.controlBorder(for: colorScheme), lineWidth: 0.75)
                         )
 
                     Image(systemName: settings.translationEngineMode == .google ? "globe" : "apple.logo")
                         .font(.system(size: 11, weight: .semibold))
-                        .foregroundColor(settings.translationEngineMode == .google ? Color(red: 0.4, green: 0.7, blue: 1.0) : Color.white.opacity(0.90))
+                        .foregroundStyle(settings.translationEngineMode == .google ? AnyShapeStyle(Color.accentColor) : AnyShapeStyle(Color.primary))
                 }
-                .frame(width: 22, height: 22)
+                .frame(width: 24, height: 24)
             }
             .buttonStyle(.plain)
             .fixedSize()
@@ -286,17 +290,17 @@ public struct TranslationPopoverView: View {
             } label: {
                 HStack(spacing: 3) {
                     Text(sourceLanguageDisplayName)
-                        .font(.system(size: 10, weight: .semibold))
+                        .font(.system(size: 10.5, weight: .semibold))
                         .lineLimit(1)
                     Image(systemName: "chevron.down")
                         .font(.system(size: 7))
                         .opacity(0.6)
                 }
-                .foregroundColor(.white)
-                .padding(.horizontal, 6)
-                .padding(.vertical, 3)
-                .background(Color.white.opacity(0.10))
-                .clipShape(RoundedRectangle(cornerRadius: 4))
+                .foregroundStyle(.primary)
+                .padding(.horizontal, 8)
+                .padding(.vertical, 3.5)
+                .background(ModernTheme.controlFill(for: colorScheme))
+                .clipShape(Capsule())
             }
             .menuStyle(.borderlessButton)
             .fixedSize()
@@ -305,9 +309,9 @@ public struct TranslationPopoverView: View {
             Button(action: swapLanguages) {
                 Image(systemName: "arrow.left.arrow.right")
                     .font(.system(size: 9, weight: .semibold))
-                    .foregroundColor(Color.white.opacity(0.80))
-                    .frame(width: 20, height: 20)
-                    .background(Color.white.opacity(0.06))
+                    .foregroundStyle(.secondary)
+                    .frame(width: 22, height: 22)
+                    .background(ModernTheme.controlFill(for: colorScheme))
                     .clipShape(Circle())
             }
             .buttonStyle(.plain)
@@ -330,17 +334,17 @@ public struct TranslationPopoverView: View {
             } label: {
                 HStack(spacing: 3) {
                     Text(targetLanguageDisplayName)
-                        .font(.system(size: 10, weight: .semibold))
+                        .font(.system(size: 10.5, weight: .semibold))
                         .lineLimit(1)
                     Image(systemName: "chevron.down")
                         .font(.system(size: 7))
                         .opacity(0.6)
                 }
-                .foregroundColor(.white)
-                .padding(.horizontal, 6)
-                .padding(.vertical, 3)
-                .background(Color.white.opacity(0.10))
-                .clipShape(RoundedRectangle(cornerRadius: 4))
+                .foregroundStyle(.primary)
+                .padding(.horizontal, 8)
+                .padding(.vertical, 3.5)
+                .background(ModernTheme.controlFill(for: colorScheme))
+                .clipShape(Capsule())
             }
             .menuStyle(.borderlessButton)
             .fixedSize()
@@ -350,9 +354,9 @@ public struct TranslationPopoverView: View {
                 .frame(maxWidth: .infinity, maxHeight: 24)
                 .overlay(
                     HStack(spacing: 3) {
-                        Circle().fill(Color.white.opacity(0.30)).frame(width: 3.5, height: 3.5)
-                        Circle().fill(Color.white.opacity(0.30)).frame(width: 3.5, height: 3.5)
-                        Circle().fill(Color.white.opacity(0.30)).frame(width: 3.5, height: 3.5)
+                        Circle().fill(Color.secondary.opacity(0.35)).frame(width: 3.5, height: 3.5)
+                        Circle().fill(Color.secondary.opacity(0.35)).frame(width: 3.5, height: 3.5)
+                        Circle().fill(Color.secondary.opacity(0.35)).frame(width: 3.5, height: 3.5)
                     }
                 )
 
@@ -364,9 +368,9 @@ public struct TranslationPopoverView: View {
             }) {
                 Image(systemName: "clock.arrow.circlepath")
                     .font(.system(size: 10, weight: .semibold))
-                    .foregroundColor(showingHistory ? Color(red: 0.4, green: 0.7, blue: 1.0) : Color.white.opacity(0.70))
-                    .frame(width: 18, height: 18)
-                    .background(showingHistory ? Color.blue.opacity(0.22) : Color.white.opacity(0.08))
+                    .foregroundStyle(showingHistory ? AnyShapeStyle(Color.accentColor) : AnyShapeStyle(.secondary))
+                    .frame(width: 22, height: 22)
+                    .background(showingHistory ? Color.accentColor.opacity(0.18) : ModernTheme.controlFill(for: colorScheme))
                     .clipShape(Circle())
             }
             .buttonStyle(.plain)
@@ -377,9 +381,9 @@ public struct TranslationPopoverView: View {
             Button(action: onClose) {
                 Image(systemName: "xmark")
                     .font(.system(size: 9, weight: .bold))
-                    .foregroundColor(Color.white.opacity(0.70))
-                    .frame(width: 18, height: 18)
-                    .background(Color.white.opacity(0.08))
+                    .foregroundStyle(.secondary)
+                    .frame(width: 22, height: 22)
+                    .background(ModernTheme.controlFill(for: colorScheme))
                     .clipShape(Circle())
             }
             .buttonStyle(.plain)
@@ -474,11 +478,12 @@ public struct TranslationPopoverView: View {
                     Text(copiedConfirmation ? loc["trans_copied"] : loc["trans_copy"])
                         .font(.system(size: 11, weight: .medium))
                 }
-                .foregroundColor(copiedConfirmation ? .green : .white)
-                .padding(.horizontal, 9)
+                .foregroundStyle(copiedConfirmation ? AnyShapeStyle(Color.green) : AnyShapeStyle(Color.primary))
+                .padding(.horizontal, 10)
                 .padding(.vertical, 5)
-                .background(Color.white.opacity(0.08))
-                .clipShape(RoundedRectangle(cornerRadius: 5))
+                .background(ModernTheme.controlFill(for: colorScheme))
+                .clipShape(Capsule())
+                .overlay(Capsule().stroke(ModernTheme.controlBorder(for: colorScheme), lineWidth: 0.75))
             }
             .buttonStyle(.plain)
             .disabled(translationResult == nil)
@@ -490,13 +495,13 @@ public struct TranslationPopoverView: View {
                         Image(systemName: "arrow.triangle.2.circlepath")
                             .font(.system(size: 10))
                         Text(loc["trans_replace"])
-                            .font(.system(size: 11, weight: .medium))
+                            .font(.system(size: 11, weight: .semibold))
                     }
-                    .foregroundColor(Color(red: 0.4, green: 0.7, blue: 1.0))
-                    .padding(.horizontal, 9)
+                    .foregroundColor(.white)
+                    .padding(.horizontal, 10)
                     .padding(.vertical, 5)
-                    .background(Color(red: 0.2, green: 0.4, blue: 0.8).opacity(0.25))
-                    .clipShape(RoundedRectangle(cornerRadius: 5))
+                    .background(Color.accentColor)
+                    .clipShape(Capsule())
                 }
                 .buttonStyle(.plain)
                 .disabled(translationResult == nil)
@@ -505,8 +510,8 @@ public struct TranslationPopoverView: View {
             Spacer()
 
             Text(loc["shortcut_esc"])
-                .font(.system(size: 9))
-                .foregroundColor(Color.white.opacity(0.40))
+                .font(.system(size: 9.5))
+                .foregroundStyle(.tertiary)
 
             // Draggable resize grip in bottom-right corner
             ResizeGripHandle()
@@ -518,7 +523,7 @@ public struct TranslationPopoverView: View {
             HStack {
                 Text(loc["trans_history"])
                     .font(.system(size: 11, weight: .semibold))
-                    .foregroundColor(.white.opacity(0.85))
+                    .foregroundStyle(.primary)
                 Spacer()
                 if !translationService.history.isEmpty {
                     Button(loc["trans_history_clear"]) {
@@ -536,7 +541,7 @@ public struct TranslationPopoverView: View {
                 Spacer()
                 Text(loc["trans_history_empty"])
                     .font(.system(size: 11))
-                    .foregroundColor(.white.opacity(0.45))
+                    .foregroundStyle(.tertiary)
                 Spacer()
             } else {
                 ScrollView {
@@ -559,22 +564,26 @@ public struct TranslationPopoverView: View {
                                     HStack {
                                         Text("\(entry.sourceLanguage.uppercased()) → \(entry.targetLanguage.uppercased())")
                                             .font(.system(size: 9, weight: .bold, design: .monospaced))
-                                            .foregroundColor(Color(red: 0.4, green: 0.7, blue: 1.0))
+                                            .foregroundStyle(Color.accentColor)
                                         Spacer()
                                     }
                                     Text(entry.originalText)
                                         .font(.system(size: 11))
-                                        .foregroundColor(.white.opacity(0.75))
+                                        .foregroundStyle(.secondary)
                                         .lineLimit(1)
                                     Text(entry.translatedText)
-                                        .font(.system(size: 11, weight: .medium))
-                                        .foregroundColor(.white)
+                                        .font(.system(size: 11.5, weight: .medium))
+                                        .foregroundStyle(.primary)
                                         .lineLimit(2)
                                 }
                                 .frame(maxWidth: .infinity, alignment: .leading)
-                                .padding(8)
-                                .background(Color.white.opacity(0.06))
-                                .clipShape(RoundedRectangle(cornerRadius: 6))
+                                .padding(9)
+                                .background(ModernTheme.subtleCardFill(for: colorScheme))
+                                .clipShape(RoundedRectangle(cornerRadius: 9, style: .continuous))
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 9, style: .continuous)
+                                        .stroke(ModernTheme.controlBorder(for: colorScheme), lineWidth: 0.75)
+                                )
                             }
                             .buttonStyle(.plain)
                         }
@@ -749,8 +758,8 @@ public struct ResizeGripHandle: View {
 
     public var body: some View {
         Image(systemName: "arrow.down.right.and.arrow.up.left")
-            .font(.system(size: 8, weight: .bold))
-            .foregroundColor(Color.white.opacity(0.40))
+            .font(.system(size: 8.5, weight: .bold))
+            .foregroundStyle(.tertiary)
             .frame(width: 16, height: 16)
             .contentShape(Rectangle())
             .gesture(

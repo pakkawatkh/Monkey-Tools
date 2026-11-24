@@ -8,7 +8,7 @@ public final class ClipboardPanel: NSPanel {
 
     public init() {
         super.init(
-            contentRect: NSRect(x: 0, y: 0, width: 320, height: 520),
+            contentRect: NSRect(x: 0, y: 0, width: 340, height: 540),
             styleMask: [.titled, .fullSizeContentView, .nonactivatingPanel],
             backing: .buffered,
             defer: false
@@ -22,7 +22,6 @@ public final class ClipboardPanel: NSPanel {
         self.backgroundColor = .clear
         self.isOpaque = false
         self.hasShadow = true
-        self.appearance = NSAppearance(named: .darkAqua)
         self.hidesOnDeactivate = false
 
         // Hide standard window title bar buttons
@@ -41,7 +40,7 @@ public final class ClipboardPanel: NSPanel {
 
         let hosting = NSHostingView(rootView: rootView)
         hosting.wantsLayer = true
-        hosting.layer?.cornerRadius = 14
+        hosting.layer?.cornerRadius = 18
         hosting.layer?.masksToBounds = true
         self.contentView = hosting
         self.hostingView = hosting
@@ -257,8 +256,8 @@ public final class ClipboardPanel: NSPanel {
             return
         }
 
-        let panelWidth: CGFloat = 320
-        let panelHeight: CGFloat = 520
+        let panelWidth: CGFloat = 340
+        let panelHeight: CGFloat = 540
         let visibleFrame = screen.visibleFrame
 
         // Center on screen or near mouse cursor with screen bounds protection

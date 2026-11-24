@@ -32,7 +32,6 @@ public final class TranslationPopoverPanel: NSPanel, NSWindowDelegate {
         self.backgroundColor = .clear
         self.isOpaque = false
         self.hasShadow = true
-        self.appearance = NSAppearance(named: .darkAqua)
         self.hidesOnDeactivate = false
         self.delegate = self
 
@@ -74,7 +73,7 @@ public final class TranslationPopoverPanel: NSPanel, NSWindowDelegate {
 
         let hosting = NSHostingView(rootView: popoverView)
         hosting.wantsLayer = true
-        hosting.layer?.cornerRadius = 12
+        hosting.layer?.cornerRadius = 16
         hosting.layer?.masksToBounds = true
         self.contentView = hosting
         self.invalidateShadow()

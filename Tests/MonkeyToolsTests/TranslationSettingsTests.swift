@@ -81,7 +81,7 @@ final class TranslationSettingsTests: XCTestCase {
     func testSettingsWindowController() {
         let controller = SettingsWindowController.shared
         XCTAssertNotNil(controller.window)
-        XCTAssertEqual(controller.window?.title, "monkey-tools Preferences")
+        XCTAssertEqual(controller.window?.title, "monkey-tools Settings")
         XCTAssertFalse(controller.window?.isReleasedWhenClosed ?? true)
     }
 }

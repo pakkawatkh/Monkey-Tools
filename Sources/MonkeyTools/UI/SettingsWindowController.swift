@@ -6,14 +6,17 @@ public final class SettingsWindowController: NSWindowController {
 
     private init() {
         let window = NSWindow(
-            contentRect: NSRect(x: 0, y: 0, width: 500, height: 550),
-            styleMask: [.titled, .closable, .miniaturizable],
+            contentRect: NSRect(x: 0, y: 0, width: 660, height: 540),
+            styleMask: [.titled, .closable, .miniaturizable, .fullSizeContentView],
             backing: .buffered,
             defer: false
         )
-        window.title = "monkey-tools Preferences"
+        window.title = "monkey-tools Settings"
+        window.titleVisibility = .hidden
+        window.titlebarAppearsTransparent = true
+        window.isMovableByWindowBackground = true
         window.isReleasedWhenClosed = false
-        window.appearance = NSAppearance(named: .darkAqua)
+        window.backgroundColor = .windowBackgroundColor
         window.center()
 
         let hosting = NSHostingView(rootView: SettingsView())

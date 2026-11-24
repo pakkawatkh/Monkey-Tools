@@ -29,7 +29,6 @@ public final class SelectionBubblePanel: NSPanel {
         self.backgroundColor = .clear
         self.isOpaque = false
         self.hasShadow = true
-        self.appearance = NSAppearance(named: .darkAqua)
         self.hidesOnDeactivate = false
 
         let bubbleView = SelectionBubbleView(
@@ -262,27 +261,35 @@ public final class SelectionBubblePanel: NSPanel {
 
 public struct SelectionBubbleView: View {
     public let onTap: () -> Void
+    @Environment(\.colorScheme) private var colorScheme
     @State private var isHovered = false
 
     public var body: some View {
         Button(action: onTap) {
             ZStack {
                 Circle()
-                    .fill(Color(red: 0.12, green: 0.12, blue: 0.15).opacity(0.95))
+                    .fill(.ultraThinMaterial)
                     .overlay(
                         Circle()
-                            .stroke(Color.white.opacity(isHovered ? 0.35 : 0.18), lineWidth: 1)
+                            .fill(colorScheme == .dark ? Color.black.opacity(0.35) : Color.white.opacity(0.45))
+                    )
+                    .overlay(
+                        Circle()
+                            .stroke(
+                                isHovered
+                                    ? Color.accentColor.opacity(0.75)
+                                    : (colorScheme == .dark ? Color.white.opacity(0.28) : Color.black.opacity(0.14)),
+                                lineWidth: 1
+                            )
                     )
 
-                HStack(spacing: 0) {
-                    Image(systemName: "globe")
-                        .font(.system(size: 11, weight: .semibold))
-                        .foregroundColor(isHovered ? .white : Color.white.opacity(0.90))
-                }
+                Image(systemName: "globe")
+                    .font(.system(size: 11.5, weight: .semibold))
+                    .foregroundStyle(isHovered ? Color.accentColor : Color.primary)
             }
             .frame(width: 26, height: 26)
             .scaleEffect(isHovered ? 1.08 : 1.0)
-            .animation(.spring(response: 0.2, dampingFraction: 0.6), value: isHovered)
+            .animation(.spring(response: 0.22, dampingFraction: 0.65), value: isHovered)
         }
         .buttonStyle(.plain)
         .onHover { hovering in

@@ -19,9 +19,17 @@ public enum SettingsTab: String, CaseIterable, Identifiable {
 
     public var icon: String {
         switch self {
-        case .clipboard: return "doc.on.clipboard"
-        case .translator: return "character.bubble"
-        case .general: return "gearshape"
+        case .clipboard: return "doc.on.clipboard.fill"
+        case .translator: return "character.bubble.fill"
+        case .general: return "gearshape.fill"
+        }
+    }
+
+    public var iconColor: Color {
+        switch self {
+        case .clipboard: return .blue
+        case .translator: return .indigo
+        case .general: return .gray
         }
     }
 }
@@ -32,6 +40,7 @@ public struct SettingsView: View {
     @ObservedObject var loc = LocalizationManager.shared
     @ObservedObject var updateService = UpdateCheckService.shared
     @ObservedObject var installer = UpdateInstallerService.shared
+    @Environment(\.colorScheme) private var colorScheme
     @State private var selectedTab: SettingsTab = .clipboard
     @State private var isRecordingCustom = false
     @State private var isRecordingTranslateCustom = false
@@ -41,66 +50,104 @@ public struct SettingsView: View {
     public init() {}
 
     public var body: some View {
-        VStack(spacing: 0) {
-            // Header
-            HStack(spacing: 12) {
-                Text("🐵")
-                    .font(.system(size: 22))
-                Text(loc["settings_title"])
-                    .font(.headline)
-                Spacer()
-            }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 12)
-            .background(Color.primary.opacity(0.04))
+        HStack(spacing: 0) {
+            // Left Translucent macOS System Settings Sidebar
+            VStack(alignment: .leading, spacing: 6) {
+                HStack(spacing: 10) {
+                    Text("🐵")
+                        .font(.system(size: 24))
+                        .frame(width: 34, height: 34)
+                        .background(
+                            RoundedRectangle(cornerRadius: 9, style: .continuous)
+                                .fill(Color.accentColor.opacity(0.16))
+                        )
+                    VStack(alignment: .leading, spacing: 1) {
+                        Text("monkey-tools")
+                            .font(.system(size: 13.5, weight: .semibold))
+                            .foregroundStyle(.primary)
+                        Text("v\(updateService.currentAppVersion)")
+                            .font(.system(size: 10.5, weight: .medium, design: .monospaced))
+                            .foregroundStyle(.secondary)
+                    }
+                    Spacer()
+                }
+                .padding(.horizontal, 10)
+                .padding(.top, 38)
+                .padding(.bottom, 12)
 
-            Divider()
-
-            // Tab Navigation Bar
-            HStack(spacing: 8) {
                 ForEach(SettingsTab.allCases) { tab in
+                    let isSelected = selectedTab == tab
                     Button(action: {
-                        selectedTab = tab
-                    }) {
-                        HStack(spacing: 6) {
-                            Image(systemName: tab.icon)
-                                .font(.system(size: 12))
-                            Text(tab.title(loc: loc))
-                                .font(.system(size: 12, weight: selectedTab == tab ? .semibold : .medium))
+                        withAnimation(.easeInOut(duration: 0.14)) {
+                            selectedTab = tab
                         }
-                        .padding(.horizontal, 12)
+                    }) {
+                        HStack(spacing: 9) {
+                            Image(systemName: tab.icon)
+                                .font(.system(size: 11, weight: .semibold))
+                                .foregroundColor(.white)
+                                .frame(width: 22, height: 22)
+                                .background(
+                                    RoundedRectangle(cornerRadius: 6, style: .continuous)
+                                        .fill(tab.iconColor.gradient)
+                                )
+                            Text(tab.title(loc: loc))
+                                .font(.system(size: 13, weight: isSelected ? .semibold : .regular))
+                                .foregroundStyle(isSelected ? Color.white : Color.primary)
+                            Spacer()
+                        }
+                        .padding(.horizontal, 9)
                         .padding(.vertical, 6)
-                        .foregroundColor(selectedTab == tab ? .white : .secondary)
-                        .background(selectedTab == tab ? Color.accentColor : Color.primary.opacity(0.04))
-                        .clipShape(RoundedRectangle(cornerRadius: 8))
+                        .background(
+                            RoundedRectangle(cornerRadius: 8, style: .continuous)
+                                .fill(isSelected ? Color.accentColor : Color.clear)
+                        )
+                        .contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)
                 }
+
                 Spacer()
             }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 10)
-            .background(Color.primary.opacity(0.02))
+            .padding(.horizontal, 10)
+            .padding(.bottom, 12)
+            .frame(width: 195)
+            .frame(maxHeight: .infinity)
+            .background(AdaptiveVisualEffectView(material: .sidebar, blendingMode: .behindWindow, cornerRadius: 0))
 
             Divider()
 
-            // Tab Content
-            ScrollView {
-                VStack(alignment: .leading, spacing: 16) {
-                    switch selectedTab {
-                    case .clipboard:
-                        clipboardTabContent
-                    case .translator:
-                        translatorTabContent
-                    case .general:
-                        generalTabContent
-                    }
+            // Right Detail Content Area
+            VStack(alignment: .leading, spacing: 0) {
+                HStack {
+                    Text(selectedTab.title(loc: loc))
+                        .font(.system(size: 19, weight: .bold))
+                        .foregroundStyle(.primary)
+                    Spacer()
                 }
-                .padding(16)
+                .padding(.horizontal, 22)
+                .padding(.top, 22)
+                .padding(.bottom, 12)
+
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 16) {
+                        switch selectedTab {
+                        case .clipboard:
+                            clipboardTabContent
+                        case .translator:
+                            translatorTabContent
+                        case .general:
+                            generalTabContent
+                        }
+                    }
+                    .padding(.horizontal, 22)
+                    .padding(.bottom, 22)
+                }
             }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .background(Color(nsColor: .windowBackgroundColor))
         }
-        .frame(width: 500, height: 530)
-        .preferredColorScheme(.dark)
+        .frame(width: 660, height: 540)
         .onAppear {
             autoPaster.refreshAccessibilityStatus()
         }
