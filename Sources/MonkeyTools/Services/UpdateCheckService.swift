@@ -8,8 +8,8 @@ public final class UpdateCheckService: ObservableObject {
         static let lastUpdateCheckDate = "app_last_update_check_date"
     }
 
-    public static let primaryManifestURL = URL(string: "https://pakkawatkh.github.io/Tiffy-App/monkey-tools/version.json")!
-    public static let fallbackManifestURL = URL(string: "https://raw.githubusercontent.com/pakkawatkh/tiffy-app/main/monkey-tools/version.json")!
+    public static let primaryManifestURL = URL(string: "https://pakkawatkh.github.io/Pliw-App/monkey-tools/version.json")!
+    public static let fallbackManifestURL = URL(string: "https://raw.githubusercontent.com/pakkawatkh/pliw-app/main/monkey-tools/version.json")!
 
     @Published public private(set) var isChecking: Bool = false
     @Published public private(set) var updateAvailable: Bool = false

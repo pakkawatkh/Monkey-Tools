@@ -27,17 +27,17 @@
    ```bash
    ./scripts/create_dmg.sh
    ```
-   *(สคริปต์จะ Build Release, สร้าง `.app`, `.dmg`, `.zip` และคัดลอกไปยัง `./docs/` และ `../tiffy-app/monkey-tools/` อัตโนมัติ)*
+   *(สคริปต์จะ Build Release, สร้าง `.app`, `.dmg`, `.zip` และคัดลอกไปยัง `./docs/` และ `../pliw-app/monkey-tools/` อัตโนมัติ)*
 
 ---
 
-## 🌐 Step 3: อัปเดตข้อมูลเวอร์ชันและหน้าเว็บที่ Release Portal (`../tiffy-app`)
+## 🌐 Step 3: อัปเดตข้อมูลเวอร์ชันและหน้าเว็บที่ Release Portal (`../pliw-app`)
 
-1. **อัปเดตไฟล์ `../tiffy-app/monkey-tools/version.json`:**
+1. **อัปเดตไฟล์ `../pliw-app/monkey-tools/version.json`:**
    อัปเดต `"latestVersion"`, `"releaseNotes"`, และ `"releaseDate"` (YYYY-MM-DD)
 2. **อัปเดตเลขเวอร์ชันบนหน้าเว็บไซต์:**
-   - `../tiffy-app/index.html`
-   - `../tiffy-app/monkey-tools/index.html`
+   - `../pliw-app/index.html`
+   - `../pliw-app/monkey-tools/index.html`
 
 ---
 
@@ -49,8 +49,8 @@ git add .
 git commit -m "feat: release vX.Y.Z - <สรุปการเปลี่ยนแปลง>"
 git push origin main
 
-# 2. Push ไฟล์ติดตั้งและหน้าเว็บขึ้น Release Portal (../tiffy-app)
-cd ../tiffy-app
+# 2. Push ไฟล์ติดตั้งและหน้าเว็บขึ้น Release Portal (../pliw-app)
+cd ../pliw-app
 git add monkey-tools/ index.html
 git commit -m "chore(release): update monkey-tools to vX.Y.Z"
 git push origin main

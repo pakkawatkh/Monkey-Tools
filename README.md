@@ -2,32 +2,32 @@
 > **Windows-style Clipboard History (`Win + V`), Continuous Emoji Picker, Smart Selection Translator & Real-Time Network Monitor for macOS**  
 > A lightweight, powerful, and privacy-conscious all-in-one productivity suite for macOS. Seamlessly unites Windows-style Clipboard History, an instant continuous Emoji Picker, a smart floating Selection Translator, and a real-time system Network Monitor into a single menu bar utility. Crafted with Swift & SwiftUI, featuring a clean, dark acrylic design that is fast, responsive, and easy on system resources.
 
-[![Release](https://img.shields.io/badge/Release-v2.3.2-orange?style=for-the-badge&logo=github)](https://pakkawatkh.github.io/Tiffy-App/monkey-tools/)
+[![Release](https://img.shields.io/badge/Release-v2.3.3-orange?style=for-the-badge&logo=github)](https://pakkawatkh.github.io/Pliw-App/monkey-tools/)
 [![Platform](https://img.shields.io/badge/Platform-macOS%2013%2B-lightgrey?style=for-the-badge&logo=apple)](https://github.com/pakkawatkh/monkey-tools)
 [![License](https://img.shields.io/badge/License-MIT-green?style=for-the-badge)](LICENSE)
 
 ---
 
-## 📥 Download Installer (v2.3.2)
+## 📥 Download Installer (v2.3.3)
 
-You can download the latest official `.dmg` installer directly from the Tiffy App Release Portal:
+You can download the latest official `.dmg` installer directly from the Pliw App Release Portal:
 
-[![Download DMG](https://img.shields.io/badge/Download-monkey--tools--Installer.dmg%20(v2.3.2)-blue?style=for-the-badge&logo=apple)](https://pakkawatkh.github.io/Tiffy-App/monkey-tools/monkey-tools-Installer.dmg)
+[![Download DMG](https://img.shields.io/badge/Download-monkey--tools--Installer.dmg%20(v2.3.3)-blue?style=for-the-badge&logo=apple)](https://pakkawatkh.github.io/Pliw-App/monkey-tools/monkey-tools-Installer.dmg)
 
 👉 **Direct Links & Live Preview:**
-- **[Official Website & Interactive Tour](https://pakkawatkh.github.io/Tiffy-App/monkey-tools/)**
-- **[Download monkey-tools-Installer.dmg (v2.3.2 · 1.3 MB)](https://pakkawatkh.github.io/Tiffy-App/monkey-tools/monkey-tools-Installer.dmg)**
-- **[Download monkey-tools.zip (Auto-Update Archive)](https://pakkawatkh.github.io/Tiffy-App/monkey-tools/monkey-tools.zip)**
+- **[Official Website & Interactive Tour](https://pakkawatkh.github.io/Pliw-App/monkey-tools/)**
+- **[Download monkey-tools-Installer.dmg (v2.3.3 · 1.3 MB)](https://pakkawatkh.github.io/Pliw-App/monkey-tools/monkey-tools-Installer.dmg)**
+- **[Download monkey-tools.zip (Auto-Update Archive)](https://pakkawatkh.github.io/Pliw-App/monkey-tools/monkey-tools.zip)**
 
 ---
 
-## 🚀 What's New (v2.3.2 Highlights)
+## 🚀 What's New (v2.3.3 Highlights)
 
 - 🫧 **macOS Sequoia/Tahoe Liquid Glass UI:** Automatic Light & Dark Mode support, translucent popover glass with specular rim highlights, capsule controls, and a redesigned System Settings sidebar layout.
 - 🗂️ **Clipboard Category Filters & Power Shortcuts:** Filter by `All`, `Text`, `Images`, `Pinned` with source app icons, quick paste `⌘1`–`⌘9`, Pin `⌘P`, Delete `⌘⌫`, Quick Preview `⌘Y`, and Translate `⌘T`.
 - 🔍 **Offline Image OCR (Apple Vision):** Extract text directly from copied screenshots and images 100% locally.
 - ⚡ **Quick Translate Hotkey (`⌘⇧E`) & History:** Summon the translator instantly from anywhere, browse recent translations, and exclude specific apps from the floating selection bubble.
-- 🔄 **In-App Auto-Updater:** Checks `https://pakkawatkh.github.io/Tiffy-App/monkey-tools/version.json` automatically.
+- 🔄 **In-App Auto-Updater:** Checks `https://pakkawatkh.github.io/Pliw-App/monkey-tools/version.json` automatically.
 
 - 🌐 **Real-time System Network Monitor:** 
   - Live download (`⬇`) and upload (`⬆`) bandwidth speed displayed directly on the macOS Menu Bar.

@@ -64,7 +64,7 @@ hdiutil create -volname "monkey-tools Installer" -srcfolder "${DMG_TMP}" -ov -fo
 # Clean up temporary staging directory
 rm -rf "${DMG_TMP}"
 
-# Sync latest DMG and ZIP to docs and Tiffy-App for direct website downloads
+# Sync latest DMG and ZIP to docs and Pliw-App for direct website downloads
 mkdir -p "${PROJECT_DIR}/docs"
 cp -f "${DMG_OUTPUT}" "${PROJECT_DIR}/docs/monkey-tools-Installer.dmg"
 
@@ -74,11 +74,11 @@ rm -f "${ZIP_OUTPUT}"
 ditto -c -k --keepParent "${PROJECT_DIR}/monkey-tools.app" "${ZIP_OUTPUT}"
 cp -f "${ZIP_OUTPUT}" "${PROJECT_DIR}/docs/monkey-tools.zip"
 
-TIFFY_MONKEY_DIR="$(cd "${PROJECT_DIR}/.." && pwd)/Tiffy-App/monkey-tools"
-if [ -d "${TIFFY_MONKEY_DIR}" ]; then
-    echo "📦 Syncing DMG and ZIP to ${TIFFY_MONKEY_DIR}..."
-    cp -f "${DMG_OUTPUT}" "${TIFFY_MONKEY_DIR}/monkey-tools-Installer.dmg"
-    cp -f "${ZIP_OUTPUT}" "${TIFFY_MONKEY_DIR}/monkey-tools.zip"
+PLIW_MONKEY_DIR="$(cd "${PROJECT_DIR}/.." && pwd)/Pliw-App/monkey-tools"
+if [ -d "${PLIW_MONKEY_DIR}" ]; then
+    echo "📦 Syncing DMG and ZIP to ${PLIW_MONKEY_DIR}..."
+    cp -f "${DMG_OUTPUT}" "${PLIW_MONKEY_DIR}/monkey-tools-Installer.dmg"
+    cp -f "${ZIP_OUTPUT}" "${PLIW_MONKEY_DIR}/monkey-tools.zip"
 fi
 
 echo "🎉 DMG and ZIP packages successfully created!"

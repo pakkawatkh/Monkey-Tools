@@ -144,7 +144,7 @@ final class EnhancementTests: XCTestCase {
         let notHex = ClipboardItem(type: .text, text: "#ZZZZZZ")
         XCTAssertNil(notHex.detectedHexColor)
 
-        let validURL = ClipboardItem(type: .text, text: "https://pakkawatkh.github.io/Tiffy-App/")
+        let validURL = ClipboardItem(type: .text, text: "https://pakkawatkh.github.io/Pliw-App/")
         XCTAssertNotNil(validURL.detectedURL)
         XCTAssertNil(validURL.detectedHexColor)
 
