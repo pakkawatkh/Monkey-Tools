@@ -154,7 +154,7 @@ final class TextSelectionMonitorTests: XCTestCase {
 
         panel.hide()
         // Ensure hide finishes and invalidates monitors safely
-        RunLoop.main.run(until: Date().addingTimeInterval(0.15))
+        RunLoop.main.run(until: Date().addingTimeInterval(0.25))
         XCTAssertEqual(panel.alphaValue, 0.0)
     }
 

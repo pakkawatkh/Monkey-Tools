@@ -168,6 +168,12 @@ public final class TextSelectionMonitor: ObservableObject {
             return
         }
 
+        // Respect user's excluded apps for Selection Translate Bubble
+        if let bundleId = frontApp.bundleIdentifier,
+           AppSettings.shared.translatorExcludedAppBundleIDs.contains(bundleId) {
+            return
+        }
+
         let pid = frontApp.processIdentifier
         let mouseLoc = NSEvent.mouseLocation
 

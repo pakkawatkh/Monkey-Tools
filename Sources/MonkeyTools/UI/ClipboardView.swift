@@ -2,6 +2,7 @@ import SwiftUI
 
 public struct ClipboardView: View {
     @ObservedObject var manager: ClipboardManager = .shared
+    @ObservedObject var monitor: ClipboardMonitor = .shared
     @ObservedObject var autoPaster: AutoPaster = .shared
     @ObservedObject var settings: AppSettings = .shared
     @ObservedObject var emojiManager: EmojiManager = .shared
@@ -12,6 +13,8 @@ public struct ClipboardView: View {
 
     @FocusState private var isSearchFocused: Bool
     @State private var showingClearConfirmation = false
+    @State private var toastMessage: String? = nil
+    @State private var isExtractingOCR = false
 
     public init(onSelect: @escaping (ClipboardItem) -> Void, onClose: @escaping () -> Void) {
         self.onSelect = onSelect
@@ -36,17 +39,57 @@ public struct ClipboardView: View {
                 customDivider
             }
 
+            // Paused banner when user paused clipboard capture
+            if monitor.isPaused {
+                pausedBanner
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 6)
+                customDivider
+            }
+
             // Main Content Area
-            if manager.activeTab == .clipboard {
-                let items = manager.filteredItems
-                if items.isEmpty {
-                    emptyStateView
+            ZStack {
+                if manager.activeTab == .clipboard {
+                    let items = manager.filteredItems
+                    if items.isEmpty {
+                        emptyStateView
+                    } else {
+                        itemsListView(items: items)
+                    }
                 } else {
-                    itemsListView(items: items)
+                    EmojiPickerView { emoji in
+                        AutoPaster.shared.pasteEmoji(emoji)
+                    }
                 }
-            } else {
-                EmojiPickerView { emoji in
-                    AutoPaster.shared.pasteEmoji(emoji)
+
+                // Quick Preview Overlay
+                if let previewItem = manager.previewItem {
+                    quickPreviewOverlay(for: previewItem)
+                        .transition(.opacity)
+                }
+
+                // Transient Toast Notification (e.g. OCR result)
+                if let toast = toastMessage {
+                    VStack {
+                        Spacer()
+                        HStack(spacing: 6) {
+                            if isExtractingOCR {
+                                ProgressView()
+                                    .controlSize(.mini)
+                                    .scaleEffect(0.8)
+                            }
+                            Text(toast)
+                                .font(.system(size: 11, weight: .medium))
+                                .foregroundColor(.white)
+                        }
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 7)
+                        .background(Color.black.opacity(0.85))
+                        .clipShape(Capsule())
+                        .overlay(Capsule().stroke(Color.white.opacity(0.18), lineWidth: 1))
+                        .padding(.bottom, 10)
+                    }
+                    .transition(.opacity)
                 }
             }
 
@@ -258,6 +301,231 @@ public struct ClipboardView: View {
         )
     }
 
+    private var pausedBanner: some View {
+        HStack(spacing: 6) {
+            Image(systemName: "pause.circle.fill")
+                .foregroundColor(.orange)
+                .font(.system(size: 11))
+
+            Text(loc["clipboard_paused_banner"])
+                .font(.system(size: 10, weight: .medium))
+                .foregroundColor(Color.white.opacity(0.9))
+
+            Spacer()
+
+            Button(loc["clipboard_resume_btn"]) {
+                monitor.togglePause()
+            }
+            .buttonStyle(.borderedProminent)
+            .tint(.orange)
+            .controlSize(.mini)
+        }
+        .padding(.horizontal, 8)
+        .padding(.vertical, 5)
+        .background(Color.orange.opacity(0.18))
+        .clipShape(RoundedRectangle(cornerRadius: 6))
+        .overlay(
+            RoundedRectangle(cornerRadius: 6)
+                .stroke(Color.orange.opacity(0.35), lineWidth: 1)
+        )
+    }
+
+    private func quickPreviewOverlay(for item: ClipboardItem) -> some View {
+        VStack(spacing: 0) {
+            HStack(spacing: 6) {
+                if let appIcon = item.loadSourceAppIcon() {
+                    Image(nsImage: appIcon)
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 14, height: 14)
+                }
+                Text(item.sourceAppName ?? (item.type == .image ? "Image" : loc["tab_text"]))
+                    .font(.system(size: 11, weight: .semibold))
+                    .foregroundColor(.white)
+                    .lineLimit(1)
+
+                Text("• \(item.localizedRelativeTime(loc: loc))")
+                    .font(.system(size: 10))
+                    .foregroundColor(Color.white.opacity(0.6))
+
+                Spacer()
+
+                Button(action: {
+                    withAnimation(.easeInOut(duration: 0.12)) {
+                        manager.previewItem = nil
+                    }
+                }) {
+                    Image(systemName: "xmark")
+                        .font(.system(size: 10, weight: .bold))
+                        .foregroundColor(Color.white.opacity(0.8))
+                        .frame(width: 22, height: 22)
+                        .background(Color.white.opacity(0.1))
+                        .clipShape(Circle())
+                }
+                .buttonStyle(.plain)
+                .help(loc["preview_close"])
+            }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 9)
+            .background(Color.white.opacity(0.05))
+
+            customDivider
+
+            ScrollView {
+                if item.type == .image {
+                    if let fullImg = item.loadImage() {
+                        Image(nsImage: fullImg)
+                            .resizable()
+                            .scaledToFit()
+                            .frame(maxWidth: .infinity)
+                            .clipShape(RoundedRectangle(cornerRadius: 6))
+                            .padding(10)
+                    }
+                } else if let text = item.text {
+                    VStack(alignment: .leading, spacing: 8) {
+                        if let nsColor = item.detectedHexColor {
+                            HStack(spacing: 8) {
+                                RoundedRectangle(cornerRadius: 6)
+                                    .fill(Color(nsColor: nsColor))
+                                    .frame(width: 32, height: 32)
+                                    .overlay(RoundedRectangle(cornerRadius: 6).stroke(Color.white.opacity(0.3), lineWidth: 1))
+                                Text(text.trimmingCharacters(in: .whitespacesAndNewlines))
+                                    .font(.system(size: 13, weight: .bold, design: .monospaced))
+                                    .foregroundColor(.white)
+                            }
+                        }
+                        Text(text)
+                            .font(.system(size: 12))
+                            .foregroundColor(.white)
+                            .textSelection(.enabled)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                    }
+                    .padding(12)
+                }
+            }
+
+            customDivider
+
+            HStack(spacing: 8) {
+                Button(action: {
+                    manager.previewItem = nil
+                    onSelect(item)
+                }) {
+                    HStack(spacing: 4) {
+                        Image(systemName: "doc.on.clipboard")
+                            .font(.system(size: 10))
+                        Text(loc["preview_paste"])
+                            .font(.system(size: 11, weight: .semibold))
+                    }
+                    .foregroundColor(.white)
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 5)
+                    .background(Color.accentColor)
+                    .clipShape(RoundedRectangle(cornerRadius: 6))
+                }
+                .buttonStyle(.plain)
+
+                if item.type == .text {
+                    Button(action: {
+                        manager.previewItem = nil
+                        translateClipboardItem(item)
+                    }) {
+                        HStack(spacing: 4) {
+                            Image(systemName: "globe")
+                                .font(.system(size: 10))
+                            Text(loc["tab_translator"])
+                                .font(.system(size: 11, weight: .medium))
+                        }
+                        .foregroundColor(.white)
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 5)
+                        .background(Color.white.opacity(0.10))
+                        .clipShape(RoundedRectangle(cornerRadius: 6))
+                    }
+                    .buttonStyle(.plain)
+                } else if item.type == .image {
+                    Button(action: {
+                        manager.previewItem = nil
+                        extractTextFromImage(item)
+                    }) {
+                        HStack(spacing: 4) {
+                            Image(systemName: "doc.text.viewfinder")
+                                .font(.system(size: 10))
+                            Text("OCR")
+                                .font(.system(size: 11, weight: .medium))
+                        }
+                        .foregroundColor(.white)
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 5)
+                        .background(Color.white.opacity(0.10))
+                        .clipShape(RoundedRectangle(cornerRadius: 6))
+                    }
+                    .buttonStyle(.plain)
+                }
+
+                Spacer()
+
+                Button(loc["preview_close"]) {
+                    withAnimation(.easeInOut(duration: 0.12)) {
+                        manager.previewItem = nil
+                    }
+                }
+                .font(.system(size: 11))
+                .foregroundColor(Color.white.opacity(0.75))
+                .buttonStyle(.plain)
+            }
+            .padding(.horizontal, 10)
+            .padding(.vertical, 8)
+            .background(Color.white.opacity(0.04))
+        }
+        .background(Color(red: 0.09, green: 0.09, blue: 0.12).opacity(0.98))
+    }
+
+    private func translateClipboardItem(_ item: ClipboardItem) {
+        guard let text = item.text, !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
+        onClose()
+        DispatchQueue.main.async {
+            TranslationPopoverPanel.shared.show(text: text, near: NSEvent.mouseLocation, sourceAppPID: 0, isEditable: false)
+        }
+    }
+
+    private func extractTextFromImage(_ item: ClipboardItem) {
+        guard item.type == .image, let data = item.loadImageData() else { return }
+        isExtractingOCR = true
+        showToast(loc["ocr_processing"], autoDismiss: false)
+
+        Task {
+            let extracted = await OCRService.shared.extractText(from: data)
+            await MainActor.run {
+                self.isExtractingOCR = false
+                if let text = extracted, !text.isEmpty {
+                    ClipboardMonitor.shared.markProgrammaticWrite(text: text)
+                    NSPasteboard.general.clearContents()
+                    NSPasteboard.general.setString(text, forType: .string)
+                    ClipboardManager.shared.add(text: text, sourceAppBundleID: Bundle.main.bundleIdentifier, sourceAppName: "OCR")
+                    self.showToast(loc["ocr_copied"], autoDismiss: true)
+                } else {
+                    self.showToast(loc["ocr_no_text"], autoDismiss: true)
+                }
+            }
+        }
+    }
+
+    private func showToast(_ message: String, autoDismiss: Bool) {
+        withAnimation(.easeInOut(duration: 0.15)) {
+            toastMessage = message
+        }
+        if autoDismiss {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
+                if self.toastMessage == message {
+                    withAnimation(.easeInOut(duration: 0.2)) {
+                        self.toastMessage = nil
+                    }
+                }
+            }
+        }
+    }
+
     private var accessibilityBanner: some View {
         HStack(spacing: 6) {
             Image(systemName: "info.circle.fill")
@@ -307,7 +575,18 @@ public struct ClipboardView: View {
                             },
                             onDelete: {
                                 manager.delete(item: item)
-                            }
+                            },
+                            onPreview: {
+                                withAnimation(.easeInOut(duration: 0.15)) {
+                                    manager.previewItem = item
+                                }
+                            },
+                            onTranslate: item.type == .text ? {
+                                translateClipboardItem(item)
+                            } : nil,
+                            onOCR: item.type == .image ? {
+                                extractTextFromImage(item)
+                            } : nil
                         )
                         .id(item.id)
                     }

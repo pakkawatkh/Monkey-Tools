@@ -4,7 +4,6 @@ import Combine
 public final class StatusMenuController: NSObject {
     private var statusItem: NSStatusItem?
     private var cancellables = Set<AnyCancellable>()
-    private let fixedSpeedBarLength: CGFloat = 176.0
 
     public override init() {
         super.init()
@@ -12,7 +11,7 @@ public final class StatusMenuController: NSObject {
     }
 
     private func setupStatusItem() {
-        statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
+        statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
 
         guard let button = statusItem?.button else { return }
 
@@ -20,7 +19,7 @@ public final class StatusMenuController: NSObject {
         let monkeyIcon = createMonkeyTemplateIcon()
         button.image = monkeyIcon
         button.imagePosition = .imageOnly
-        button.toolTip = "monkey-tools (คลิกเพื่อเปิดการตั้งค่า / Settings)"
+        button.toolTip = LocalizationManager.shared["menu_tooltip"]
 
         button.target = self
         button.action = #selector(statusItemClicked(_:))
@@ -31,14 +30,14 @@ public final class StatusMenuController: NSObject {
     }
 
     private func setupObservers() {
-        NetworkMonitorService.shared.$formattedSpeedString
+        ClipboardMonitor.shared.$isPaused
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
                 self?.updateStatusItemDisplay()
             }
             .store(in: &cancellables)
 
-        AppSettings.shared.$networkMonitorEnabled
+        LocalizationManager.shared.$effectiveLanguageCode
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
                 self?.updateStatusItemDisplay()
@@ -48,24 +47,8 @@ public final class StatusMenuController: NSObject {
 
     private func updateStatusItemDisplay() {
         guard let button = statusItem?.button else { return }
-        let isEnabled = AppSettings.shared.networkMonitorEnabled
-        let speedText = NetworkMonitorService.shared.formattedSpeedString
-
-        if isEnabled && !speedText.isEmpty {
-            statusItem?.length = NSStatusItem.variableLength
-            let font = NSFont.monospacedDigitSystemFont(ofSize: 10.5, weight: .medium)
-            let attrTitle = NSAttributedString(string: " " + speedText, attributes: [
-                .font: font,
-                .foregroundColor: NSColor.labelColor
-            ])
-            button.attributedTitle = attrTitle
-            button.imagePosition = .imageLeft
-        } else {
-            statusItem?.length = NSStatusItem.variableLength
-            button.attributedTitle = NSAttributedString(string: "")
-            button.title = ""
-            button.imagePosition = .imageOnly
-        }
+        button.toolTip = LocalizationManager.shared["menu_tooltip"]
+        button.alphaValue = ClipboardMonitor.shared.isPaused ? 0.45 : 1.0
     }
 
     private func createMonkeyTemplateIcon() -> NSImage {
@@ -181,6 +164,11 @@ public final class StatusMenuController: NSObject {
         countItem.isEnabled = false
         menu.addItem(countItem)
 
+        let pauseTitle = ClipboardMonitor.shared.isPaused ? loc["menu_resume_clipboard"] : loc["menu_pause_clipboard"]
+        let pauseItem = NSMenuItem(title: pauseTitle, action: #selector(toggleClipboardPause), keyEquivalent: "")
+        pauseItem.target = self
+        menu.addItem(pauseItem)
+
         let clearUnpinned = NSMenuItem(title: loc["menu_clear_unpinned"], action: #selector(clearUnpinnedHistory), keyEquivalent: "")
         clearUnpinned.target = self
         menu.addItem(clearUnpinned)
@@ -188,21 +176,6 @@ public final class StatusMenuController: NSObject {
         let clearAll = NSMenuItem(title: loc["menu_clear_all"], action: #selector(clearAllHistory), keyEquivalent: "")
         clearAll.target = self
         menu.addItem(clearAll)
-
-        if AppSettings.shared.networkMonitorEnabled {
-            menu.addItem(NSMenuItem.separator())
-            let netService = NetworkMonitorService.shared
-            let speedText = netService.formattedSpeedString.isEmpty ? "⬇ 0 B/s  ⬆ 0 B/s" : netService.formattedSpeedString
-            let netSpeedItem = NSMenuItem(title: "📶 \(loc["menu_network_speed"]): \(speedText)", action: nil, keyEquivalent: "")
-            netSpeedItem.isEnabled = false
-            menu.addItem(netSpeedItem)
-
-            let sessionDown = NetworkSpeedUnit.formatDataSize(bytes: netService.sessionDownloadBytes)
-            let sessionUp = NetworkSpeedUnit.formatDataSize(bytes: netService.sessionUploadBytes)
-            let sessionItem = NSMenuItem(title: "📊 \(loc["menu_network_session_total"]): ⬇ \(sessionDown) | ⬆ \(sessionUp)", action: nil, keyEquivalent: "")
-            sessionItem.isEnabled = false
-            menu.addItem(sessionItem)
-        }
 
         menu.addItem(NSMenuItem.separator())
 
@@ -233,6 +206,10 @@ public final class StatusMenuController: NSObject {
 
     @objc private func togglePanel() {
         ClipboardPanel.shared.toggleVisibility()
+    }
+
+    @objc private func toggleClipboardPause() {
+        ClipboardMonitor.shared.togglePause()
     }
 
     @objc private func clearUnpinnedHistory() {

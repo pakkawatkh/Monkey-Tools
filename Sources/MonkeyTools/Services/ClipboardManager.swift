@@ -43,6 +43,7 @@ public final class ClipboardManager: ObservableObject {
         }
     }
     @Published public var maxHistoryCount: Int = 100
+    @Published public var previewItem: ClipboardItem? = nil
 
     private let storage: ClipboardStorage
 
@@ -111,6 +112,10 @@ public final class ClipboardManager: ObservableObject {
         } else {
             let lowerQuery = query.lowercased()
             baseItems = itemsToFilter.filter { item in
+                // Match source app name if available
+                if let appName = item.sourceAppName, appName.localizedCaseInsensitiveContains(query) {
+                    return true
+                }
                 switch item.type {
                 case .text:
                     return item.text?.localizedCaseInsensitiveContains(query) == true
@@ -146,7 +151,7 @@ public final class ClipboardManager: ObservableObject {
 
     /// Add a new text string copied from clipboard
     @discardableResult
-    public func add(text: String) -> ClipboardItem? {
+    public func add(text: String, sourceAppBundleID: String? = nil, sourceAppName: String? = nil) -> ClipboardItem? {
         let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return nil }
 
@@ -155,7 +160,7 @@ public final class ClipboardManager: ObservableObject {
             var existing = items.remove(at: existingIndex)
             existing.timestamp = Date()
             items.insert(existing, at: 0)
-            storage.save(items: items)
+            storage.saveAsync(items: items)
             selectedIndex = 0
             return existing
         }
@@ -164,7 +169,9 @@ public final class ClipboardManager: ObservableObject {
             type: .text,
             text: text,
             timestamp: Date(),
-            isPinned: false
+            isPinned: false,
+            sourceAppBundleID: sourceAppBundleID,
+            sourceAppName: sourceAppName
         )
         insertAndPrune(newItem)
         return newItem
@@ -172,7 +179,7 @@ public final class ClipboardManager: ObservableObject {
 
     /// Add a new image copied from clipboard
     @discardableResult
-    public func addImage(nsImage: NSImage, data: Data) -> ClipboardItem? {
+    public func addImage(nsImage: NSImage, data: Data, sourceAppBundleID: String? = nil, sourceAppName: String? = nil) -> ClipboardItem? {
         let hash = SHA256.hash(data: data).compactMap { String(format: "%02x", $0) }.joined()
 
         // Check if exact same image already exists
@@ -180,7 +187,7 @@ public final class ClipboardManager: ObservableObject {
             var existing = items.remove(at: existingIndex)
             existing.timestamp = Date()
             items.insert(existing, at: 0)
-            storage.save(items: items)
+            storage.saveAsync(items: items)
             selectedIndex = 0
             return existing
         }
@@ -208,7 +215,9 @@ public final class ClipboardManager: ObservableObject {
             imageHeight: height,
             dataHash: hash,
             timestamp: Date(),
-            isPinned: false
+            isPinned: false,
+            sourceAppBundleID: sourceAppBundleID,
+            sourceAppName: sourceAppName
         )
         insertAndPrune(newItem)
         return newItem
@@ -230,7 +239,7 @@ public final class ClipboardManager: ObservableObject {
             return unpinnedCount <= unpinnedAllowed
         }
 
-        storage.save(items: items)
+        storage.saveAsync(items: items)
         storage.cleanupUnusedImages(retainedItems: items)
         selectedIndex = 0
     }
@@ -239,16 +248,19 @@ public final class ClipboardManager: ObservableObject {
     public func togglePin(for item: ClipboardItem) {
         guard let index = items.firstIndex(where: { $0.id == item.id }) else { return }
         items[index].isPinned.toggle()
-        storage.save(items: items)
+        storage.saveAsync(items: items)
     }
 
     /// Delete an item from history
     public func delete(item: ClipboardItem) {
+        if previewItem?.id == item.id {
+            previewItem = nil
+        }
         if item.type == .image {
             storage.deleteImageFiles(imageFileName: item.imageFileName, thumbnailFileName: item.thumbnailFileName)
         }
         items.removeAll { $0.id == item.id }
-        storage.save(items: items)
+        storage.saveAsync(items: items)
         if selectedIndex >= filteredItems.count && !filteredItems.isEmpty {
             selectedIndex = filteredItems.count - 1
         }
@@ -256,12 +268,13 @@ public final class ClipboardManager: ObservableObject {
 
     /// Clear all unpinned items (or all items if includingPinned is true)
     public func clearAll(includingPinned: Bool = false) {
+        previewItem = nil
         if includingPinned {
             items.removeAll()
         } else {
             items.removeAll { !$0.isPinned }
         }
-        storage.save(items: items)
+        storage.saveAsync(items: items)
         storage.cleanupUnusedImages(retainedItems: items)
         selectedIndex = 0
     }

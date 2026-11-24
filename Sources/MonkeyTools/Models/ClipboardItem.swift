@@ -17,6 +17,8 @@ public struct ClipboardItem: Identifiable, Codable, Equatable, Hashable {
     public let dataHash: String?
     public var timestamp: Date
     public var isPinned: Bool
+    public let sourceAppBundleID: String?
+    public let sourceAppName: String?
 
     public init(
         id: UUID = UUID(),
@@ -28,7 +30,9 @@ public struct ClipboardItem: Identifiable, Codable, Equatable, Hashable {
         imageHeight: Int? = nil,
         dataHash: String? = nil,
         timestamp: Date = Date(),
-        isPinned: Bool = false
+        isPinned: Bool = false,
+        sourceAppBundleID: String? = nil,
+        sourceAppName: String? = nil
     ) {
         self.id = id
         self.type = type
@@ -40,10 +44,12 @@ public struct ClipboardItem: Identifiable, Codable, Equatable, Hashable {
         self.dataHash = dataHash
         self.timestamp = timestamp
         self.isPinned = isPinned
+        self.sourceAppBundleID = sourceAppBundleID
+        self.sourceAppName = sourceAppName
     }
 
     enum CodingKeys: String, CodingKey {
-        case id, type, text, imageFileName, thumbnailFileName, imageWidth, imageHeight, dataHash, timestamp, isPinned
+        case id, type, text, imageFileName, thumbnailFileName, imageWidth, imageHeight, dataHash, timestamp, isPinned, sourceAppBundleID, sourceAppName
     }
 
     public init(from decoder: Decoder) throws {
@@ -58,6 +64,8 @@ public struct ClipboardItem: Identifiable, Codable, Equatable, Hashable {
         dataHash = try container.decodeIfPresent(String.self, forKey: .dataHash)
         timestamp = try container.decode(Date.self, forKey: .timestamp)
         isPinned = try container.decodeIfPresent(Bool.self, forKey: .isPinned) ?? false
+        sourceAppBundleID = try container.decodeIfPresent(String.self, forKey: .sourceAppBundleID)
+        sourceAppName = try container.decodeIfPresent(String.self, forKey: .sourceAppName)
     }
 
     public var characterCount: Int {
@@ -86,6 +94,103 @@ public struct ClipboardItem: Identifiable, Codable, Equatable, Hashable {
             let days = Int(seconds / 86400)
             return "\(days)d ago"
         }
+    }
+
+    public func localizedRelativeTime(loc: LocalizationManager = .shared) -> String {
+        let seconds = max(0, -timestamp.timeIntervalSinceNow)
+        if seconds < 5 {
+            return loc["time_just_now"]
+        } else if seconds < 60 {
+            return String(format: loc["time_seconds_ago"], Int(seconds))
+        } else if seconds < 3600 {
+            return String(format: loc["time_minutes_ago"], Int(seconds / 60))
+        } else if seconds < 86400 {
+            return String(format: loc["time_hours_ago"], Int(seconds / 3600))
+        } else {
+            return String(format: loc["time_days_ago"], Int(seconds / 86400))
+        }
+    }
+
+    /// Detects if the text item is a standalone CSS Hex Color (#RGB, #RRGGBB, #RRGGBBAA).
+    public var detectedHexColor: NSColor? {
+        guard type == .text, let raw = text?.trimmingCharacters(in: .whitespacesAndNewlines) else {
+            return nil
+        }
+        guard raw.hasPrefix("#") else { return nil }
+        let hex = String(raw.dropFirst())
+        guard hex.count == 3 || hex.count == 6 || hex.count == 8 else { return nil }
+        let hexChars = CharacterSet(charactersIn: "0123456789abcdefABCDEF")
+        guard hex.unicodeScalars.allSatisfy({ hexChars.contains($0) }) else { return nil }
+
+        var expanded = hex
+        if hex.count == 3 {
+            expanded = hex.map { "\($0)\($0)" }.joined()
+        }
+
+        var value: UInt64 = 0
+        guard Scanner(string: expanded).scanHexInt64(&value) else { return nil }
+
+        if expanded.count == 6 {
+            let r = CGFloat((value & 0xFF0000) >> 16) / 255.0
+            let g = CGFloat((value & 0x00FF00) >> 8) / 255.0
+            let b = CGFloat(value & 0x0000FF) / 255.0
+            return NSColor(srgbRed: r, green: g, blue: b, alpha: 1.0)
+        } else if expanded.count == 8 {
+            let r = CGFloat((value & 0xFF000000) >> 24) / 255.0
+            let g = CGFloat((value & 0x00FF0000) >> 16) / 255.0
+            let b = CGFloat((value & 0x0000FF00) >> 8) / 255.0
+            let a = CGFloat(value & 0x000000FF) / 255.0
+            return NSColor(srgbRed: r, green: g, blue: b, alpha: a)
+        }
+        return nil
+    }
+
+    /// Detects if the text item is a single-line HTTP/HTTPS URL.
+    public var detectedURL: URL? {
+        guard type == .text, let raw = text?.trimmingCharacters(in: .whitespacesAndNewlines) else {
+            return nil
+        }
+        guard !raw.contains("\n"), !raw.contains(" ") else { return nil }
+        let lower = raw.lowercased()
+        guard lower.hasPrefix("http://") || lower.hasPrefix("https://") else { return nil }
+        guard let url = URL(string: raw), let host = url.host, !host.isEmpty else { return nil }
+        return url
+    }
+
+    /// In-memory cache for source app icons
+    private static let appIconCache = NSCache<NSString, NSImage>()
+
+    /// Loads and caches the macOS application icon for a bundle identifier.
+    public static func icon(forBundleID bundleID: String) -> NSImage? {
+        let key = bundleID as NSString
+        if let cached = appIconCache.object(forKey: key) {
+            return cached
+        }
+        guard let appURL = NSWorkspace.shared.urlForApplication(withBundleIdentifier: bundleID) else {
+            return nil
+        }
+        let icon = NSWorkspace.shared.icon(forFile: appURL.path)
+        icon.size = NSSize(width: 16, height: 16)
+        appIconCache.setObject(icon, forKey: key)
+        return icon
+    }
+
+    /// Resolves the localized display name for a bundle identifier if installed.
+    public static func displayName(forBundleID bundleID: String) -> String? {
+        guard let appURL = NSWorkspace.shared.urlForApplication(withBundleIdentifier: bundleID) else {
+            return nil
+        }
+        if let bundle = Bundle(url: appURL),
+           let name = (bundle.object(forInfoDictionaryKey: "CFBundleDisplayName") as? String)
+                   ?? (bundle.object(forInfoDictionaryKey: "CFBundleName") as? String) {
+            return name
+        }
+        return appURL.deletingPathExtension().lastPathComponent
+    }
+
+    public func loadSourceAppIcon() -> NSImage? {
+        guard let bundleID = sourceAppBundleID else { return nil }
+        return Self.icon(forBundleID: bundleID)
     }
 
     /// In-memory cache for decoded thumbnails to guarantee 120fps scrolling and eliminate repeated disk I/O

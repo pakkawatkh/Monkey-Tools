@@ -1,8 +1,11 @@
 import AppKit
+import Combine
 import Foundation
 
-public final class ClipboardMonitor {
+public final class ClipboardMonitor: ObservableObject {
     public static let shared = ClipboardMonitor()
+
+    @Published public var isPaused: Bool = false
 
     private let pasteboard = NSPasteboard.general
     public var lastChangeCount: Int
@@ -13,6 +16,13 @@ public final class ClipboardMonitor {
 
     public init() {
         self.lastChangeCount = pasteboard.changeCount
+    }
+
+    public func togglePause() {
+        isPaused.toggle()
+        if !isPaused {
+            lastChangeCount = pasteboard.changeCount
+        }
     }
 
     public func startMonitoring(interval: TimeInterval = 0.35) {
@@ -51,13 +61,18 @@ public final class ClipboardMonitor {
         guard currentChangeCount != lastChangeCount else { return }
         lastChangeCount = currentChangeCount
 
-        // Ignore if capturing is temporarily suppressed for translation probe
-        if isCapturingSuppressed {
+        // Ignore if paused by user or temporarily suppressed for translation probe
+        if isPaused || isCapturingSuppressed {
             return
         }
 
+        // Capture frontmost application metadata
+        let frontApp = NSWorkspace.shared.frontmostApplication
+        let sourceBundleID = frontApp?.bundleIdentifier
+        let sourceAppName = frontApp?.localizedName
+
         // Ignore if frontmost app is in user's excluded list
-        if let frontAppId = NSWorkspace.shared.frontmostApplication?.bundleIdentifier {
+        if let frontAppId = sourceBundleID {
             if AppSettings.shared.excludedAppBundleIDs.contains(frontAppId) {
                 return
             }
@@ -85,7 +100,7 @@ public final class ClipboardMonitor {
             if plainText == nil || pasteboard.types?.contains(.png) == true {
                 if let pngData = pasteboard.data(forType: .png), let img = NSImage(data: pngData) {
                     DispatchQueue.main.async {
-                        ClipboardManager.shared.addImage(nsImage: img, data: pngData)
+                        ClipboardManager.shared.addImage(nsImage: img, data: pngData, sourceAppBundleID: sourceBundleID, sourceAppName: sourceAppName)
                     }
                     return
                 } else if let tiffData = pasteboard.data(forType: .tiff), let img = NSImage(data: tiffData) {
@@ -93,7 +108,7 @@ public final class ClipboardMonitor {
                     let rep = NSBitmapImageRep(data: tiffData)
                     let pngData = rep?.representation(using: .png, properties: [:]) ?? tiffData
                     DispatchQueue.main.async {
-                        ClipboardManager.shared.addImage(nsImage: img, data: pngData)
+                        ClipboardManager.shared.addImage(nsImage: img, data: pngData, sourceAppBundleID: sourceBundleID, sourceAppName: sourceAppName)
                     }
                     return
                 }
@@ -112,7 +127,7 @@ public final class ClipboardMonitor {
                 let rep = NSBitmapImageRep(data: data)
                 let pngData = rep?.representation(using: .png, properties: [:]) ?? data
                 DispatchQueue.main.async {
-                    ClipboardManager.shared.addImage(nsImage: img, data: pngData)
+                    ClipboardManager.shared.addImage(nsImage: img, data: pngData, sourceAppBundleID: sourceBundleID, sourceAppName: sourceAppName)
                 }
                 return
             }
@@ -121,7 +136,7 @@ public final class ClipboardMonitor {
         // 5. Fallback to Text
         if let string = pasteboard.string(forType: .string) {
             DispatchQueue.main.async {
-                ClipboardManager.shared.add(text: string)
+                ClipboardManager.shared.add(text: string, sourceAppBundleID: sourceBundleID, sourceAppName: sourceAppName)
             }
         }
     }

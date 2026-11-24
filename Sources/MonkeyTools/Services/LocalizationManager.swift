@@ -223,13 +223,47 @@ public final class LocalizationManager: ObservableObject {
 
         // Status Menu Bar
         "menu_show_monkey": ["th": "เปิด monkey-tools", "en": "Show monkey-tools", "zh": "打开 monkey-tools"],
+        "menu_tooltip": ["th": "monkey-tools (คลิกเพื่อเปิดการตั้งค่า / คลิกขวาเพื่อเปิดเมนู)", "en": "monkey-tools (Click for Settings / Right-click for Menu)", "zh": "monkey-tools (点击打开设置 / 右键打开菜单)"],
         "menu_history_count": ["th": "ประวัติ:", "en": "History:", "zh": "历史记录："],
+        "menu_pause_clipboard": ["th": "⏸ หยุดบันทึกคลิปบอร์ดชั่วคราว", "en": "⏸ Pause Clipboard Capture", "zh": "⏸ 暂停剪贴板记录"],
+        "menu_resume_clipboard": ["th": "▶️ กลับมาบันทึกคลิปบอร์ดต่อ", "en": "▶️ Resume Clipboard Capture", "zh": "▶️ 恢复剪贴板记录"],
+        "clipboard_paused_banner": ["th": "หยุดบันทึกคลิปบอร์ดชั่วคราวอยู่", "en": "Clipboard capture is paused", "zh": "剪贴板记录已暂停"],
+        "clipboard_resume_btn": ["th": "เปิดต่อ", "en": "Resume", "zh": "恢复"],
         "menu_clear_unpinned": ["th": "ล้างประวัติที่ไม่ตรึง", "en": "Clear Unpinned History", "zh": "清空未固定记录"],
         "menu_clear_all": ["th": "ล้างประวัติทั้งหมด", "en": "Clear All History", "zh": "清空所有记录"],
         "menu_access_granted": ["th": "✓ ได้รับสิทธิ์ Accessibility แล้ว", "en": "✓ Accessibility Granted", "zh": "✓ 已获得辅助功能权限"],
         "menu_access_enable": ["th": "⚠️ เปิดการตั้งค่า Accessibility...", "en": "⚠️ Enable Accessibility...", "zh": "⚠️ 开启辅助功能权限..."],
         "menu_settings_item": ["th": "การตั้งค่า...", "en": "Settings...", "zh": "偏好设置..."],
-        "menu_quit_item": ["th": "ออกจาก monkey-tools", "en": "Quit monkey-tools", "zh": "退出 monkey-tools"]
+        "menu_quit_item": ["th": "ออกจาก monkey-tools", "en": "Quit monkey-tools", "zh": "退出 monkey-tools"],
+
+        // Relative Time
+        "time_just_now": ["th": "เมื่อสักครู่", "en": "Just now", "zh": "刚刚"],
+        "time_seconds_ago": ["th": "%d วิที่แล้ว", "en": "%ds ago", "zh": "%d秒前"],
+        "time_minutes_ago": ["th": "%d นาทีที่แล้ว", "en": "%dm ago", "zh": "%d分钟前"],
+        "time_hours_ago": ["th": "%d ชม.ที่แล้ว", "en": "%dh ago", "zh": "%d小时前"],
+        "time_days_ago": ["th": "%d วันที่แล้ว", "en": "%dd ago", "zh": "%d天前"],
+
+        // Clipboard Pro Actions & Preview
+        "preview_item": ["th": "ดูตัวอย่างเต็ม (⌘Y)", "en": "Quick Preview (⌘Y)", "zh": "快速预览 (⌘Y)"],
+        "translate_item": ["th": "แปลข้อความนี้ (⌘T)", "en": "Translate item (⌘T)", "zh": "翻译此条目 (⌘T)"],
+        "open_url": ["th": "เปิดลิงก์ในเบราว์เซอร์", "en": "Open URL in browser", "zh": "在浏览器中打开链接"],
+        "ocr_extract": ["th": "ดึงข้อความจากรูป (OCR)", "en": "Extract text from image (OCR)", "zh": "提取图片文字 (OCR)"],
+        "ocr_processing": ["th": "กำลังอ่านข้อความ...", "en": "Extracting text...", "zh": "正在识别文字..."],
+        "ocr_copied": ["th": "คัดลอกข้อความจากรูปแล้ว!", "en": "Extracted text copied!", "zh": "已复制识别的文字！"],
+        "ocr_no_text": ["th": "ไม่พบข้อความในรูป", "en": "No text detected in image", "zh": "未检测到图片文字"],
+        "preview_close": ["th": "ปิดตัวอย่าง", "en": "Close Preview", "zh": "关闭预览"],
+        "preview_paste": ["th": "วางรายการนี้", "en": "Paste Item", "zh": "粘贴此项"],
+        "bubble_tooltip": ["th": "แปลข้อความที่คลุมดำ (Translate)", "en": "Translate selected text", "zh": "翻译选中文本"],
+
+        // Translator History & Excluded Apps
+        "trans_history": ["th": "ประวัติการแปล", "en": "History", "zh": "翻译历史"],
+        "trans_history_empty": ["th": "ยังไม่มีประวัติการแปล", "en": "No translation history yet", "zh": "暂无翻译历史"],
+        "trans_history_clear": ["th": "ล้างประวัติ", "en": "Clear", "zh": "清空"],
+        "settings_translator_excluded_heading": ["th": "ยกเว้นแอปสำหรับปุ่มแปลภาษา (Selection Bubble)", "en": "Excluded Apps for Selection Bubble", "zh": "划词翻译排除的应用"],
+        "settings_translator_excluded_desc": ["th": "จะไม่แสดงปุ่มแปลภาษา 🌐 เมื่อคลุมดำข้อความในแอปเหล่านี้", "en": "Do not show the floating 🌐 translate bubble in these apps.", "zh": "在这些应用中划词时不显示浮动 🌐 翻译图标。"],
+        "settings_no_translator_excluded": ["th": "ไม่มีแอปที่ถูกยกเว้น (แสดงปุ่มแปลในทุกแอป)", "en": "No excluded apps (bubble enabled in all apps)", "zh": "暂无排除的应用 (所有应用均启用)"],
+        "settings_hotkey_conflict": ["th": "⚠️ คีย์ลัดนี้ซ้ำกับคีย์ลัดอีกตัวหนึ่ง กรุณาเลือกคีย์อื่น", "en": "⚠️ This shortcut conflicts with another shortcut. Please choose a different key.", "zh": "⚠️ 此快捷键与其他快捷键冲突，请选择其他按键。"],
+        "settings_recording_esc_hint": ["th": "กด Esc เพื่อยกเลิก", "en": "Press Esc to cancel", "zh": "按 Esc 取消"]
     ]
 
     private init() {

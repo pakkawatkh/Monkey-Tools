@@ -6,6 +6,7 @@ public final class ClipboardStorage {
     public static let shared = ClipboardStorage()
 
     private let fileManager = FileManager.default
+    private let ioQueue = DispatchQueue(label: "com.monkeytools.clipboard.storage", qos: .utility)
     public let storageURL: URL
     public let imagesDirectory: URL
 
@@ -51,23 +52,39 @@ public final class ClipboardStorage {
     }
 
     public func load() -> [ClipboardItem] {
-        guard fileManager.fileExists(atPath: storageURL.path) else {
-            return []
-        }
+        return ioQueue.sync {
+            guard fileManager.fileExists(atPath: storageURL.path) else {
+                return []
+            }
 
-        do {
-            let data = try Data(contentsOf: storageURL)
-            let decoder = JSONDecoder()
-            decoder.dateDecodingStrategy = .iso8601
-            let items = try decoder.decode([ClipboardItem].self, from: data)
-            return items
-        } catch {
-            print("[ClipboardStorage] Error loading history: \(error)")
-            return []
+            do {
+                let data = try Data(contentsOf: storageURL)
+                let decoder = JSONDecoder()
+                decoder.dateDecodingStrategy = .iso8601
+                let items = try decoder.decode([ClipboardItem].self, from: data)
+                return items
+            } catch {
+                print("[ClipboardStorage] Error loading history: \(error)")
+                return []
+            }
         }
     }
 
     public func save(items: [ClipboardItem]) {
+        ioQueue.sync {
+            self.writeItems(items)
+        }
+    }
+
+    /// Saves history off the main thread on a serial I/O queue so UI never stutters.
+    public func saveAsync(items: [ClipboardItem]) {
+        let snapshot = items
+        ioQueue.async { [weak self] in
+            self?.writeItems(snapshot)
+        }
+    }
+
+    private func writeItems(_ items: [ClipboardItem]) {
         ensureDirectoriesExist()
         do {
             let encoder = JSONEncoder()

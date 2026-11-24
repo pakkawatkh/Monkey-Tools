@@ -10,6 +10,7 @@ public struct TranslationPopoverView: View {
     @ObservedObject var settings = AppSettings.shared
     @ObservedObject var speech = SpeechService.shared
     @ObservedObject var loc = LocalizationManager.shared
+    @ObservedObject var translationService = TranslationService.shared
 
     @State private var sourceLanguage: String = "auto"
     @State private var targetLanguage: String = "th"
@@ -19,6 +20,8 @@ public struct TranslationPopoverView: View {
     @State private var copiedConfirmation = false
     @State private var editableText: String
     @State private var debounceTask: Task<Void, Never>?
+    @State private var translationTask: Task<Void, Never>?
+    @State private var showingHistory = false
     @FocusState private var isInputFocused: Bool
 
     public init(
@@ -45,7 +48,10 @@ public struct TranslationPopoverView: View {
             Divider()
                 .background(Color.white.opacity(0.10))
 
-            // Body: Original Text & Translation with Audio Speaker buttons
+            // Body: Translation History OR Original Text & Translation
+            if showingHistory {
+                historyListView
+            } else {
             ScrollView {
                 VStack(alignment: .leading, spacing: 10) {
                     // Original Text Card (Editable)
@@ -197,6 +203,7 @@ public struct TranslationPopoverView: View {
                 }
                 .padding(10)
             }
+            }
 
             Divider()
                 .background(Color.white.opacity(0.10))
@@ -237,6 +244,7 @@ public struct TranslationPopoverView: View {
         .onDisappear {
             speech.stop()
             debounceTask?.cancel()
+            translationTask?.cancel()
         }
     }
 
@@ -310,7 +318,7 @@ public struct TranslationPopoverView: View {
             Menu {
                 Button(loc["trans_auto"]) {
                     settings.translationTargetLang = "auto"
-                    targetLanguage = TranslationService.shared.resolveTargetLanguage(for: originalText, preferredTarget: "auto")
+                    targetLanguage = TranslationService.shared.resolveTargetLanguage(for: editableText, preferredTarget: "auto")
                     performTranslation()
                 }
                 Divider()
@@ -347,6 +355,23 @@ public struct TranslationPopoverView: View {
                         Circle().fill(Color.white.opacity(0.30)).frame(width: 3.5, height: 3.5)
                     }
                 )
+
+            // History toggle button
+            Button(action: {
+                withAnimation(.easeInOut(duration: 0.12)) {
+                    showingHistory.toggle()
+                }
+            }) {
+                Image(systemName: "clock.arrow.circlepath")
+                    .font(.system(size: 10, weight: .semibold))
+                    .foregroundColor(showingHistory ? Color(red: 0.4, green: 0.7, blue: 1.0) : Color.white.opacity(0.70))
+                    .frame(width: 18, height: 18)
+                    .background(showingHistory ? Color.blue.opacity(0.22) : Color.white.opacity(0.08))
+                    .clipShape(Circle())
+            }
+            .buttonStyle(.plain)
+            .fixedSize()
+            .help(loc["trans_history"])
 
             // Close button (at the far right)
             Button(action: onClose) {
@@ -489,10 +514,85 @@ public struct TranslationPopoverView: View {
         }
     }
 
+    private var historyListView: some View {
+        VStack(spacing: 0) {
+            HStack {
+                Text(loc["trans_history"])
+                    .font(.system(size: 11, weight: .semibold))
+                    .foregroundColor(.white.opacity(0.85))
+                Spacer()
+                if !translationService.history.isEmpty {
+                    Button(loc["trans_history_clear"]) {
+                        translationService.clearHistory()
+                    }
+                    .font(.system(size: 10))
+                    .foregroundColor(.orange)
+                    .buttonStyle(.plain)
+                }
+            }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 6)
+
+            if translationService.history.isEmpty {
+                Spacer()
+                Text(loc["trans_history_empty"])
+                    .font(.system(size: 11))
+                    .foregroundColor(.white.opacity(0.45))
+                Spacer()
+            } else {
+                ScrollView {
+                    LazyVStack(spacing: 6) {
+                        ForEach(translationService.history) { entry in
+                            Button(action: {
+                                showingHistory = false
+                                sourceLanguage = entry.sourceLanguage
+                                targetLanguage = entry.targetLanguage
+                                editableText = entry.originalText
+                                translationResult = TranslationResult(
+                                    originalText: entry.originalText,
+                                    translatedText: entry.translatedText,
+                                    sourceLanguage: entry.sourceLanguage,
+                                    targetLanguage: entry.targetLanguage,
+                                    engineUsed: settings.translationEngineMode
+                                )
+                            }) {
+                                VStack(alignment: .leading, spacing: 3) {
+                                    HStack {
+                                        Text("\(entry.sourceLanguage.uppercased()) → \(entry.targetLanguage.uppercased())")
+                                            .font(.system(size: 9, weight: .bold, design: .monospaced))
+                                            .foregroundColor(Color(red: 0.4, green: 0.7, blue: 1.0))
+                                        Spacer()
+                                    }
+                                    Text(entry.originalText)
+                                        .font(.system(size: 11))
+                                        .foregroundColor(.white.opacity(0.75))
+                                        .lineLimit(1)
+                                    Text(entry.translatedText)
+                                        .font(.system(size: 11, weight: .medium))
+                                        .foregroundColor(.white)
+                                        .lineLimit(2)
+                                }
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .padding(8)
+                                .background(Color.white.opacity(0.06))
+                                .clipShape(RoundedRectangle(cornerRadius: 6))
+                            }
+                            .buttonStyle(.plain)
+                        }
+                    }
+                    .padding(.horizontal, 10)
+                    .padding(.bottom, 8)
+                }
+            }
+        }
+    }
+
     // MARK: - Actions
 
     private func performTranslation(textToTranslate: String? = nil) {
         debounceTask?.cancel()
+        translationTask?.cancel()
+
         let text = (textToTranslate ?? editableText).trimmingCharacters(in: .whitespacesAndNewlines)
         guard !text.isEmpty else {
             translationResult = nil
@@ -504,19 +604,26 @@ public struct TranslationPopoverView: View {
         isLoading = true
         errorMessage = nil
 
-        Task {
+        let currentEngine = settings.translationEngineMode
+        let currentSource = sourceLanguage
+        let currentTarget = targetLanguage
+
+        translationTask = Task {
             do {
                 let result = try await TranslationService.shared.translate(
                     text: text,
-                    mode: settings.translationEngineMode,
-                    sourceLang: sourceLanguage,
-                    targetLang: targetLanguage
+                    mode: currentEngine,
+                    sourceLang: currentSource,
+                    targetLang: currentTarget
                 )
+                guard !Task.isCancelled else { return }
+                TranslationService.shared.recordHistory(result)
                 await MainActor.run {
                     self.translationResult = result
                     self.isLoading = false
                 }
             } catch {
+                guard !Task.isCancelled else { return }
                 await MainActor.run {
                     self.errorMessage = error.localizedDescription
                     self.isLoading = false
@@ -648,6 +755,6 @@ public struct ResizeGripHandle: View {
                         TranslationPopoverPanel.shared.saveCurrentSize()
                     }
             )
-            .help("Drag to resize")
+            .help(LocalizationManager.shared["trans_resize"])
     }
 }

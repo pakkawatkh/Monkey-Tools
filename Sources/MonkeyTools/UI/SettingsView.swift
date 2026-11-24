@@ -5,7 +5,6 @@ import AppKit
 public enum SettingsTab: String, CaseIterable, Identifiable {
     case clipboard = "clipboard"
     case translator = "translator"
-    case network = "network"
     case general = "general"
 
     public var id: String { rawValue }
@@ -14,7 +13,6 @@ public enum SettingsTab: String, CaseIterable, Identifiable {
         switch self {
         case .clipboard: return loc["tab_clipboard"]
         case .translator: return loc["tab_translator"]
-        case .network: return loc["tab_network"]
         case .general: return loc["tab_general"]
         }
     }
@@ -23,7 +21,6 @@ public enum SettingsTab: String, CaseIterable, Identifiable {
         switch self {
         case .clipboard: return "doc.on.clipboard"
         case .translator: return "character.bubble"
-        case .network: return "network"
         case .general: return "gearshape"
         }
     }
@@ -33,7 +30,6 @@ public struct SettingsView: View {
     @ObservedObject var settings = AppSettings.shared
     @ObservedObject var autoPaster = AutoPaster.shared
     @ObservedObject var loc = LocalizationManager.shared
-    @ObservedObject var networkMonitor = NetworkMonitorService.shared
     @ObservedObject var updateService = UpdateCheckService.shared
     @ObservedObject var installer = UpdateInstallerService.shared
     @State private var selectedTab: SettingsTab = .clipboard
@@ -96,8 +92,6 @@ public struct SettingsView: View {
                         clipboardTabContent
                     case .translator:
                         translatorTabContent
-                    case .network:
-                        networkTabContent
                     case .general:
                         generalTabContent
                     }
@@ -157,12 +151,22 @@ public struct SettingsView: View {
                 }
 
                 if isRecordingCustom {
-                    Text(loc["settings_recording_hint"])
+                    Text("\(loc["settings_recording_hint"]) (\(loc["settings_recording_esc_hint"]))")
                         .font(.system(size: 11))
                         .foregroundColor(.orange)
                         .padding(8)
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .background(Color.orange.opacity(0.1))
+                        .clipShape(RoundedRectangle(cornerRadius: 6))
+                }
+
+                if settings.hasHotkeyConflict {
+                    Text(loc["settings_hotkey_conflict"])
+                        .font(.system(size: 11, weight: .medium))
+                        .foregroundColor(.red)
+                        .padding(8)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .background(Color.red.opacity(0.12))
                         .clipShape(RoundedRectangle(cornerRadius: 6))
                 }
 
@@ -259,23 +263,9 @@ public struct SettingsView: View {
                 } else {
                     VStack(spacing: 6) {
                         ForEach(settings.excludedAppBundleIDs, id: \.self) { bundleID in
-                            HStack {
-                                Image(systemName: "app.dashed")
-                                    .font(.system(size: 12))
-                                    .foregroundColor(.secondary)
-                                Text(bundleID)
-                                    .font(.system(size: 12, design: .monospaced))
-                                Spacer()
-                                Button(loc["settings_remove_excluded_app"]) {
-                                    settings.removeExcludedApp(bundleID: bundleID)
-                                }
-                                .buttonStyle(.bordered)
-                                .controlSize(.mini)
+                            excludedAppRow(bundleID: bundleID) {
+                                settings.removeExcludedApp(bundleID: bundleID)
                             }
-                            .padding(.horizontal, 8)
-                            .padding(.vertical, 4)
-                            .background(Color.primary.opacity(0.03))
-                            .clipShape(RoundedRectangle(cornerRadius: 6))
                         }
                     }
                 }
@@ -439,12 +429,22 @@ public struct SettingsView: View {
                 }
 
                 if isRecordingTranslateCustom {
-                    Text(loc["settings_recording_hint"])
+                    Text("\(loc["settings_recording_hint"]) (\(loc["settings_recording_esc_hint"]))")
                         .font(.system(size: 11))
                         .foregroundColor(.orange)
                         .padding(8)
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .background(Color.orange.opacity(0.1))
+                        .clipShape(RoundedRectangle(cornerRadius: 6))
+                }
+
+                if settings.hasHotkeyConflict {
+                    Text(loc["settings_hotkey_conflict"])
+                        .font(.system(size: 11, weight: .medium))
+                        .foregroundColor(.red)
+                        .padding(8)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .background(Color.red.opacity(0.12))
                         .clipShape(RoundedRectangle(cornerRadius: 6))
                 }
 
@@ -491,63 +491,84 @@ public struct SettingsView: View {
             .background(Color.primary.opacity(0.02))
             .clipShape(RoundedRectangle(cornerRadius: 10))
             .overlay(RoundedRectangle(cornerRadius: 10).stroke(Color.primary.opacity(0.08), lineWidth: 1))
+
+            // Translator Excluded Apps Section
+            VStack(alignment: .leading, spacing: 12) {
+                Text(loc["settings_translator_excluded_heading"])
+                    .font(.system(size: 13, weight: .bold))
+                Text(loc["settings_translator_excluded_desc"])
+                    .font(.system(size: 11))
+                    .foregroundColor(.secondary)
+
+                if settings.translatorExcludedAppBundleIDs.isEmpty {
+                    Text(loc["settings_no_translator_excluded"])
+                        .font(.system(size: 11))
+                        .foregroundColor(.secondary)
+                        .padding(.vertical, 4)
+                } else {
+                    VStack(spacing: 6) {
+                        ForEach(settings.translatorExcludedAppBundleIDs, id: \.self) { bundleID in
+                            excludedAppRow(bundleID: bundleID) {
+                                settings.removeTranslatorExcludedApp(bundleID: bundleID)
+                            }
+                        }
+                    }
+                }
+
+                Button(action: promptAddTranslatorExcludedApp) {
+                    HStack(spacing: 4) {
+                        Image(systemName: "plus")
+                        Text(loc["settings_add_excluded_app"])
+                    }
+                    .font(.system(size: 12, weight: .medium))
+                }
+                .buttonStyle(.bordered)
+                .controlSize(.small)
+            }
+            .padding()
+            .background(Color.primary.opacity(0.02))
+            .clipShape(RoundedRectangle(cornerRadius: 10))
+            .overlay(RoundedRectangle(cornerRadius: 10).stroke(Color.primary.opacity(0.08), lineWidth: 1))
         }
     }
 
-    // MARK: - Network Monitor Tab
-    private var networkTabContent: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            Text(loc["settings_network_heading"])
-                .font(.system(size: 13, weight: .bold))
-
-            Toggle(isOn: $settings.networkMonitorEnabled) {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(loc["settings_network_enable"])
-                        .font(.system(size: 13))
-                }
-            }
-
-            if settings.networkMonitorEnabled {
-                Divider()
-
-                HStack {
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text(loc["settings_network_unit"])
-                            .font(.system(size: 13))
-                    }
-                    Spacer()
-                    Picker("", selection: $settings.networkSpeedUnit) {
-                        Text(loc["unit_auto_bytes"]).tag(NetworkSpeedUnit.autoBytes)
-                        Text(loc["unit_bits"]).tag(NetworkSpeedUnit.bits)
-                        Text(loc["unit_fixed_kb"]).tag(NetworkSpeedUnit.fixedKB)
-                        Text(loc["unit_fixed_mb"]).tag(NetworkSpeedUnit.fixedMB)
-                    }
-                    .pickerStyle(.menu)
-                    .frame(width: 190)
-                }
-
-                // Live speed preview badge
-                HStack(spacing: 8) {
-                    Text("⚡")
-                    Text(networkMonitor.formattedSpeedString.isEmpty ? "⬇ 0 B/s  ⬆ 0 B/s" : networkMonitor.formattedSpeedString)
-                        .font(.system(size: 12, weight: .semibold, design: .monospaced))
-                        .foregroundColor(.secondary)
-                }
-                .padding(8)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .background(Color.primary.opacity(0.04))
-                .clipShape(RoundedRectangle(cornerRadius: 6))
-
-                Text(loc["settings_network_fixed_slot_tip"])
-                    .font(.system(size: 11))
+    private func excludedAppRow(bundleID: String, onRemove: @escaping () -> Void) -> some View {
+        HStack(spacing: 8) {
+            if let icon = ClipboardItem.icon(forBundleID: bundleID) {
+                Image(nsImage: icon)
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 18, height: 18)
+            } else {
+                Image(systemName: "app.dashed")
+                    .font(.system(size: 14))
                     .foregroundColor(.secondary)
-                    .padding(.top, 4)
+                    .frame(width: 18, height: 18)
             }
+
+            VStack(alignment: .leading, spacing: 1) {
+                if let name = ClipboardItem.displayName(forBundleID: bundleID) {
+                    Text(name)
+                        .font(.system(size: 12, weight: .medium))
+                    Text(bundleID)
+                        .font(.system(size: 10, design: .monospaced))
+                        .foregroundColor(.secondary)
+                } else {
+                    Text(bundleID)
+                        .font(.system(size: 12, design: .monospaced))
+                }
+            }
+
+            Spacer()
+
+            Button(loc["settings_remove_excluded_app"], action: onRemove)
+                .buttonStyle(.bordered)
+                .controlSize(.mini)
         }
-        .padding()
-        .background(Color.primary.opacity(0.02))
-        .clipShape(RoundedRectangle(cornerRadius: 10))
-        .overlay(RoundedRectangle(cornerRadius: 10).stroke(Color.primary.opacity(0.08), lineWidth: 1))
+        .padding(.horizontal, 8)
+        .padding(.vertical, 5)
+        .background(Color.primary.opacity(0.03))
+        .clipShape(RoundedRectangle(cornerRadius: 6))
     }
 
     // MARK: - General Tab
@@ -761,6 +782,12 @@ public struct SettingsView: View {
         isRecordingCustom = true
 
         localMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
+            // Esc cancels recording cleanly
+            if event.keyCode == 53 {
+                stopRecording()
+                return nil
+            }
+
             var carbonMods: UInt32 = 0
             var displayParts: [String] = []
 
@@ -822,6 +849,12 @@ public struct SettingsView: View {
         isRecordingTranslateCustom = true
 
         localTranslateMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
+            // Esc cancels recording cleanly
+            if event.keyCode == 53 {
+                stopTranslateRecording()
+                return nil
+            }
+
             var carbonMods: UInt32 = 0
             var displayParts: [String] = []
 
@@ -872,6 +905,18 @@ public struct SettingsView: View {
     }
 
     private func promptAddExcludedApp() {
+        if let bundleID = pickApplicationBundleID() {
+            settings.addExcludedApp(bundleID: bundleID)
+        }
+    }
+
+    private func promptAddTranslatorExcludedApp() {
+        if let bundleID = pickApplicationBundleID() {
+            settings.addTranslatorExcludedApp(bundleID: bundleID)
+        }
+    }
+
+    private func pickApplicationBundleID() -> String? {
         let openPanel = NSOpenPanel()
         openPanel.canChooseFiles = true
         openPanel.canChooseDirectories = false
@@ -881,9 +926,10 @@ public struct SettingsView: View {
 
         if openPanel.runModal() == .OK, let url = openPanel.url {
             if let bundle = Bundle(url: url), let bundleID = bundle.bundleIdentifier {
-                settings.addExcludedApp(bundleID: bundleID)
+                return bundleID
             }
         }
+        return nil
     }
 
     private func formatDate(_ date: Date) -> String {

@@ -95,8 +95,12 @@ public final class ClipboardPanel: NSPanel {
     }
 
     private func handlePanelKeyDown(_ event: NSEvent) -> Bool {
-        // Esc key closes panel
+        // Esc key closes preview first, or closes panel
         if event.keyCode == 53 {
+            if ClipboardManager.shared.previewItem != nil {
+                ClipboardManager.shared.previewItem = nil
+                return true
+            }
             closePanel()
             return true
         }
@@ -104,6 +108,11 @@ public final class ClipboardPanel: NSPanel {
         // Return / Enter key (36 = Return, 76 = Numpad Enter)
         if event.keyCode == 36 || event.keyCode == 76 {
             if ClipboardManager.shared.activeTab == .clipboard {
+                if let preview = ClipboardManager.shared.previewItem {
+                    ClipboardManager.shared.previewItem = nil
+                    pasteAndClose(item: preview)
+                    return true
+                }
                 if let selected = ClipboardManager.shared.selectedItem {
                     pasteAndClose(item: selected)
                     return true
@@ -121,7 +130,7 @@ public final class ClipboardPanel: NSPanel {
 
         // Up arrow (126)
         if event.keyCode == 126 {
-            if ClipboardManager.shared.activeTab == .clipboard {
+            if ClipboardManager.shared.activeTab == .clipboard && ClipboardManager.shared.previewItem == nil {
                 ClipboardManager.shared.selectPrevious()
                 return true
             }
@@ -129,14 +138,50 @@ public final class ClipboardPanel: NSPanel {
 
         // Down arrow (125)
         if event.keyCode == 125 {
-            if ClipboardManager.shared.activeTab == .clipboard {
+            if ClipboardManager.shared.activeTab == .clipboard && ClipboardManager.shared.previewItem == nil {
                 ClipboardManager.shared.selectNext()
                 return true
             }
         }
 
-        // Cmd + 1..9 quick paste
+        // Cmd shortcuts in Clipboard tab
         if event.modifierFlags.contains(.command) && ClipboardManager.shared.activeTab == .clipboard {
+            // Cmd + P: Toggle Pin on selected item
+            if event.keyCode == 35, let selected = ClipboardManager.shared.selectedItem {
+                ClipboardManager.shared.togglePin(for: selected)
+                return true
+            }
+
+            // Cmd + Backspace (51): Delete selected item
+            if event.keyCode == 51, let selected = ClipboardManager.shared.selectedItem {
+                ClipboardManager.shared.delete(item: selected)
+                return true
+            }
+
+            // Cmd + Y (16): Toggle Quick Preview on selected item
+            if event.keyCode == 16 {
+                if ClipboardManager.shared.previewItem != nil {
+                    ClipboardManager.shared.previewItem = nil
+                } else if let selected = ClipboardManager.shared.selectedItem {
+                    ClipboardManager.shared.previewItem = selected
+                }
+                return true
+            }
+
+            // Cmd + T (17): Translate selected text item immediately
+            if event.keyCode == 17,
+               let selected = ClipboardManager.shared.selectedItem,
+               selected.type == .text,
+               let text = selected.text,
+               !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                closePanel()
+                DispatchQueue.main.async {
+                    TranslationPopoverPanel.shared.show(text: text, near: NSEvent.mouseLocation, sourceAppPID: 0, isEditable: false)
+                }
+                return true
+            }
+
+            // Cmd + 1..9 quick paste
             let digitKeyCodes: [UInt16: Int] = [
                 18: 0, // 1
                 19: 1, // 2
@@ -179,9 +224,10 @@ public final class ClipboardPanel: NSPanel {
         // Position window near mouse cursor or centered on current screen
         positionAtMouseOrCenter()
 
-        // Reset search query, selection, and tab
+        // Reset search query, selection, preview, and tab
         ClipboardManager.shared.searchQuery = ""
         ClipboardManager.shared.selectedIndex = 0
+        ClipboardManager.shared.previewItem = nil
         ClipboardManager.shared.activeTab = .clipboard
         EmojiManager.shared.searchQuery = ""
 
@@ -192,6 +238,7 @@ public final class ClipboardPanel: NSPanel {
 
     public func closePanel() {
         stopClickMonitoring()
+        ClipboardManager.shared.previewItem = nil
         self.orderOut(nil)
     }
 

@@ -110,10 +110,17 @@ public final class SelectionBubblePanel: NSPanel {
         autoDismissTimer = nil
         stopEventMonitoring()
 
+        if !NSApp.isRunning {
+            self.alphaValue = 0.0
+            self.orderOut(nil)
+            return
+        }
+
         NSAnimationContext.runAnimationGroup({ context in
             context.duration = 0.12
             self.animator().alphaValue = 0.0
         }, completionHandler: {
+            self.alphaValue = 0.0
             self.orderOut(nil)
         })
     }
@@ -238,6 +245,6 @@ public struct SelectionBubbleView: View {
         .onHover { hovering in
             isHovered = hovering
         }
-        .help("แปลภาษาข้อความที่คุมดำ (Translate)")
+        .help(LocalizationManager.shared["bubble_tooltip"])
     }
 }
