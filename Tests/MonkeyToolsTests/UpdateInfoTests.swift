@@ -17,8 +17,8 @@ final class UpdateInfoTests: XCTestCase {
         {
             "latestVersion": "2.2.0",
             "releaseDate": "2026-11-01",
-            "downloadUrl": "https://pakkawatkh.github.io/tiffy-app/monkey-tools/monkey-tools-Installer.dmg",
-            "pageUrl": "https://pakkawatkh.github.io/tiffy-app/monkey-tools/",
+            "downloadUrl": "https://pakkawatkh.github.io/Tiffy-App/monkey-tools/monkey-tools-Installer.dmg",
+            "pageUrl": "https://pakkawatkh.github.io/Tiffy-App/monkey-tools/",
             "releaseNotes": "Bug fixes and improvements"
         }
         """.data(using: .utf8)!
@@ -26,7 +26,7 @@ final class UpdateInfoTests: XCTestCase {
         let info = try JSONDecoder().decode(UpdateInfo.self, from: json)
         XCTAssertEqual(info.latestVersion, "2.2.0")
         XCTAssertEqual(info.releaseDate, "2026-11-01")
-        XCTAssertEqual(info.downloadUrl, "https://pakkawatkh.github.io/tiffy-app/monkey-tools/monkey-tools-Installer.dmg")
+        XCTAssertEqual(info.downloadUrl, "https://pakkawatkh.github.io/Tiffy-App/monkey-tools/monkey-tools-Installer.dmg")
     }
 
     func testUpdateInfoWithZipUrl() throws {
