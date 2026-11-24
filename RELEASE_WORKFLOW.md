@@ -34,7 +34,7 @@
 ## 🌐 Step 3: อัปเดตข้อมูลเวอร์ชันและหน้าเว็บที่ Release Portal (`../tiffy-app`)
 
 1. **อัปเดตไฟล์ `../tiffy-app/monkey-tools/version.json`:**
-   อัปเดต `"latestVersion"`, `"releaseNotes"`, และ `"publishedAt"`
+   อัปเดต `"latestVersion"`, `"releaseNotes"`, และ `"releaseDate"` (YYYY-MM-DD)
 2. **อัปเดตเลขเวอร์ชันบนหน้าเว็บไซต์:**
    - `../tiffy-app/index.html`
    - `../tiffy-app/monkey-tools/index.html`

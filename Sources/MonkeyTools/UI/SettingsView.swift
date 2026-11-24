@@ -779,6 +779,8 @@ public struct SettingsView: View {
     }
 
     private func startRecording() {
+        stopTranslateRecording()
+        stopRecording()
         isRecordingCustom = true
 
         localMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
@@ -807,6 +809,12 @@ public struct SettingsView: View {
             if flags.contains(.command) {
                 carbonMods |= UInt32(cmdKey)
                 displayParts.append("⌘")
+            }
+
+            // Esc without modifiers cancels recording
+            if event.keyCode == 53 && carbonMods == 0 {
+                stopRecording()
+                return nil
             }
 
             let keyStr = AppSettings.displayStringForKeyCode(event.keyCode, characters: event.charactersIgnoringModifiers)
@@ -846,6 +854,8 @@ public struct SettingsView: View {
     }
 
     private func startTranslateRecording() {
+        stopRecording()
+        stopTranslateRecording()
         isRecordingTranslateCustom = true
 
         localTranslateMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
@@ -874,6 +884,12 @@ public struct SettingsView: View {
             if flags.contains(.command) {
                 carbonMods |= UInt32(cmdKey)
                 displayParts.append("⌘")
+            }
+
+            // Esc without modifiers cancels recording
+            if event.keyCode == 53 && carbonMods == 0 {
+                stopTranslateRecording()
+                return nil
             }
 
             let keyStr = AppSettings.displayStringForKeyCode(event.keyCode, characters: event.charactersIgnoringModifiers)
@@ -932,10 +948,14 @@ public struct SettingsView: View {
         return nil
     }
 
-    private func formatDate(_ date: Date) -> String {
+    private static let checkDateFormatter: DateFormatter = {
         let formatter = DateFormatter()
         formatter.dateStyle = .short
         formatter.timeStyle = .short
-        return formatter.string(from: date)
+        return formatter
+    }()
+
+    private func formatDate(_ date: Date) -> String {
+        return Self.checkDateFormatter.string(from: date)
     }
 }

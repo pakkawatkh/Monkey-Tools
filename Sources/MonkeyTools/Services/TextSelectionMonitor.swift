@@ -26,11 +26,67 @@ public final class TextSelectionMonitor: ObservableObject {
     private var pendingWorkItem: DispatchWorkItem?
 
     private var mouseDownLocation: CGPoint = .zero
+    private var mouseDownAppPID: pid_t = 0
     private var isDragging = false
     private var lastClickCount: Int = 1
     private var isProbeInProgress = false
 
     private init() {}
+
+    /// Returns true if an AX role/subrole is explicitly a text input or text content element
+    /// (e.g. browser URL bar `AXTextField` inside an `AXToolbar`, search box, static text, text area).
+    public func isExplicitTextRole(_ role: String, subrole: String = "") -> Bool {
+        let textRoles: Set<String> = [
+            "AXTextField", "AXTextArea", "AXSearchField", "AXComboBox", "AXStaticText"
+        ]
+        return textRoles.contains(role) || subrole == "AXEditableText" || subrole == "AXSearchField"
+    }
+
+    /// Returns true if an AX role/subrole represents non-text UI chrome (buttons, tabs, toolbars, titlebars, images, scrollbars, etc.)
+    /// where double-clicking should NEVER trigger text translation.
+    /// Note: `AXWindow`, `AXApplication`, and `AXTabGroup` are intentionally NOT blocked here because Chromium/Electron
+    /// and tabbed macOS apps host real text content inside those containers.
+    public func isNonTextUIRole(_ role: String, subrole: String = "") -> Bool {
+        let nonTextRoles: Set<String> = [
+            "AXButton", "AXCheckBox", "AXRadioButton", "AXPopUpButton", "AXMenuButton",
+            "AXMenuBar", "AXMenuBarItem", "AXMenu", "AXMenuItem",
+            "AXTab", "AXToolbar", "AXTitleBar",
+            "AXScrollBar", "AXValueIndicator", "AXSlider", "AXImage",
+            "AXDockItem", "AXSplitter", "AXGrowArea", "AXDisclosureTriangle",
+            "AXIncrementor", "AXColorWell", "AXProgressIndicator", "AXBusyIndicator",
+            "AXRelevanceIndicator", "AXRuler", "AXRulerMarker", "AXMatte",
+            "AXHandle"
+        ]
+        if nonTextRoles.contains(role) {
+            return true
+        }
+        let nonTextSubroles: Set<String> = [
+            "AXCloseButton", "AXMinimizeButton", "AXZoomButton", "AXFullScreenButton",
+            "AXToolbarButton", "AXTabButton", "AXSortButton",
+            "AXIncrementArrow", "AXDecrementArrow", "AXSystemDialog"
+        ]
+        return nonTextSubroles.contains(subrole)
+    }
+
+    /// Returns true if `point` (Cocoa screen coordinates) lies within a reasonable proximity of `selectionRect`.
+    /// Prevents stale selections in another area of the window (e.g. address bar or earlier highlight) from firing when clicking empty space.
+    public func isPoint(_ point: CGPoint, nearSelectionRect selectionRect: CGRect, horizontalMargin: CGFloat = 140, verticalMargin: CGFloat = 90) -> Bool {
+        guard selectionRect.width > 0 && selectionRect.height > 0 else { return true }
+        return selectionRect.insetBy(dx: -horizontalMargin, dy: -verticalMargin).contains(point)
+    }
+
+    /// Validates that captured text makes sense for the gesture that triggered it.
+    /// A double-click selects a single word/segment on one line, never a multi-line block copied from a stale selection or list row.
+    public func isValidSelectionForTrigger(_ text: String, isDrag: Bool, clickCount: Int) -> Bool {
+        guard isValidTranslatableText(text) else { return false }
+        if !isDrag && clickCount == 2 {
+            let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+            if trimmed.contains("\n") || trimmed.contains("\r") {
+                return false
+            }
+        }
+        return true
+    }
 
     public func isValidTranslatableText(_ text: String) -> Bool {
         let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -113,6 +169,7 @@ public final class TextSelectionMonitor: ObservableObject {
         switch event.type {
         case .leftMouseDown:
             mouseDownLocation = NSEvent.mouseLocation
+            mouseDownAppPID = NSWorkspace.shared.frontmostApplication?.processIdentifier ?? 0
             isDragging = false
             lastClickCount = event.clickCount
 
@@ -132,13 +189,16 @@ public final class TextSelectionMonitor: ObservableObject {
         case .leftMouseUp:
             let mouseLoc = NSEvent.mouseLocation
             let dist = hypot(mouseLoc.x - mouseDownLocation.x, mouseLoc.y - mouseDownLocation.y)
-            let isMultiClick = event.clickCount >= 2 || lastClickCount >= 2
+            let clickCount = max(event.clickCount, lastClickCount)
+            let isMultiClick = clickCount >= 2
             let isDrag = isDragging || dist > 7.0
             let isShiftClick = event.modifierFlags.contains(.shift)
+            let currentFrontPID = NSWorkspace.shared.frontmostApplication?.processIdentifier ?? 0
+            let switchedAppsDuringClick = (mouseDownAppPID != 0 && currentFrontPID != 0 && mouseDownAppPID != currentFrontPID)
             isDragging = false
 
-            if isDrag || isMultiClick || isShiftClick {
-                scheduleSelectionCheck(isDoubleClick: isMultiClick)
+            if isDrag || (isMultiClick && !switchedAppsDuringClick) || isShiftClick {
+                scheduleSelectionCheck(isDrag: isDrag, clickCount: clickCount)
             } else {
                 // User single-clicked (which deselects text in macOS apps)
                 if !SelectionBubblePanel.shared.frame.insetBy(dx: -4, dy: -4).contains(mouseLoc) {
@@ -151,16 +211,16 @@ public final class TextSelectionMonitor: ObservableObject {
         }
     }
 
-    private func scheduleSelectionCheck(isDoubleClick: Bool = false) {
+    private func scheduleSelectionCheck(isDrag: Bool = false, clickCount: Int = 1) {
         pendingWorkItem?.cancel()
         let workItem = DispatchWorkItem { [weak self] in
-            self?.checkSelectedText(isDoubleClick: isDoubleClick)
+            self?.checkSelectedText(isDrag: isDrag, clickCount: clickCount)
         }
         pendingWorkItem = workItem
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.05, execute: workItem)
     }
 
-    public func checkSelectedText(isDoubleClick: Bool = false) {
+    public func checkSelectedText(isDrag: Bool = false, clickCount: Int = 1) {
         guard let frontApp = NSWorkspace.shared.frontmostApplication else { return }
 
         // Don't trigger for monkey-tools's own windows
@@ -168,19 +228,45 @@ public final class TextSelectionMonitor: ObservableObject {
             return
         }
 
-        // Respect user's excluded apps for Selection Translate Bubble
+        // Respect user's excluded apps lists (clipboard excluded + translator bubble excluded)
         if let bundleId = frontApp.bundleIdentifier,
-           AppSettings.shared.translatorExcludedAppBundleIDs.contains(bundleId) {
+           (AppSettings.shared.excludedAppBundleIDs.contains(bundleId) ||
+            AppSettings.shared.translatorExcludedAppBundleIDs.contains(bundleId)) {
             return
         }
 
         let pid = frontApp.processIdentifier
         let mouseLoc = NSEvent.mouseLocation
 
-        // Method 1: Try Accessibility API first (fast for native text fields like TextEdit, Mail, Xcode, Notes)
-        if let axText = queryAXSelectedText(pid: pid), isValidTranslatableText(axText.text) {
+        // Guard against clicks on non-text UI chrome (buttons, tabs, toolbars, titlebars, images, scrollbars, empty window frames)
+        // or outside the active app's focused window
+        if !isDrag && isClickOnNonTextElement(pid: pid, mouseLoc: mouseLoc) {
+            onSelectionCleared?()
+            return
+        }
+
+        // Method 1: Try Accessibility API first (fast for native text fields like TextEdit, Mail, Xcode, Notes, URL bars)
+        if let axText = queryAXSelectedText(pid: pid),
+           isValidSelectionForTrigger(axText.text, isDrag: isDrag, clickCount: clickCount) {
+            // Only apply proximity guard on non-drag clicks (double/triple-click) so dragging across long text
+            // or secondary monitors is never falsely rejected. Accept if mouse is near either the selection bounds
+            // OR inside the focused element's own frame (handles Chromium URL bar where range bounds can be offset).
+            if !isDrag {
+                let nearRange = axText.hasExactBounds && isPoint(mouseLoc, nearSelectionRect: axText.bounds)
+                let insideElement = axText.elementFrame.map { isPoint(mouseLoc, nearSelectionRect: $0, horizontalMargin: 24, verticalMargin: 24) } ?? false
+                if (axText.hasExactBounds || axText.elementFrame != nil) && !nearRange && !insideElement {
+                    onSelectionCleared?()
+                    return
+                }
+            }
+            let bubbleRect: CGRect
+            if axText.hasExactBounds && isPoint(mouseLoc, nearSelectionRect: axText.bounds) {
+                bubbleRect = axText.bounds
+            } else {
+                bubbleRect = CGRect(x: mouseLoc.x, y: mouseLoc.y, width: 1, height: 1)
+            }
             let editable = isElementEditable(pid: pid, mouseLoc: mouseLoc)
-            let event = TextSelectionEvent(text: axText.text, screenRect: axText.bounds, sourceAppPID: pid, isEditable: editable)
+            let event = TextSelectionEvent(text: axText.text, screenRect: bubbleRect, sourceAppPID: pid, isEditable: editable)
             onSelectionDetected?(event)
             return
         }
@@ -193,7 +279,7 @@ public final class TextSelectionMonitor: ObservableObject {
 
         // Method 2: For browsers (Safari, Chrome) and other non-AX apps:
         // Stealth probe to verify translatable text exists without modifying clipboard or polluting history
-        probeNonAXSelection(pid: pid, mouseLoc: mouseLoc, isDoubleClick: isDoubleClick)
+        probeNonAXSelection(pid: pid, mouseLoc: mouseLoc, isDrag: isDrag, clickCount: clickCount)
     }
 
     public func triggerImmediateTranslation() {
@@ -228,10 +314,10 @@ public final class TextSelectionMonitor: ObservableObject {
         }
 
         // Method 3: Probe directly to popover
-        probeNonAXSelection(pid: pid, mouseLoc: mouseLoc, isDoubleClick: false, directToPopover: true)
+        probeNonAXSelection(pid: pid, mouseLoc: mouseLoc, isDrag: true, clickCount: 1, directToPopover: true)
     }
 
-    private func probeNonAXSelection(pid: pid_t, mouseLoc: CGPoint, isDoubleClick: Bool, directToPopover: Bool = false) {
+    private func probeNonAXSelection(pid: pid_t, mouseLoc: CGPoint, isDrag: Bool, clickCount: Int, directToPopover: Bool = false) {
         guard !isProbeInProgress else { return }
         isProbeInProgress = true
 
@@ -283,15 +369,17 @@ public final class TextSelectionMonitor: ObservableObject {
             keyUp.post(tap: .cgSessionEventTap)
         }
 
-        // Helper to restore clipboard backup
-        let restoreBackup = {
-            pasteboard.clearContents()
-            for backup in backupItems {
-                let item = NSPasteboardItem()
-                for (type, data) in backup.data {
-                    item.setData(data, forType: type)
+        // Helper to restore clipboard backup ONLY when the probe actually mutated the pasteboard
+        let restoreBackup = { (didMutateClipboard: Bool) in
+            if didMutateClipboard {
+                pasteboard.clearContents()
+                for backup in backupItems {
+                    let item = NSPasteboardItem()
+                    for (type, data) in backup.data {
+                        item.setData(data, forType: type)
+                    }
+                    pasteboard.writeObjects([item])
                 }
-                pasteboard.writeObjects([item])
             }
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.12) {
                 ClipboardMonitor.shared.lastChangeCount = pasteboard.changeCount
@@ -329,7 +417,7 @@ public final class TextSelectionMonitor: ObservableObject {
                 }
                 let isFileType = self.isFilePasteboardTypes(types)
 
-                restoreBackup()
+                restoreBackup(true)
                 cleanup()
 
                 // If file/folder item (e.g. from Desktop or file manager) -> dismiss or show empty
@@ -352,8 +440,11 @@ public final class TextSelectionMonitor: ObservableObject {
                     return
                 }
 
-                // If captured text is whitespace, pure numbers, punctuation -> dismiss or show empty
-                if !self.isValidTranslatableText(capturedText) {
+                // Validate captured text against gesture (rejects whitespace, pure numbers, and multi-line false positives on double-click)
+                let isValidText = directToPopover
+                    ? self.isValidTranslatableText(capturedText)
+                    : self.isValidSelectionForTrigger(capturedText, isDrag: isDrag, clickCount: clickCount)
+                if !isValidText {
                     if directToPopover {
                         TranslationPopoverPanel.shared.show(text: "", near: mouseLoc, sourceAppPID: pid, isEditable: false)
                     } else {
@@ -376,7 +467,8 @@ public final class TextSelectionMonitor: ObservableObject {
 
             if attempts >= maxAttempts {
                 timer.invalidate()
-                restoreBackup()
+                // Clipboard never changed -> do NOT clear/rewrite user's existing pasteboard!
+                restoreBackup(false)
                 cleanup()
                 if directToPopover {
                     TranslationPopoverPanel.shared.show(text: "", near: mouseLoc, sourceAppPID: pid, isEditable: false)
@@ -388,7 +480,103 @@ public final class TextSelectionMonitor: ObservableObject {
         RunLoop.main.add(checkTimer!, forMode: .common)
     }
 
-    private func queryAXSelectedText(pid: pid_t) -> (text: String, bounds: CGRect)? {
+    /// Inspects the AX element directly beneath `mouseLoc` to prevent double-clicking on window titlebars,
+    /// buttons, tabs, toolbars, scrollbars, or images from triggering translation.
+    private func isClickOnNonTextElement(pid: pid_t, mouseLoc: CGPoint) -> Bool {
+        guard pid > 0 else { return false }
+        let appElement = AXUIElementCreateApplication(pid)
+        AXUIElementSetAttributeValue(appElement, "AXEnhancedUserInterface" as CFString, kCFBooleanTrue)
+
+        // Check the specific AX element under the cursor
+        let screenHeight = NSScreen.screens.first?.frame.height ?? 1080
+        let axPoint = CGPoint(x: mouseLoc.x, y: screenHeight - mouseLoc.y)
+        var elementAtPos: AXUIElement?
+        guard AXUIElementCopyElementAtPosition(appElement, Float(axPoint.x), Float(axPoint.y), &elementAtPos) == .success,
+              let el = elementAtPos else {
+            return false
+        }
+
+        var roleObj: AnyObject?
+        AXUIElementCopyAttributeValue(el, kAXRoleAttribute as CFString, &roleObj)
+        let role = (roleObj as? String) ?? ""
+
+        var subroleObj: AnyObject?
+        AXUIElementCopyAttributeValue(el, kAXSubroleAttribute as CFString, &subroleObj)
+        let subrole = (subroleObj as? String) ?? ""
+
+        // Explicitly allow text inputs/content even when hosted inside a toolbar (e.g. browser URL bar, search bar)
+        if isExplicitTextRole(role, subrole: subrole) {
+            return false
+        }
+
+        if isNonTextUIRole(role, subrole: subrole) {
+            return true
+        }
+
+        // If the click landed directly on an AXWindow's top titlebar strip (~28pt), block it (e.g. double-click to zoom window)
+        if role == "AXWindow" {
+            var posObj: AnyObject?
+            var sizeObj: AnyObject?
+            if AXUIElementCopyAttributeValue(el, kAXPositionAttribute as CFString, &posObj) == .success,
+               AXUIElementCopyAttributeValue(el, kAXSizeAttribute as CFString, &sizeObj) == .success,
+               let posVal = posObj, let sizeVal = sizeObj {
+                var axOrigin = CGPoint.zero
+                var axSize = CGSize.zero
+                if AXValueGetValue(posVal as! AXValue, .cgPoint, &axOrigin),
+                   AXValueGetValue(sizeVal as! AXValue, .cgSize, &axSize),
+                   axSize.height > 28 {
+                    let cocoaTop = screenHeight - axOrigin.y
+                    if mouseLoc.y >= cocoaTop - 28 && mouseLoc.y <= cocoaTop {
+                        return true
+                    }
+                }
+            }
+        }
+
+        // Check immediate parents for menu bar / title bar chrome only
+        // (Do NOT block AXToolbar or AXTabGroup parents, as they host URL/search bars and tab content views)
+        var current = el
+        for _ in 0..<2 {
+            var parentObj: AnyObject?
+            if AXUIElementCopyAttributeValue(current, kAXParentAttribute as CFString, &parentObj) == .success,
+               let parent = parentObj {
+                let parentEl = parent as! AXUIElement
+                var pRoleObj: AnyObject?
+                AXUIElementCopyAttributeValue(parentEl, kAXRoleAttribute as CFString, &pRoleObj)
+                let pRole = (pRoleObj as? String) ?? ""
+                if pRole == "AXMenuBar" || pRole == "AXTitleBar" {
+                    return true
+                }
+                current = parentEl
+            } else {
+                break
+            }
+        }
+
+        return false
+    }
+
+    private func getElementFrame(_ element: AXUIElement) -> CGRect? {
+        var posObj: AnyObject?
+        var sizeObj: AnyObject?
+        guard AXUIElementCopyAttributeValue(element, kAXPositionAttribute as CFString, &posObj) == .success,
+              AXUIElementCopyAttributeValue(element, kAXSizeAttribute as CFString, &sizeObj) == .success,
+              let posVal = posObj, let sizeVal = sizeObj else {
+            return nil
+        }
+        var axOrigin = CGPoint.zero
+        var axSize = CGSize.zero
+        guard AXValueGetValue(posVal as! AXValue, .cgPoint, &axOrigin),
+              AXValueGetValue(sizeVal as! AXValue, .cgSize, &axSize),
+              axSize.width > 0 && axSize.height > 0,
+              let primaryScreen = NSScreen.screens.first else {
+            return nil
+        }
+        let cocoaY = primaryScreen.frame.height - (axOrigin.y + axSize.height)
+        return CGRect(x: axOrigin.x, y: cocoaY, width: axSize.width, height: axSize.height)
+    }
+
+    private func queryAXSelectedText(pid: pid_t) -> (text: String, bounds: CGRect, hasExactBounds: Bool, elementFrame: CGRect?)? {
         let appElement = AXUIElementCreateApplication(pid)
 
         var focusedElementObj: AnyObject?
@@ -406,11 +594,12 @@ public final class TextSelectionMonitor: ObservableObject {
             return nil
         }
 
-        let bounds = getSelectionBounds(element: element)
-        return (text, bounds)
+        let (bounds, hasExactBounds) = getSelectionBounds(element: element)
+        let elementFrame = getElementFrame(element)
+        return (text, bounds, hasExactBounds, elementFrame)
     }
 
-    private func getSelectionBounds(element: AXUIElement) -> CGRect {
+    private func getSelectionBounds(element: AXUIElement) -> (rect: CGRect, hasExactBounds: Bool) {
         var selectedRangeValue: AnyObject?
         let rangeResult = AXUIElementCopyAttributeValue(element, kAXSelectedTextRangeAttribute as CFString, &selectedRangeValue)
 
@@ -431,14 +620,14 @@ public final class TextSelectionMonitor: ObservableObject {
                         let screenHeight = primaryScreen.frame.height
                         rect.origin.y = screenHeight - (rect.origin.y + rect.height)
                     }
-                    return rect
+                    return (rect, true)
                 }
             }
         }
 
         // Fallback: mouse cursor position
         let mouseLoc = NSEvent.mouseLocation
-        return CGRect(x: mouseLoc.x, y: mouseLoc.y, width: 20, height: 20)
+        return (CGRect(x: mouseLoc.x, y: mouseLoc.y, width: 20, height: 20), false)
     }
 
     public func isElementEditable(pid: pid_t, mouseLoc: CGPoint? = nil) -> Bool {

@@ -6,6 +6,11 @@ PROJECT_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
 
 cd "${PROJECT_DIR}"
 
+# Prefer full Xcode toolchain when installed (CommandLineTools lacks SwiftUIMacros plugin on newer macOS SDKs)
+if [ -z "${DEVELOPER_DIR}" ] && [ -d "/Applications/Xcode.app/Contents/Developer" ]; then
+    export DEVELOPER_DIR="/Applications/Xcode.app/Contents/Developer"
+fi
+
 echo "🔨 Building monkey-tools (Release mode)..."
 swift build -c release -Xswiftc -cross-module-optimization
 

@@ -457,7 +457,6 @@ public struct TranslationPopoverView: View {
 
         if let translated = translationResult?.translatedText, !translated.isEmpty {
             editableText = translated
-            debounceTranslation(for: translated)
         } else {
             performTranslation()
         }
@@ -592,7 +591,6 @@ public struct TranslationPopoverView: View {
     private func performTranslation(textToTranslate: String? = nil) {
         debounceTask?.cancel()
         translationTask?.cancel()
-
         let text = (textToTranslate ?? editableText).trimmingCharacters(in: .whitespacesAndNewlines)
         guard !text.isEmpty else {
             translationResult = nil
@@ -601,21 +599,45 @@ public struct TranslationPopoverView: View {
             return
         }
 
+        let mode = settings.translationEngineMode
+        let src = sourceLanguage
+        let tgt = targetLanguage
+
+        // Fast path: consume instant pre-translated result or join already-running background prefetch task
+        let prefetched = TranslationService.shared.consumePreTranslation(
+            for: text,
+            mode: mode,
+            sourceLang: src,
+            targetLang: tgt
+        )
+        if let instantResult = prefetched.result {
+            TranslationService.shared.recordHistory(instantResult)
+            self.translationResult = instantResult
+            self.errorMessage = nil
+            self.isLoading = false
+            return
+        }
+
         isLoading = true
         errorMessage = nil
 
-        let currentEngine = settings.translationEngineMode
-        let currentSource = sourceLanguage
-        let currentTarget = targetLanguage
-
         translationTask = Task {
             do {
-                let result = try await TranslationService.shared.translate(
-                    text: text,
-                    mode: currentEngine,
-                    sourceLang: currentSource,
-                    targetLang: currentTarget
-                )
+                let result: TranslationResult
+                if let inFlight = prefetched.inFlightTask {
+                    result = try await withTaskCancellationHandler {
+                        try await inFlight.value
+                    } onCancel: {
+                        inFlight.cancel()
+                    }
+                } else {
+                    result = try await TranslationService.shared.translate(
+                        text: text,
+                        mode: mode,
+                        sourceLang: src,
+                        targetLang: tgt
+                    )
+                }
                 guard !Task.isCancelled else { return }
                 TranslationService.shared.recordHistory(result)
                 await MainActor.run {

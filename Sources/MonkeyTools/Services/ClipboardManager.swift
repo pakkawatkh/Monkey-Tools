@@ -53,37 +53,47 @@ public final class ClipboardManager: ObservableObject {
         let savedMax = UserDefaults.standard.object(forKey: "app_max_history") as? Int
         self.maxHistoryCount = savedMax ?? 100
 
-        // Background migration: generate missing thumbnails for legacy images
-        DispatchQueue.global(qos: .utility).async { [weak self] in
-            self?.generateMissingThumbnails()
+        // Background migration: snapshot missing-thumbnail targets on caller thread, then generate off main thread
+        let missingTargets: [(id: UUID, imageFileName: String)] = self.items.compactMap { item in
+            guard item.type == .image, item.thumbnailFileName == nil, let imgName = item.imageFileName else {
+                return nil
+            }
+            return (item.id, imgName)
+        }
+        if !missingTargets.isEmpty {
+            DispatchQueue.global(qos: .utility).async { [weak self] in
+                self?.generateMissingThumbnails(for: missingTargets)
+            }
         }
     }
 
-    /// Scans history for image items lacking a thumbnail and generates them in the background
-    private func generateMissingThumbnails() {
-        var updated = false
-        var currentItems = items
+    /// Generates missing thumbnails for legacy images in the background and safely merges by ID on the main thread
+    private func generateMissingThumbnails(for targets: [(id: UUID, imageFileName: String)]) {
+        var generatedById: [UUID: String] = [:]
 
-        for index in currentItems.indices {
-            let item = currentItems[index]
-            if item.type == .image && item.thumbnailFileName == nil, let imgName = item.imageFileName {
-                let imageURL = storage.imagesDirectory.appendingPathComponent(imgName)
-                if let (_, thumbData) = ClipboardStorage.generateThumbnail(from: imageURL, maxPixelSize: 360),
-                   !thumbData.isEmpty {
-                    let thumbName = "thumb_\(UUID().uuidString).jpg"
-                    storage.saveImageData(thumbData, fileName: thumbName)
-                    currentItems[index].thumbnailFileName = thumbName
-                    updated = true
-                }
+        for target in targets {
+            let imageURL = storage.imagesDirectory.appendingPathComponent(target.imageFileName)
+            if let (_, thumbData) = ClipboardStorage.generateThumbnail(from: imageURL, maxPixelSize: 360),
+               !thumbData.isEmpty {
+                let thumbName = "thumb_\(UUID().uuidString).jpg"
+                storage.saveImageData(thumbData, fileName: thumbName)
+                generatedById[target.id] = thumbName
             }
         }
 
-        if updated {
+        if !generatedById.isEmpty {
             DispatchQueue.main.async { [weak self] in
                 guard let self = self else { return }
-                if self.items.count == currentItems.count {
-                    self.items = currentItems
-                    self.storage.save(items: currentItems)
+                var didChange = false
+                for index in self.items.indices {
+                    let id = self.items[index].id
+                    if self.items[index].thumbnailFileName == nil, let thumbName = generatedById[id] {
+                        self.items[index].thumbnailFileName = thumbName
+                        didChange = true
+                    }
+                }
+                if didChange {
+                    self.storage.save(items: self.items)
                 }
             }
         }

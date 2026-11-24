@@ -6,6 +6,7 @@ public final class TranslationPopoverPanel: NSPanel, NSWindowDelegate {
 
     private var globalClickMonitor: Any?
     private var currentSize: CGSize
+    private var visibilityToken: Int = 0
 
     public init() {
         let savedW = UserDefaults.standard.double(forKey: "translation_popover_width")
@@ -102,6 +103,7 @@ public final class TranslationPopoverPanel: NSPanel, NSWindowDelegate {
             }
         }
 
+        visibilityToken += 1
         self.setFrame(NSRect(x: targetX, y: targetY, width: popoverWidth, height: popoverHeight), display: true)
         self.alphaValue = 1.0
         self.orderFrontRegardless()
@@ -111,11 +113,14 @@ public final class TranslationPopoverPanel: NSPanel, NSWindowDelegate {
     }
 
     public func hide() {
+        visibilityToken += 1
+        let hideToken = visibilityToken
         stopClickMonitoring()
         NSAnimationContext.runAnimationGroup({ context in
             context.duration = 0.12
             self.animator().alphaValue = 0.0
-        }, completionHandler: {
+        }, completionHandler: { [weak self] in
+            guard let self = self, self.visibilityToken == hideToken else { return }
             self.orderOut(nil)
         })
     }

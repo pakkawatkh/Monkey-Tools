@@ -36,8 +36,18 @@ public final class UpdateInstallerService: NSObject, ObservableObject, URLSessio
         return """
         #!/bin/bash
         while kill -0 \(currentPID) 2>/dev/null; do sleep 0.1; done
+        BACKUP_APP="\(cleanupDir)/backup.app"
+        if [ -d "\(targetAppPath)" ]; then
+          cp -R "\(targetAppPath)" "${BACKUP_APP}" 2>/dev/null || true
+        fi
         rm -rf "\(targetAppPath)"
-        cp -R "\(newAppPath)" "\(targetAppPath)"
+        if ! cp -R "\(newAppPath)" "\(targetAppPath)"; then
+          if [ -d "${BACKUP_APP}" ]; then
+            cp -R "${BACKUP_APP}" "\(targetAppPath)" 2>/dev/null || true
+          fi
+          rm -rf "\(cleanupDir)"
+          exit 1
+        fi
         xattr -d -r com.apple.quarantine "\(targetAppPath)" 2>/dev/null || true
         open "\(targetAppPath)"
         rm -rf "\(cleanupDir)"
@@ -106,6 +116,17 @@ public final class UpdateInstallerService: NSObject, ObservableObject, URLSessio
         downloadTask: URLSessionDownloadTask,
         didFinishDownloadingTo location: URL
     ) {
+        if let httpResponse = downloadTask.response as? HTTPURLResponse,
+           !(200...299).contains(httpResponse.statusCode) {
+            let err = NSError(
+                domain: "UpdateInstallerService",
+                code: httpResponse.statusCode,
+                userInfo: [NSLocalizedDescriptionKey: "Download failed with HTTP \(httpResponse.statusCode)"]
+            )
+            failWithError(err)
+            return
+        }
+
         // MUST copy file synchronously before this delegate method returns,
         // because URLSession purges the temporary file at `location` immediately upon return!
         let fileManager = FileManager.default
@@ -117,6 +138,8 @@ public final class UpdateInstallerService: NSObject, ObservableObject, URLSessio
             let isZip = updateInfo?.preferredDownloadURL?.pathExtension.lowercased() == "zip"
             let stagedPayload = tempWorkingDir.appendingPathComponent(isZip ? "payload.zip" : "payload.dmg")
             try fileManager.copyItem(at: location, to: stagedPayload)
+
+            releaseSession()
 
             DispatchQueue.global(qos: .userInitiated).async { [weak self] in
                 guard let self = self else { return }
@@ -266,8 +289,15 @@ public final class UpdateInstallerService: NSObject, ObservableObject, URLSessio
         return nil
     }
 
+    private func releaseSession() {
+        session?.finishTasksAndInvalidate()
+        session = nil
+        downloadTask = nil
+    }
+
     private func failWithError(_ error: Error) {
         DispatchQueue.main.async {
+            self.releaseSession()
             self.isInstalling = false
             self.installError = error.localizedDescription
             self.installStatusText = LocalizationManager.shared["update_failed"]

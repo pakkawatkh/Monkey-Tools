@@ -178,4 +178,100 @@ final class TextSelectionMonitorTests: XCTestCase {
         XCTAssertFalse(monitor.isFilePasteboardTypes([.string, .rtf, .html]))
         XCTAssertFalse(monitor.isFilePasteboardTypes([]))
     }
+
+    func testNonTextUIRoleFiltering() {
+        let monitor = TextSelectionMonitor.shared
+
+        // Non-text UI chrome must be rejected
+        XCTAssertTrue(monitor.isNonTextUIRole("AXButton"))
+        XCTAssertTrue(monitor.isNonTextUIRole("AXToolbar"))
+        XCTAssertTrue(monitor.isNonTextUIRole("AXTitleBar"))
+        XCTAssertTrue(monitor.isNonTextUIRole("AXTab"))
+        XCTAssertTrue(monitor.isNonTextUIRole("AXImage"))
+        XCTAssertTrue(monitor.isNonTextUIRole("AXScrollBar"))
+        XCTAssertTrue(monitor.isNonTextUIRole("AXUnknown", subrole: "AXCloseButton"))
+
+        // Text / content containers (including AXWindow & AXTabGroup for Electron/Chromium/tabbed macOS apps) must remain allowed
+        XCTAssertFalse(monitor.isNonTextUIRole("AXWindow"))
+        XCTAssertFalse(monitor.isNonTextUIRole("AXTabGroup"))
+        XCTAssertFalse(monitor.isNonTextUIRole("AXStaticText"))
+        XCTAssertFalse(monitor.isNonTextUIRole("AXTextField"))
+        XCTAssertFalse(monitor.isNonTextUIRole("AXTextArea"))
+        XCTAssertFalse(monitor.isNonTextUIRole("AXWebArea"))
+        XCTAssertFalse(monitor.isNonTextUIRole("AXGroup"))
+
+        // Explicit text elements (like browser URL bar inside AXToolbar) must always be recognized as text
+        XCTAssertTrue(monitor.isExplicitTextRole("AXTextField"))
+        XCTAssertTrue(monitor.isExplicitTextRole("AXSearchField"))
+        XCTAssertTrue(monitor.isExplicitTextRole("AXComboBox"))
+        XCTAssertTrue(monitor.isExplicitTextRole("AXTextArea"))
+        XCTAssertTrue(monitor.isExplicitTextRole("AXStaticText"))
+        XCTAssertFalse(monitor.isExplicitTextRole("AXToolbar"))
+        XCTAssertFalse(monitor.isExplicitTextRole("AXButton"))
+    }
+
+    func testSelectionBoundsProximityCheck() {
+        let monitor = TextSelectionMonitor.shared
+        let selectionRect = CGRect(x: 200, y: 300, width: 80, height: 20)
+
+        // Click on or near the selected text passes
+        XCTAssertTrue(monitor.isPoint(CGPoint(x: 240, y: 310), nearSelectionRect: selectionRect))
+        XCTAssertTrue(monitor.isPoint(CGPoint(x: 320, y: 310), nearSelectionRect: selectionRect))
+
+        // Click far away (stale selection in another part of window) is rejected
+        XCTAssertFalse(monitor.isPoint(CGPoint(x: 800, y: 310), nearSelectionRect: selectionRect))
+        XCTAssertFalse(monitor.isPoint(CGPoint(x: 240, y: 600), nearSelectionRect: selectionRect))
+    }
+
+    func testDoubleClickTriggerValidation() {
+        let monitor = TextSelectionMonitor.shared
+
+        // Double-click on a single word/phrase passes
+        XCTAssertTrue(monitor.isValidSelectionForTrigger("hello", isDrag: false, clickCount: 2))
+        XCTAssertTrue(monitor.isValidSelectionForTrigger("สวัสดีครับ", isDrag: false, clickCount: 2))
+
+        // Double-click yielding multi-line text (e.g. stale highlight or list row) is rejected
+        XCTAssertFalse(monitor.isValidSelectionForTrigger("Line 1\nLine 2", isDrag: false, clickCount: 2))
+
+        // Drag or triple-click selecting multi-line text still passes
+        XCTAssertTrue(monitor.isValidSelectionForTrigger("Line 1\nLine 2", isDrag: true, clickCount: 1))
+        XCTAssertTrue(monitor.isValidSelectionForTrigger("Line 1\nLine 2", isDrag: false, clickCount: 3))
+    }
+
+    func testRapidHideThenShowKeepsBubbleVisible() {
+        let panel = SelectionBubblePanel.shared
+        panel.show(at: CGRect(x: 100, y: 100, width: 20, height: 20), selectedText: "First")
+        panel.hide()
+        // Re-show immediately before the 120ms fade-out animation finishes
+        panel.show(at: CGRect(x: 120, y: 120, width: 20, height: 20), selectedText: "Second")
+
+        RunLoop.main.run(until: Date().addingTimeInterval(0.20))
+        XCTAssertTrue(panel.isVisible)
+        XCTAssertEqual(panel.alphaValue, 1.0)
+        panel.orderOut(nil)
+    }
+
+    func testBubbleOriginNeverCoversSelectedText() {
+        let screenFrame = CGRect(x: 0, y: 0, width: 1440, height: 900)
+
+        // 1. Exact AX text rect in middle of screen -> bubble floats snugly ABOVE text with zero overlap
+        let textRect = CGRect(x: 300, y: 500, width: 140, height: 22)
+        let originAbove = SelectionBubblePanel.computeBubbleOrigin(for: textRect, in: screenFrame)
+        let bubbleAbove = CGRect(origin: originAbove, size: CGSize(width: 26, height: 26))
+        XCTAssertFalse(bubbleAbove.intersects(textRect))
+        XCTAssertGreaterThanOrEqual(bubbleAbove.minY, textRect.maxY + 4)
+
+        // 2. Cursor-point fallback (width=1, height=1) -> bubble sits close to mouse & cleanly ABOVE text line
+        let pointRect = CGRect(x: 400, y: 500, width: 1, height: 1)
+        let originPoint = SelectionBubblePanel.computeBubbleOrigin(for: pointRect, in: screenFrame)
+        XCTAssertGreaterThanOrEqual(originPoint.y, pointRect.origin.y + 11)
+        XCTAssertLessThanOrEqual(originPoint.y, pointRect.origin.y + 14)
+
+        // 3. Selection near top of screen -> bubble flips cleanly BELOW text instead of covering it
+        let topTextRect = CGRect(x: 300, y: 870, width: 140, height: 22)
+        let originBelow = SelectionBubblePanel.computeBubbleOrigin(for: topTextRect, in: screenFrame)
+        let bubbleBelow = CGRect(origin: originBelow, size: CGSize(width: 26, height: 26))
+        XCTAssertFalse(bubbleBelow.intersects(topTextRect))
+        XCTAssertLessThanOrEqual(bubbleBelow.maxY, topTextRect.minY - 4)
+    }
 }
