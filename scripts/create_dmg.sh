@@ -74,8 +74,8 @@ rm -f "${ZIP_OUTPUT}"
 ditto -c -k --keepParent "${PROJECT_DIR}/monkey-tools.app" "${ZIP_OUTPUT}"
 cp -f "${ZIP_OUTPUT}" "${PROJECT_DIR}/docs/monkey-tools.zip"
 
-if [ -d "$(cd "${PROJECT_DIR}/../.." && pwd)/monkey-tools" ] && [ -f "$(cd "${PROJECT_DIR}/../.." && pwd)/index.html" ]; then
-    PLIW_MONKEY_DIR="$(cd "${PROJECT_DIR}/../.." && pwd)/monkey-tools"
+if [ -d "$(cd "${PROJECT_DIR}/.." && pwd)/pliw-public/monkey-tools" ]; then
+    PLIW_MONKEY_DIR="$(cd "${PROJECT_DIR}/.." && pwd)/pliw-public/monkey-tools"
 else
     PLIW_MONKEY_DIR="$(cd "${PROJECT_DIR}/.." && pwd)/Pliw-App/monkey-tools"
 fi
