@@ -223,7 +223,7 @@ public final class LocalizationManager: ObservableObject {
 
         // Status Menu Bar
         "menu_show_monkey": ["th": "เปิด monkey-tools", "en": "Show monkey-tools", "zh": "打开 monkey-tools"],
-        "menu_tooltip": ["th": "monkey-tools (คลิกเพื่อเปิดการตั้งค่า / คลิกขวาเพื่อเปิดเมนู)", "en": "monkey-tools (Click for Settings / Right-click for Menu)", "zh": "monkey-tools (点击打开设置 / 右键打开菜单)"],
+        "menu_tooltip": ["th": "monkey-tools", "en": "monkey-tools", "zh": "monkey-tools"],
         "menu_history_count": ["th": "ประวัติ:", "en": "History:", "zh": "历史记录："],
         "menu_pause_clipboard": ["th": "⏸ หยุดบันทึกคลิปบอร์ดชั่วคราว", "en": "⏸ Pause Clipboard Capture", "zh": "⏸ 暂停剪贴板记录"],
         "menu_resume_clipboard": ["th": "▶️ กลับมาบันทึกคลิปบอร์ดต่อ", "en": "▶️ Resume Clipboard Capture", "zh": "▶️ 恢复剪贴板记录"],
@@ -263,7 +263,17 @@ public final class LocalizationManager: ObservableObject {
         "settings_translator_excluded_desc": ["th": "จะไม่แสดงปุ่มแปลภาษา 🌐 เมื่อคลุมดำข้อความในแอปเหล่านี้", "en": "Do not show the floating 🌐 translate bubble in these apps.", "zh": "在这些应用中划词时不显示浮动 🌐 翻译图标。"],
         "settings_no_translator_excluded": ["th": "ไม่มีแอปที่ถูกยกเว้น (แสดงปุ่มแปลในทุกแอป)", "en": "No excluded apps (bubble enabled in all apps)", "zh": "暂无排除的应用 (所有应用均启用)"],
         "settings_hotkey_conflict": ["th": "⚠️ คีย์ลัดนี้ซ้ำกับคีย์ลัดอีกตัวหนึ่ง กรุณาเลือกคีย์อื่น", "en": "⚠️ This shortcut conflicts with another shortcut. Please choose a different key.", "zh": "⚠️ 此快捷键与其他快捷键冲突，请选择其他按键。"],
-        "settings_recording_esc_hint": ["th": "กด Esc เพื่อยกเลิก", "en": "Press Esc to cancel", "zh": "按 Esc 取消"]
+        "settings_recording_esc_hint": ["th": "กด Esc เพื่อยกเลิก", "en": "Press Esc to cancel", "zh": "按 Esc 取消"],
+
+        // Menu Bar Popover
+        "popover_clipboard_capture": ["th": "บันทึกคลิปบอร์ด", "en": "Clipboard Capture", "zh": "剪贴板记录"],
+        "popover_auto_paste": ["th": "วางอัตโนมัติ (Auto-Paste)", "en": "Auto-Paste", "zh": "自动粘贴"],
+        "popover_selection_translate": ["th": "แปลเมื่อคลุมดำข้อความ", "en": "Selection Translate", "zh": "划词翻译"],
+        "popover_history": ["th": "ประวัติคลิปบอร์ด", "en": "History", "zh": "剪贴板历史"],
+        "popover_ignore_clipboard": ["th": "ยกเว้นบันทึกคลิปบอร์ดในแอปนี้", "en": "Ignore Clipboard", "zh": "忽略此应用剪贴板"],
+        "popover_ignore_translate": ["th": "ซ่อนปุ่มแปลในแอปนี้", "en": "Hide Translate Bubble", "zh": "在此应用隐藏翻译气泡"],
+        "popover_language": ["th": "ภาษา", "en": "Language", "zh": "语言"],
+        "popover_access_required": ["th": "ต้องการสิทธิ์การช่วยการเข้าถึง", "en": "Accessibility Required", "zh": "需要辅助功能权限"]
     ]
 
     private init() {

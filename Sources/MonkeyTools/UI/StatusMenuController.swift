@@ -1,13 +1,21 @@
 import AppKit
 import Combine
+import SwiftUI
 
-public final class StatusMenuController: NSObject {
+@MainActor
+public final class StatusMenuController: NSObject, NSPopoverDelegate {
     private var statusItem: NSStatusItem?
+    private var popover: NSPopover!
+    private let popoverViewModel = MonkeyPopoverViewModel()
+
     private var cancellables = Set<AnyCancellable>()
+    private var globalEventMonitor: Any?
+    private var localEventMonitor: Any?
 
     public override init() {
         super.init()
         setupStatusItem()
+        setupPopover()
     }
 
     private func setupStatusItem() {
@@ -23,10 +31,55 @@ public final class StatusMenuController: NSObject {
 
         button.target = self
         button.action = #selector(statusItemClicked(_:))
-        button.sendAction(on: [.leftMouseUp, .rightMouseUp])
+        button.sendAction(on: [.leftMouseDown, .rightMouseDown])
 
         setupObservers()
         updateStatusItemDisplay()
+    }
+
+    private func setupPopover() {
+        let rootView = MonkeyStatusPopoverView(
+            settings: AppSettings.shared,
+            monitor: ClipboardMonitor.shared,
+            clipboard: ClipboardManager.shared,
+            localization: LocalizationManager.shared,
+            updateChecker: UpdateCheckService.shared,
+            updateInstaller: UpdateInstallerService.shared,
+            viewModel: popoverViewModel,
+            onShowClipboard: { [weak self] in
+                self?.closePopover()
+                self?.togglePanel()
+            },
+            onOpenAccessibility: { [weak self] in
+                self?.closePopover()
+                self?.openAccessibilitySettings()
+            },
+            onOpenSettings: { [weak self] in
+                self?.closePopover()
+                self?.openSettings()
+            },
+            onOpenUpdateDownload: { [weak self] in
+                self?.closePopover()
+                self?.openUpdateDownload()
+            },
+            onCheckUpdates: { [weak self] in
+                self?.closePopover()
+                self?.checkForUpdatesManually()
+            },
+            onQuit: { [weak self] in
+                self?.quitApp()
+            }
+        )
+
+        let hosting = NSHostingController(rootView: rootView)
+        hosting.sizingOptions = [.preferredContentSize]
+
+        let pop = NSPopover()
+        pop.contentViewController = hosting
+        pop.behavior = .applicationDefined
+        pop.animates = true
+        pop.delegate = self
+        self.popover = pop
     }
 
     private func setupObservers() {
@@ -121,103 +174,101 @@ public final class StatusMenuController: NSObject {
     }
 
     @objc private func statusItemClicked(_ sender: NSStatusBarButton) {
-        guard let event = NSApp.currentEvent else { return }
-
-        // If right click or holding Control, show menu
-        if event.type == .rightMouseUp || event.modifierFlags.contains(.control) {
-            showMenu()
+        if popover.isShown {
+            closePopover()
         } else {
-            // Normal left click opens the app settings / config directly
-            SettingsWindowController.shared.toggleSettings()
+            showPopover()
         }
     }
 
     public func showMenu() {
-        let menu = NSMenu()
-        let loc = LocalizationManager.shared
+        showPopover()
+    }
 
-        if UpdateInstallerService.shared.isInstalling {
-            let pct = Int(UpdateInstallerService.shared.downloadProgress * 100)
-            let updateTitle = "⏳ \(loc["update_downloading"]) (\(pct)%)"
-            let updateItem = NSMenuItem(title: updateTitle, action: #selector(openUpdateDownload), keyEquivalent: "")
-            updateItem.target = self
-            menu.addItem(updateItem)
-            menu.addItem(NSMenuItem.separator())
-        } else if UpdateCheckService.shared.updateAvailable {
-            let version = UpdateCheckService.shared.latestUpdateInfo?.latestVersion ?? ""
-            let updateTitle = "✨ \(loc["menu_update_available"]) (v\(version))"
-            let updateItem = NSMenuItem(title: updateTitle, action: #selector(openUpdateDownload), keyEquivalent: "")
-            updateItem.target = self
-            menu.addItem(updateItem)
-            menu.addItem(NSMenuItem.separator())
+    private func showPopover() {
+        guard let button = statusItem?.button else { return }
+        popoverViewModel.refreshState()
+        popoverViewModel.expandedSection = nil
+
+        popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
+        installEventMonitors()
+    }
+
+    private func closePopover() {
+        if popover.isShown {
+            popover.performClose(nil)
+        }
+        removeEventMonitors()
+    }
+
+    public func popoverDidClose(_ notification: Notification) {
+        removeEventMonitors()
+    }
+
+    private func installEventMonitors() {
+        removeEventMonitors()
+
+        globalEventMonitor = NSEvent.addGlobalMonitorForEvents(
+            matching: [.leftMouseDown, .rightMouseDown, .otherMouseDown]
+        ) { [weak self] _ in
+            Task { @MainActor [weak self] in
+                guard let self, self.popover.isShown else { return }
+                self.closePopover()
+            }
         }
 
-        let shortcutDisplay = AppSettings.shared.hotkeyDisplayString
-        let showItem = NSMenuItem(title: "\(loc["menu_show_monkey"]) (\(shortcutDisplay))", action: #selector(togglePanel), keyEquivalent: "")
-        showItem.target = self
-        menu.addItem(showItem)
+        localEventMonitor = NSEvent.addLocalMonitorForEvents(
+            matching: [.leftMouseDown, .rightMouseDown, .otherMouseDown, .keyDown]
+        ) { [weak self] event in
+            guard let self, self.popover.isShown else { return event }
 
-        menu.addItem(NSMenuItem.separator())
+            switch event.type {
+            case .keyDown:
+                if event.keyCode == 53 { // Escape
+                    self.closePopover()
+                    return nil
+                }
+                let flags = event.modifierFlags.intersection(.deviceIndependentFlagsMask)
+                if flags == .command {
+                    if event.charactersIgnoringModifiers == "," {
+                        self.closePopover()
+                        self.openSettings()
+                        return nil
+                    }
+                    if event.charactersIgnoringModifiers?.lowercased() == "q" {
+                        self.quitApp()
+                        return nil
+                    }
+                }
+                return event
 
-        let count = ClipboardManager.shared.items.count
-        let countItem = NSMenuItem(title: "\(loc["menu_history_count"]) \(count) \(loc["items_count"])", action: nil, keyEquivalent: "")
-        countItem.isEnabled = false
-        menu.addItem(countItem)
+            case .leftMouseDown, .rightMouseDown, .otherMouseDown:
+                let popoverWindow = self.popover.contentViewController?.view.window
+                let statusWindow = self.statusItem?.button?.window
+                if event.window !== popoverWindow && event.window !== statusWindow {
+                    self.closePopover()
+                }
+                return event
 
-        let pauseTitle = ClipboardMonitor.shared.isPaused ? loc["menu_resume_clipboard"] : loc["menu_pause_clipboard"]
-        let pauseItem = NSMenuItem(title: pauseTitle, action: #selector(toggleClipboardPause), keyEquivalent: "")
-        pauseItem.target = self
-        menu.addItem(pauseItem)
+            default:
+                return event
+            }
+        }
+    }
 
-        let clearUnpinned = NSMenuItem(title: loc["menu_clear_unpinned"], action: #selector(clearUnpinnedHistory), keyEquivalent: "")
-        clearUnpinned.target = self
-        menu.addItem(clearUnpinned)
-
-        let clearAll = NSMenuItem(title: loc["menu_clear_all"], action: #selector(clearAllHistory), keyEquivalent: "")
-        clearAll.target = self
-        menu.addItem(clearAll)
-
-        menu.addItem(NSMenuItem.separator())
-
-        let accessStatus = AutoPaster.shared.isAccessibilityGranted ? loc["menu_access_granted"] : loc["menu_access_enable"]
-        let accessItem = NSMenuItem(title: accessStatus, action: #selector(openAccessibilitySettings), keyEquivalent: "")
-        accessItem.target = self
-        menu.addItem(accessItem)
-
-        let settingsItem = NSMenuItem(title: loc["menu_settings_item"], action: #selector(openSettings), keyEquivalent: ",")
-        settingsItem.target = self
-        menu.addItem(settingsItem)
-
-        let checkUpdateItem = NSMenuItem(title: loc["menu_check_updates"], action: #selector(checkForUpdatesManually), keyEquivalent: "")
-        checkUpdateItem.target = self
-        menu.addItem(checkUpdateItem)
-
-        menu.addItem(NSMenuItem.separator())
-
-        let quitItem = NSMenuItem(title: loc["menu_quit_item"], action: #selector(quitApp), keyEquivalent: "q")
-        quitItem.target = self
-        menu.addItem(quitItem)
-
-        statusItem?.menu = menu
-        statusItem?.button?.performClick(nil)
-        // Reset menu so left-click continues to toggle
-        statusItem?.menu = nil
+    private func removeEventMonitors() {
+        if let monitor = globalEventMonitor {
+            NSEvent.removeMonitor(monitor)
+            globalEventMonitor = nil
+        }
+        if let monitor = localEventMonitor {
+            NSEvent.removeMonitor(monitor)
+            localEventMonitor = nil
+        }
     }
 
     @objc private func togglePanel() {
         ClipboardPanel.shared.toggleVisibility()
-    }
-
-    @objc private func toggleClipboardPause() {
-        ClipboardMonitor.shared.togglePause()
-    }
-
-    @objc private func clearUnpinnedHistory() {
-        ClipboardManager.shared.clearAll(includingPinned: false)
-    }
-
-    @objc private func clearAllHistory() {
-        ClipboardManager.shared.clearAll(includingPinned: true)
     }
 
     @objc private func openAccessibilitySettings() {
