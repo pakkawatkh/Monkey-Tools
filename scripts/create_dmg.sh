@@ -10,7 +10,7 @@ echo "🔨 Ensuring latest release build of monkey-tools.app..."
 ./scripts/build_app.sh
 
 if [ -d "$(cd "${PROJECT_DIR}/.." && pwd)/public" ]; then
-    PLIW_MONKEY_DIR="$(cd "${PROJECT_DIR}/.." && pwd)/public/monkey-tools"
+    PLIW_MONKEY_DIR="$(cd "${PROJECT_DIR}/.." && pwd)/public/public/monkey-tools"
 else
     PLIW_MONKEY_DIR="$(cd "${PROJECT_DIR}/.." && pwd)/Pliw-App/monkey-tools"
 fi
