@@ -9,11 +9,19 @@ cd "${PROJECT_DIR}"
 echo "🔨 Ensuring latest release build of monkey-tools.app..."
 ./scripts/build_app.sh
 
-DMG_TMP="${PROJECT_DIR}/.build_dmg"
-DMG_OUTPUT="${PROJECT_DIR}/monkey-tools-Installer.dmg"
+if [ -d "$(cd "${PROJECT_DIR}/.." && pwd)/public" ]; then
+    PLIW_MONKEY_DIR="$(cd "${PROJECT_DIR}/.." && pwd)/public/monkey-tools"
+else
+    PLIW_MONKEY_DIR="$(cd "${PROJECT_DIR}/.." && pwd)/Pliw-App/monkey-tools"
+fi
+mkdir -p "${PLIW_MONKEY_DIR}"
+
+DMG_TMP="$(mktemp -d)"
+trap 'rm -rf "${DMG_TMP}"' EXIT
+DMG_OUTPUT="${PLIW_MONKEY_DIR}/monkey-tools-Installer.dmg"
+ZIP_OUTPUT="${PLIW_MONKEY_DIR}/monkey-tools.zip"
 
 echo "📦 Preparing DMG installer directory structure..."
-rm -rf "${DMG_TMP}"
 mkdir -p "${DMG_TMP}"
 
 # Copy the .app bundle
@@ -56,34 +64,18 @@ EOF
 
 echo "📀 Creating DMG disk image: ${DMG_OUTPUT}..."
 rm -f "${DMG_OUTPUT}"
+rm -f "${PROJECT_DIR}/monkey-tools-Installer.dmg"
 rm -f "${PROJECT_DIR}/monkey-copy-Installer.dmg"
 rm -f "${PROJECT_DIR}/bxxs-clipboard-Installer.dmg"
 rm -f "${PROJECT_DIR}/MacClipboard-Installer.dmg"
 hdiutil create -volname "monkey-tools Installer" -srcfolder "${DMG_TMP}" -ov -format UDZO "${DMG_OUTPUT}"
 
-# Clean up temporary staging directory
-rm -rf "${DMG_TMP}"
-
-# Sync latest DMG and ZIP to docs and Pliw-App for direct website downloads
-mkdir -p "${PROJECT_DIR}/docs"
-cp -f "${DMG_OUTPUT}" "${PROJECT_DIR}/docs/monkey-tools-Installer.dmg"
-
-ZIP_OUTPUT="${PROJECT_DIR}/monkey-tools.zip"
 echo "🗜️ Creating ZIP archive for in-app updates: ${ZIP_OUTPUT}..."
-rm -f "${ZIP_OUTPUT}"
+rm -f "${ZIP_OUTPUT}" "${PROJECT_DIR}/monkey-tools.zip"
 ditto -c -k --keepParent "${PROJECT_DIR}/monkey-tools.app" "${ZIP_OUTPUT}"
-cp -f "${ZIP_OUTPUT}" "${PROJECT_DIR}/docs/monkey-tools.zip"
 
-if [ -d "$(cd "${PROJECT_DIR}/.." && pwd)/public/monkey-tools" ]; then
-    PLIW_MONKEY_DIR="$(cd "${PROJECT_DIR}/.." && pwd)/public/monkey-tools"
-else
-    PLIW_MONKEY_DIR="$(cd "${PROJECT_DIR}/.." && pwd)/Pliw-App/monkey-tools"
-fi
-if [ -d "${PLIW_MONKEY_DIR}" ]; then
-    echo "📦 Syncing DMG and ZIP to ${PLIW_MONKEY_DIR}..."
-    cp -f "${DMG_OUTPUT}" "${PLIW_MONKEY_DIR}/monkey-tools-Installer.dmg"
-    cp -f "${ZIP_OUTPUT}" "${PLIW_MONKEY_DIR}/monkey-tools.zip"
-fi
+# Remove temporary local .app bundle so build outputs stay only in public/
+rm -rf "${PROJECT_DIR}/monkey-tools.app"
 
-echo "🎉 DMG and ZIP packages successfully created!"
+echo "🎉 DMG and ZIP packages successfully created in ${PLIW_MONKEY_DIR}!"
 ls -lh "${DMG_OUTPUT}" "${ZIP_OUTPUT}"

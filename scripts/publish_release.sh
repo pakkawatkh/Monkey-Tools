@@ -5,7 +5,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
 cd "${PROJECT_DIR}"
 
-DMG_FILE="${PROJECT_DIR}/monkey-tools-Installer.dmg"
+DMG_FILE="$(cd "${PROJECT_DIR}/.." && pwd)/public/monkey-tools/monkey-tools-Installer.dmg"
 TAG="v2.0.1"
 REPO="pakkawatkh/monkey-tools"
 

@@ -14,9 +14,7 @@ DerivedData/
 
 # Disk Images & Installers
 *.dmg
-!docs/*.dmg
 *.zip
-!docs/*.zip
 .build_dmg/
 
 /.agents
