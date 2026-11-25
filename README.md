@@ -3,7 +3,7 @@
 > A lightweight, powerful, and privacy-conscious all-in-one productivity suite for macOS. Seamlessly unites Windows-style Clipboard History, an instant continuous Emoji Picker, a smart floating Selection Translator, and a real-time system Network Monitor into a single menu bar utility. Crafted with Swift & SwiftUI, featuring a clean, dark acrylic design that is fast, responsive, and easy on system resources.
 
 [![Release](https://img.shields.io/badge/Release-v2.3.5-orange?style=for-the-badge&logo=github)](https://pakkawatkh.github.io/public/monkey-tools/)
-[![Platform](https://img.shields.io/badge/Platform-macOS%2013%2B-lightgrey?style=for-the-badge&logo=apple)](https://github.com/pakkawatkh/monkey-tools)
+[![Platform](https://img.shields.io/badge/Platform-macOS%2013%2B-lightgrey?style=for-the-badge&logo=apple)](https://github.com/pakkawatkh/Monkey-Tools)
 [![License](https://img.shields.io/badge/License-MIT-green?style=for-the-badge)](LICENSE)
 
 ---
@@ -232,7 +232,7 @@ To compile and package the project manually:
 
 ```bash
 # Clone the repository
-git clone https://github.com/pakkawatkh/monkey-tools.git
+git clone https://github.com/pakkawatkh/Monkey-Tools.git
 cd monkey-tools
 
 # Run full unit test suite (39 tests)
