@@ -2,7 +2,7 @@
 > **Windows-style Clipboard History (`Win + V`), Continuous Emoji Picker, Smart Selection Translator & Real-Time Network Monitor for macOS**  
 > A lightweight, powerful, and privacy-conscious all-in-one productivity suite for macOS. Seamlessly unites Windows-style Clipboard History, an instant continuous Emoji Picker, a smart floating Selection Translator, and a real-time system Network Monitor into a single menu bar utility. Crafted with Swift & SwiftUI, featuring a clean, dark acrylic design that is fast, responsive, and easy on system resources.
 
-[![Release](https://img.shields.io/badge/Release-v2.3.5-orange?style=for-the-badge&logo=github)](https://pakkawatkh.github.io/Pliw-App/monkey-tools/)
+[![Release](https://img.shields.io/badge/Release-v2.3.5-orange?style=for-the-badge&logo=github)](https://pakkawatkh.github.io/pliw-public/monkey-tools/)
 [![Platform](https://img.shields.io/badge/Platform-macOS%2013%2B-lightgrey?style=for-the-badge&logo=apple)](https://github.com/pakkawatkh/monkey-tools)
 [![License](https://img.shields.io/badge/License-MIT-green?style=for-the-badge)](LICENSE)
 
@@ -12,12 +12,12 @@
 
 You can download the latest official `.dmg` installer directly from the Pliw App Release Portal:
 
-[![Download DMG](https://img.shields.io/badge/Download-monkey--tools--Installer.dmg%20(v2.3.5)-blue?style=for-the-badge&logo=apple)](https://pakkawatkh.github.io/Pliw-App/monkey-tools/monkey-tools-Installer.dmg)
+[![Download DMG](https://img.shields.io/badge/Download-monkey--tools--Installer.dmg%20(v2.3.5)-blue?style=for-the-badge&logo=apple)](https://pakkawatkh.github.io/pliw-public/monkey-tools/monkey-tools-Installer.dmg)
 
 👉 **Direct Links & Live Preview:**
-- **[Official Website & Interactive Tour](https://pakkawatkh.github.io/Pliw-App/monkey-tools/)**
-- **[Download monkey-tools-Installer.dmg (v2.3.5 · 1.3 MB)](https://pakkawatkh.github.io/Pliw-App/monkey-tools/monkey-tools-Installer.dmg)**
-- **[Download monkey-tools.zip (Auto-Update Archive)](https://pakkawatkh.github.io/Pliw-App/monkey-tools/monkey-tools.zip)**
+- **[Official Website & Interactive Tour](https://pakkawatkh.github.io/pliw-public/monkey-tools/)**
+- **[Download monkey-tools-Installer.dmg (v2.3.5 · 1.8 MB)](https://pakkawatkh.github.io/pliw-public/monkey-tools/monkey-tools-Installer.dmg)**
+- **[Download monkey-tools.zip (Auto-Update Archive)](https://pakkawatkh.github.io/pliw-public/monkey-tools/monkey-tools.zip)**
 
 ---
 
@@ -27,7 +27,7 @@ You can download the latest official `.dmg` installer directly from the Pliw App
 - 🗂️ **Clipboard Category Filters & Power Shortcuts:** Filter by `All`, `Text`, `Images`, `Pinned` with source app icons, quick paste `⌘1`–`⌘9`, Pin `⌘P`, Delete `⌘⌫`, Quick Preview `⌘Y`, and Translate `⌘T`.
 - 🔍 **Offline Image OCR (Apple Vision):** Extract text directly from copied screenshots and images 100% locally.
 - ⚡ **Quick Translate Hotkey (`⌘⇧E`) & History:** Summon the translator instantly from anywhere, browse recent translations, and exclude specific apps from the floating selection bubble.
-- 🔄 **In-App Auto-Updater:** Checks `https://pakkawatkh.github.io/Pliw-App/monkey-tools/version.json` automatically.
+- 🔄 **In-App Auto-Updater:** Checks `https://pakkawatkh.github.io/pliw-public/monkey-tools/version.json` automatically.
 
 - 🌐 **Real-time System Network Monitor:** 
   - Live download (`⬇`) and upload (`⬆`) bandwidth speed displayed directly on the macOS Menu Bar.
